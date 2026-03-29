@@ -43,9 +43,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.sample2.BubbleColor
-import com.example.sample2.TextColor
-import com.example.sample2.TimeColor
+import com.example.sample2.core.ui.BubbleColor
+import com.example.sample2.core.ui.TextColor
+import com.example.sample2.core.ui.TimeColor
 import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.EmotionMetrics
@@ -79,15 +79,16 @@ private val BubbleTextVerticalPaddingCompact = 4.dp
 @Composable
 fun MessageBubble(
     message: MessageV2,
-    state: ChatState,
+    isSingleLineMode: Boolean,
+    onSelectMessage: (MessageV2) -> Unit,
     onDelete: () -> Unit,
     onUpdate: (MessageV2) -> Unit
 ) {
     val textVerticalPadding =
-        if (state.isSingleLineMode) BubbleTextVerticalPaddingCompact
+        if (isSingleLineMode) BubbleTextVerticalPaddingCompact
         else BubbleTextVerticalPadding
 
-    val displayText = if (state.isSingleLineMode) {
+    val displayText = if (isSingleLineMode) {
         message.text
             .replace("\r\n", " ")
             .replace("\n", " ")
@@ -146,7 +147,7 @@ fun MessageBubble(
                 .padding(end = BubbleRightPadding)
                 .combinedClickable(
                     onClick = {},
-                    onLongClick = { state.selectedMessage = message }
+                    onLongClick = { onSelectMessage(message) }
                 )
         ) {
             Text(
@@ -156,8 +157,8 @@ fun MessageBubble(
                     vertical = textVerticalPadding
                 ),
                 color = TextColor,
-                maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
-                overflow = if (state.isSingleLineMode) {
+                maxLines = if (isSingleLineMode) 1 else Int.MAX_VALUE,
+                overflow = if (isSingleLineMode) {
                     TextOverflow.Ellipsis
                 } else {
                     TextOverflow.Clip
@@ -212,7 +213,6 @@ fun getRelativeLabel(timestamp: Long): String {
 @Composable
 fun MessageActionOverlay(
     message: MessageV2,
-    state: ChatState,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
     onUpdate: (MessageV2) -> Unit

@@ -60,7 +60,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.sample2.data.DailyRecord
 import com.example.sample2.data.SleepData
-import com.example.sample2.model.JournalJsonStorage
+import com.example.sample2.data.repository.JournalJsonStorage
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date

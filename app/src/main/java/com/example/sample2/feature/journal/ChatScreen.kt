@@ -1,7 +1,6 @@
-package com.example.sample2.ui
+package com.example.sample2.feature.journal
 
 import androidx.compose.runtime.Composable
-import com.example.sample2.feature.journal.ChatRoute
 
 @Composable
 fun ChatScreen() {

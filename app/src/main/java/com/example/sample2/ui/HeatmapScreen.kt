@@ -64,11 +64,10 @@ private enum class HeatmapCategory(val label: String) {
 
 @Composable
 fun HeatmapScreen(
-    state: ChatState,
+    messages: List<MessageV2>,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val messages = state.messages
 
     val initialPreset = remember { PeriodPreset.values().first() }
     val initialRange = remember { initialPreset.resolveRange() }
