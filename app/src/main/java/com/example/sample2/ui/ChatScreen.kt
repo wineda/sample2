@@ -6,49 +6,25 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.speech.RecognizerIntent
-import androidx.core.content.FileProvider
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.ShowChart
-import androidx.compose.material.icons.filled.Today
-import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.ViewStream
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,29 +35,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.sample2.model.JournalJsonStorage
+import com.example.sample2.ui.journal.DeleteMessageConfirmDialog
+import com.example.sample2.ui.journal.JournalBottomModeBar
+import com.example.sample2.ui.journal.JournalCompactMetaRow
+import com.example.sample2.ui.journal.JournalScreenMode
+import com.example.sample2.ui.journal.RestoreConfirmDialog
+import com.example.sample2.ui.journal.buildJournalDateLabel
+import com.example.sample2.ui.journal.shareJournalBackup
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.ui.theme.ChatGptTheme
 import com.example.sample2.util.formatDate
 import kotlinx.coroutines.launch
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-
-private enum class JournalScreenMode {
-    Journal,
-    Analytics,
-    Heatmap,
-    DailyRecord
-}
 
 @SuppressLint("UnrememberedMutableState")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -226,51 +194,22 @@ fun ChatScreen() {
     }
 
     if (state.showRestoreDialog) {
-        AlertDialog(
-            onDismissRequest = { state.showRestoreDialog = false },
-            title = { Text("リストア確認") },
-            text = { Text("現在のデータは上書きされます。\nよろしいですか？") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        state.showRestoreDialog = false
-                        restoreLauncher.launch(arrayOf("application/json"))
-                    }
-                ) {
-                    Text("OK")
-                }
+        RestoreConfirmDialog(
+            onConfirm = {
+                state.showRestoreDialog = false
+                restoreLauncher.launch(arrayOf("application/json"))
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { state.showRestoreDialog = false }
-                ) {
-                    Text("キャンセル")
-                }
-            }
+            onDismiss = { state.showRestoreDialog = false }
         )
     }
 
     if (state.deleteTarget != null) {
-        AlertDialog(
-            containerColor = MaterialTheme.colorScheme.surface,
-            onDismissRequest = { state.deleteTarget = null },
-            title = { Text("削除") },
-            text = { Text("このメッセージを削除しますか？") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        state.deleteTarget?.let { state.deleteMessage(it) }
-                        state.deleteTarget = null
-                    }
-                ) {
-                    Text("削除")
-                }
+        DeleteMessageConfirmDialog(
+            onConfirm = {
+                state.deleteTarget?.let { state.deleteMessage(it) }
+                state.deleteTarget = null
             },
-            dismissButton = {
-                TextButton(onClick = { state.deleteTarget = null }) {
-                    Text("キャンセル")
-                }
-            }
+            onDismiss = { state.deleteTarget = null }
         )
     }
 
@@ -500,255 +439,3 @@ fun ChatScreen() {
     }
 }
 
-@Composable
-private fun JournalBottomModeBar(
-    currentMode: JournalScreenMode,
-    onOpenJournal: () -> Unit,
-    onOpenAnalytics: () -> Unit,
-    onOpenHeatmap: () -> Unit,
-    onOpenDailyRecord: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        CompactActionChip(
-            text = "記録",
-            icon = Icons.Default.ViewAgenda,
-            selected = currentMode == JournalScreenMode.Journal,
-            onClick = onOpenJournal
-        )
-
-        CompactActionChip(
-            text = "分析",
-            icon = Icons.Default.ShowChart,
-            selected = currentMode == JournalScreenMode.Analytics,
-            onClick = onOpenAnalytics
-        )
-
-        CompactActionChip(
-            text = "ヒートマップ",
-            icon = Icons.Default.GridView,
-            selected = currentMode == JournalScreenMode.Heatmap,
-            onClick = onOpenHeatmap
-        )
-
-        CompactActionChip(
-            text = "日次",
-            icon = Icons.Default.Today,
-            selected = currentMode == JournalScreenMode.DailyRecord,
-            onClick = onOpenDailyRecord
-        )
-    }
-}
-
-@Composable
-private fun JournalCompactMetaRow(
-    dateLabel: String,
-    hasActiveFilter: Boolean,
-    isSingleLineMode: Boolean,
-    onMenuClick: () -> Unit,
-    onFilterClick: () -> Unit,
-    onToggleSingleLine: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        CompactHeaderIconButton(
-            selected = false,
-            onClick = onMenuClick,
-            icon = Icons.Default.Menu,
-            contentDescription = "メニュー"
-        )
-
-        Spacer(modifier = Modifier.size(8.dp))
-
-        Text(
-            text = dateLabel,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f)
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            CompactHeaderIconButton(
-                selected = hasActiveFilter,
-                onClick = onFilterClick,
-                icon = Icons.Default.FilterList,
-                contentDescription = "フィルタ"
-            )
-
-            CompactHeaderIconButton(
-                selected = isSingleLineMode,
-                onClick = onToggleSingleLine,
-                icon = if (isSingleLineMode) {
-                    Icons.Default.ViewAgenda
-                } else {
-                    Icons.Default.ViewStream
-                },
-                contentDescription = if (isSingleLineMode) {
-                    "通常表示に切り替え"
-                } else {
-                    "1行表示に切り替え"
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun CompactHeaderIconButton(
-    selected: Boolean,
-    onClick: () -> Unit,
-    icon: ImageVector,
-    contentDescription: String,
-    modifier: Modifier = Modifier
-) {
-    val containerColor = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
-    }
-
-    val contentColor = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Surface(
-        modifier = modifier,
-        onClick = onClick,
-        shape = CircleShape,
-        color = containerColor,
-        contentColor = contentColor,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
-    ) {
-        Box(
-            modifier = Modifier.size(28.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                modifier = Modifier.size(16.dp)
-            )
-
-            if (selected) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 4.dp, end = 4.dp)
-                        .size(5.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CompactActionChip(
-    text: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val containerColor = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f)
-    }
-
-    val contentColor = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = containerColor,
-        contentColor = contentColor,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier
-                .height(30.dp)
-                .padding(horizontal = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(14.dp)
-            )
-
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelMedium
-            )
-        }
-    }
-}
-
-private fun shareJournalBackup(context: android.content.Context) {
-    val backupFile = File(
-        context.cacheDir,
-        "journal-share-${System.currentTimeMillis()}.json"
-    )
-
-    backupFile.outputStream().use { output ->
-        JournalJsonStorage.exportBackup(context, output)
-    }
-
-    val uri = FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.provider",
-        backupFile
-    )
-
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "application/json"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_SUBJECT, "journal_backup.json")
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-
-    context.startActivity(Intent.createChooser(intent, "バックアップを共有"))
-}
-
-private fun buildJournalDateLabel(timestamp: Long): String {
-    val dateText = SimpleDateFormat("M月d日(E)", Locale.JAPAN).format(Date(timestamp))
-
-    val target = Calendar.getInstance().apply {
-        timeInMillis = timestamp
-    }
-    val today = Calendar.getInstance()
-
-    val isToday =
-        target.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
-                target.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)
-
-    return if (isToday) {
-        "$dateText・今日"
-    } else {
-        dateText
-    }
-}
