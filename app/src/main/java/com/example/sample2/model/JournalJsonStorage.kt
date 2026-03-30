@@ -19,8 +19,8 @@ object JournalJsonStorage {
     private const val MESSAGES_FILE_NAME = "messages_v2.json"
     private const val DAILY_RECORDS_FILE_NAME = "daily_records.json"
 
-    // ActionFlags に負荷フラグを追加したので版を上げる
-    private const val BACKUP_VERSION = 2
+    // quickAction を追加したので版を上げる
+    private const val BACKUP_VERSION = 3
 
     private val DATE_REGEX = Regex("""\d{4}-\d{2}-\d{2}""")
 
@@ -208,8 +208,9 @@ object JournalJsonStorage {
             insight = obj.optBoolean("insight", false),
             reflection = obj.optBoolean("reflection", false),
 
-            // version 1 の旧JSONには存在しないので false 既定で後方互換
+            // 旧JSONに存在しない項目は false 既定で後方互換
             pendingTask = obj.optBoolean("pendingTask", false),
+            quickAction = obj.optBoolean("quickAction", false),
             meetingStress = obj.optBoolean("meetingStress", false),
             smartphoneDrift = obj.optBoolean("smartphoneDrift", false),
             alcohol = obj.optBoolean("alcohol", false),
@@ -262,8 +263,8 @@ object JournalJsonStorage {
             put("insight", insight)
             put("reflection", reflection)
 
-            // 新しい負荷フラグ
             put("pendingTask", pendingTask)
+            put("quickAction", quickAction)
             put("meetingStress", meetingStress)
             put("smartphoneDrift", smartphoneDrift)
             put("alcohol", alcohol)

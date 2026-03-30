@@ -25,6 +25,7 @@ data class DailyFlagCounts(
     val intent: Int,
     val insight: Int,
     val reflection: Int,
+    val quickAction: Int,
     val pendingTask: Int,
     val meetingStress: Int,
     val smartphoneDrift: Int,
@@ -80,6 +81,7 @@ data class DailyFlagAverages(
     val intent: Double,
     val insight: Double,
     val reflection: Double,
+    val quickAction: Double,
     val pendingTask: Double,
     val meetingStress: Double,
     val smartphoneDrift: Double,
@@ -440,6 +442,7 @@ object PersonalityScoreModel {
             intent = messages.count { it.flags.intent },
             insight = messages.count { it.flags.insight },
             reflection = messages.count { it.flags.reflection },
+            quickAction = messages.count { it.flags.quickAction },
             pendingTask = messages.count { it.flags.pendingTask },
             meetingStress = messages.count { it.flags.meetingStress },
             smartphoneDrift = messages.count { it.flags.smartphoneDrift },
@@ -526,6 +529,7 @@ object PersonalityScoreModel {
         val intentNorm = normalizeCount(f.intent, 2)
         val insightNorm = normalizeCount(f.insight, 2)
         val reflectionNorm = normalizeCount(f.reflection, 2)
+        val quickActionNorm = normalizeCount(f.quickAction, 3)
 
         val pendingTaskNorm = normalizeCount(f.pendingTask, 3)
         val meetingStressNorm = normalizeCount(f.meetingStress, 2)
@@ -533,14 +537,17 @@ object PersonalityScoreModel {
         val alcoholNorm = normalizeCount(f.alcohol, 2)
         val hangoverNorm = normalizeCount(f.hangover, 1)
 
+        val effectivePendingTaskNorm = clamp(pendingTaskNorm - 0.85 * quickActionNorm, 0.0, 1.0)
+        val quickActionReliefNorm = clamp(quickActionNorm - 0.35 * pendingTaskNorm, 0.0, 1.0)
+
         // 指標ごとに「何に反応するか」を分ける。
         // 安定度: 安心感・喜び・睡眠・対人で上がりやすい。
         // 活力: 睡眠・歩数・運動で上下しやすい。
-        // 制御感: 意図・気づき・内省と、未処理/会議/スマホ逸脱で上下しやすい。
-        val stabilityPendingAmplifier = 1.0 + 0.22 * pendingTaskNorm
-        val anxietyPendingAmplifier = 1.0 + 0.30 * pendingTaskNorm
-        val energyPendingAmplifier = 1.0 + 0.18 * pendingTaskNorm
-        val controlPendingAmplifier = 1.0 + 0.45 * pendingTaskNorm
+        // 制御感: 意図・気づき・内省と、未処理/すぐやる/会議/スマホ逸脱で上下しやすい。
+        val stabilityPendingAmplifier = 1.0 + 0.22 * effectivePendingTaskNorm
+        val anxietyPendingAmplifier = 1.0 + 0.30 * effectivePendingTaskNorm
+        val energyPendingAmplifier = 1.0 + 0.18 * effectivePendingTaskNorm
+        val controlPendingAmplifier = 1.0 + 0.45 * effectivePendingTaskNorm
 
         val stabilityNegativeLoad =
             30.0 * anxietyNorm +
@@ -578,9 +585,10 @@ object PersonalityScoreModel {
                     6.0 * socializedNorm +
                     3.0 * intentNorm +
                     2.0 * insightNorm +
-                    3.0 * reflectionNorm -
+                    3.0 * reflectionNorm +
+                    5.0 * quickActionReliefNorm -
                     stabilityNegativeLoad * stabilityPendingAmplifier -
-                    7.0 * pendingTaskNorm -
+                    7.0 * effectivePendingTaskNorm -
                     4.0 * alcoholNorm -
                     5.0 * hangoverNorm
 
@@ -596,8 +604,9 @@ object PersonalityScoreModel {
                     0.2 * socializedNorm -
                     0.5 * intentNorm -
                     0.5 * insightNorm -
-                    0.3 * reflectionNorm +
-                    1.4 * pendingTaskNorm +
+                    0.3 * reflectionNorm -
+                    0.9 * quickActionReliefNorm +
+                    1.4 * effectivePendingTaskNorm +
                     0.4 * alcoholNorm +
                     0.8 * hangoverNorm
 
@@ -611,10 +620,11 @@ object PersonalityScoreModel {
                     4.0 * intentNorm +
                     3.0 * insightNorm +
                     2.0 * reflectionNorm +
+                    6.0 * quickActionReliefNorm +
                     10.0 * happyNorm +
                     1.0 * calmNorm -
                     energyNegativeLoad * energyPendingAmplifier -
-                    6.0 * pendingTaskNorm -
+                    6.0 * effectivePendingTaskNorm -
                     4.0 * alcoholNorm -
                     13.0 * hangoverNorm
 
@@ -627,9 +637,10 @@ object PersonalityScoreModel {
                     3.0 * exercisedNorm +
                     1.5 * happyNorm +
                     2.0 * calmNorm +
-                    3.0 * sleepNorm -
+                    3.0 * sleepNorm +
+                    15.0 * quickActionReliefNorm -
                     controlNegativeLoad * controlPendingAmplifier -
-                    16.0 * pendingTaskNorm -
+                    16.0 * effectivePendingTaskNorm -
                     5.0 * alcoholNorm -
                     7.0 * hangoverNorm
 
@@ -645,14 +656,17 @@ object PersonalityScoreModel {
         val e = rawToday.features.emotions
         val f = rawToday.features.flags
         val pendingNorm = normalizeCount(f.pendingTask, 3)
+        val quickActionNorm = normalizeCount(f.quickAction, 3)
+        val effectivePendingNorm = clamp(pendingNorm - 0.85 * quickActionNorm, 0.0, 1.0)
 
         val shock =
             0.40 * normalizeEmotionAbs(e.anxiety) +
                     0.14 * normalizeEmotionAbs(e.sad) +
                     0.18 * normalizeEmotionAbs(e.angry) +
-                    0.16 * pendingNorm +
-                    0.08 * normalizeEmotionAbs(e.anxiety) * pendingNorm +
-                    0.06 * normalizeEmotionAbs(e.angry) * pendingNorm +
+                    0.16 * effectivePendingNorm +
+                    0.08 * normalizeEmotionAbs(e.anxiety) * effectivePendingNorm +
+                    0.06 * normalizeEmotionAbs(e.angry) * effectivePendingNorm -
+                    0.10 * quickActionNorm +
                     0.10 * normalizeCount(f.meetingStress, 2) +
                     0.08 * normalizeCount(f.smartphoneDrift, 2) +
                     0.10 * when {
@@ -700,6 +714,7 @@ object PersonalityScoreModel {
         val insightDelta = compareHigherIsBetter(f.insight.toDouble(), baseline.flags.insight, 1.0)
         val reflectionDelta = compareHigherIsBetter(f.reflection.toDouble(), baseline.flags.reflection, 1.0)
         val socializedDelta = compareHigherIsBetter(f.socialized.toDouble(), baseline.flags.socialized, 1.0)
+        val quickActionDelta = compareHigherIsBetter(f.quickAction.toDouble(), baseline.flags.quickAction, 1.0)
         val anxietyDelta = compareLowerIsBetter(e.anxiety, baseline.emotions.anxiety, EMOTION_DELTA_SCALE)
         val sadDelta = compareLowerIsBetter(e.sad, baseline.emotions.sad, EMOTION_DELTA_SCALE)
         val pendingTaskDelta = compareLowerIsBetter(f.pendingTask.toDouble(), baseline.flags.pendingTask, 1.2)
@@ -714,6 +729,7 @@ object PersonalityScoreModel {
         if (intentDelta >= 0.35) plus += "挑戦が平常より多い"
         if (insightDelta >= 0.35) plus += "気づきが平常より多い"
         if (reflectionDelta >= 0.35) plus += "内省が平常より多い"
+        if (quickActionDelta >= 0.35) plus += "すぐやるが平常より多い"
         if (happyDelta >= 0.35) plus += "喜びが平常より高い"
         if (calmDelta >= 0.35) plus += "安心感が平常より高い"
         if (anxietyDelta >= 0.35) plus += "不安が平常より低い"
@@ -751,7 +767,7 @@ object PersonalityScoreModel {
         val tail = when (state) {
             PersonalityState.STABLE -> {
                 when {
-                    control < 50.0 -> "未処理を1つ減らすとさらに整いやすい。"
+                    control < 50.0 -> "未処理を1つ減らすか、すぐやるを1つ増やすとさらに整いやすい。"
                     energy < 45.0 -> "安定寄りだが消耗はあるので、無理に詰めすぎない。"
                     else -> "この調子で小さい行動を維持すると崩れにくい。"
                 }
@@ -760,12 +776,12 @@ object PersonalityScoreModel {
                 when {
                     anxiety >= 6.0 -> "安心感を増やす行動が効きやすい。"
                     energy < 45.0 -> "まず睡眠と軽い運動が効きやすい。"
-                    else -> "やることを絞るほど制御感が上がりやすい。"
+                    else -> "やることを絞って、すぐやるに変えるほど制御感が上がりやすい。"
                 }
             }
             PersonalityState.TENSE -> {
                 when {
-                    control < 40.0 -> "抱え込みを減らし、未処理を1つ片づけると戻しやすい。"
+                    control < 40.0 -> "抱え込みを減らし、未処理を1つ片づけるか、すぐやるを1つ増やすと戻しやすい。"
                     anxiety >= 7.0 -> "刺激を減らし、休憩や会話を先に入れたい。"
                     else -> "押し切るより、負荷源を減らす方が効く。"
                 }
@@ -857,6 +873,7 @@ object PersonalityScoreModel {
                     intent = blend(current?.flags?.intent?.toDouble(), 0.4, 0.35),
                     insight = blend(current?.flags?.insight?.toDouble(), 0.4, 0.35),
                     reflection = blend(current?.flags?.reflection?.toDouble(), 0.5, 0.35),
+                    quickAction = blend(current?.flags?.quickAction?.toDouble(), 0.6, 0.35),
                     pendingTask = blend(current?.flags?.pendingTask?.toDouble(), 0.8, 0.35),
                     meetingStress = blend(current?.flags?.meetingStress?.toDouble(), 0.5, 0.35),
                     smartphoneDrift = blend(current?.flags?.smartphoneDrift?.toDouble(), 0.6, 0.35),
@@ -883,6 +900,7 @@ object PersonalityScoreModel {
                 intent = recent.map { it.flags.intent.toDouble() }.averageOr(0.4),
                 insight = recent.map { it.flags.insight.toDouble() }.averageOr(0.4),
                 reflection = recent.map { it.flags.reflection.toDouble() }.averageOr(0.5),
+                quickAction = recent.map { it.flags.quickAction.toDouble() }.averageOr(0.6),
                 pendingTask = recent.map { it.flags.pendingTask.toDouble() }.averageOr(0.8),
                 meetingStress = recent.map { it.flags.meetingStress.toDouble() }.averageOr(0.5),
                 smartphoneDrift = recent.map { it.flags.smartphoneDrift.toDouble() }.averageOr(0.6),

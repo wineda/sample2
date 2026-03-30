@@ -25,6 +25,7 @@ data class ActionFlags(
     val intent: Boolean = false,
     val insight: Boolean = false,
     val reflection: Boolean = false,
+    val quickAction: Boolean = false,
 
     // 負荷フラグ
     val pendingTask: Boolean = false,
@@ -170,12 +171,19 @@ enum class ActionType(
         color = Color(0xFF8BC34A),
         matcher = { it.reflection }
     ),
+    QUICK_ACTION(
+        key = "quick_action",
+        label = "すぐやる",
+        iconRes = R.drawable.ic_sprint,
+        color = Color(0xFF8BC34A),
+        matcher = { it.quickAction }
+    ),
 
     // 負荷フラグ
     PENDING_TASK(
         key = "pending_task",
         label = "未処理",
-        iconRes = android.R.drawable.ic_menu_agenda,
+        iconRes = R.drawable.ic_hourglass,
         color = Color(0xFF5E35B1),
         matcher = { it.pendingTask }
     ),
@@ -189,14 +197,14 @@ enum class ActionType(
     SMARTPHONE_DRIFT(
         key = "smartphone_drift",
         label = "スマホ逸脱",
-        iconRes = android.R.drawable.ic_menu_recent_history,
+        iconRes = R.drawable.ic_clock_loader_40,
         color = Color(0xFF5E35B1),
         matcher = { it.smartphoneDrift }
     ),
     ALCOHOL(
         key = "alcohol",
         label = "飲酒",
-        iconRes = android.R.drawable.ic_menu_info_details,
+        iconRes = R.drawable.ic_beer_meal,
         color = Color(0xFF5E35B1),
         matcher = { it.alcohol }
     ),
