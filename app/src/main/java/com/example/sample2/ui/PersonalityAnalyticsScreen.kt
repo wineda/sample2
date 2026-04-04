@@ -68,6 +68,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -133,6 +134,29 @@ private val StabilityChartColor = Color(0xFF8D6E63)
 private val AnxietyChartColor = Color(0xFF8E24AA)
 private val EnergyChartColor = Color(0xFFFB8C00)
 private val ControlChartColor = Color(0xFF43A047)
+
+private val TokyoZoneId: ZoneId = ZoneId.of("Asia/Tokyo")
+private const val DetailChartStartMinutes = 7 * 60f
+private const val DetailChartEndMinutes = 22 * 60f
+
+private fun minutesOfDay(timestamp: Long): Float {
+    val time = Instant.ofEpochMilli(timestamp)
+        .atZone(TokyoZoneId)
+        .toLocalTime()
+    return time.hour * 60f + time.minute + (time.second / 60f)
+}
+
+private fun isDetailChartVisibleTime(timestamp: Long): Boolean {
+    val minutes = minutesOfDay(timestamp)
+    return minutes in DetailChartStartMinutes..DetailChartEndMinutes
+}
+
+private fun formatMinuteLabel(minutes: Float): String {
+    val totalMinutes = minutes.roundToInt().coerceIn(0, 24 * 60)
+    val hour = totalMinutes / 60
+    val minute = totalMinutes % 60
+    return String.format(Locale.JAPAN, "%02d:%02d", hour, minute)
+}
 
 @Composable
 fun PersonalityAnalyticsScreen(
@@ -636,6 +660,12 @@ private fun CompactMetricChartCard(
     selectedIndex: Int? = null,
     onSelectedIndexChange: ((Int) -> Unit)? = null,
     showSelectionLabel: Boolean = true,
+    xValues: List<Float> = emptyList(),
+    comparisonXValues: List<Float> = emptyList(),
+    axisStartLabel: String? = null,
+    axisEndLabel: String? = null,
+    xAxisMinOverride: Float? = null,
+    xAxisMaxOverride: Float? = null,
     modifier: Modifier = Modifier
 ) {
     val latest = values.lastOrNull()
@@ -679,12 +709,19 @@ private fun CompactMetricChartCard(
                 selectedIndex = selectedIndex,
                 onSelectedIndexChange = onSelectedIndexChange,
                 showSelectionLabel = showSelectionLabel,
+                xValues = xValues,
+                comparisonXValues = comparisonXValues,
+                xAxisMinOverride = xAxisMinOverride,
+                xAxisMaxOverride = xAxisMaxOverride,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
             )
 
-            CompactChartLabelRow(labels = labels)
+            CompactChartLabelRow(
+                firstLabel = axisStartLabel ?: labels.firstOrNull().orEmpty(),
+                lastLabel = axisEndLabel ?: labels.lastOrNull().orEmpty()
+            )
         }
     }
 }
@@ -1029,11 +1066,14 @@ private fun DailyMessagePseudoTrendCard(
         PersonalityScoreModel.buildIntradayScoreSeries(
             messages = messages,
             dailyRecord = dailyRecord
-        )
+        ).filter { isDetailChartVisibleTime(it.timestamp) }
     }
 
     val timeLabels = remember(points) {
         points.map { formatTime(it.timestamp) }
+    }
+    val pointXValues = remember(points) {
+        points.map { minutesOfDay(it.timestamp) }
     }
     val comparisonPoints = remember(compareMode, comparisonMessages, comparisonDailyRecord) {
         if (compareMode == DetailCompareMode.NONE || comparisonMessages.isEmpty()) {
@@ -1042,7 +1082,25 @@ private fun DailyMessagePseudoTrendCard(
             PersonalityScoreModel.buildIntradayScoreSeries(
                 messages = comparisonMessages,
                 dailyRecord = comparisonDailyRecord
-            )
+            ).filter { isDetailChartVisibleTime(it.timestamp) }
+        }
+    }
+    val comparisonPointXValues = remember(comparisonPoints) {
+        comparisonPoints.map { minutesOfDay(it.timestamp) }
+    }
+    val detailAxisMaxMinutes = remember(compareMode, pointXValues) {
+        if (compareMode == DetailCompareMode.NONE) {
+            pointXValues.maxOrNull()?.coerceIn(DetailChartStartMinutes, DetailChartEndMinutes)
+                ?: DetailChartEndMinutes
+        } else {
+            DetailChartEndMinutes
+        }
+    }
+    val detailAxisEndLabel = remember(compareMode, detailAxisMaxMinutes) {
+        if (compareMode == DetailCompareMode.NONE) {
+            formatMinuteLabel(detailAxisMaxMinutes)
+        } else {
+            "22:00"
         }
     }
     var sharedSelectedIndex by remember(points) { mutableStateOf<Int?>(null) }
@@ -1166,6 +1224,15 @@ private fun DailyMessagePseudoTrendCard(
                 return@Column
             }
 
+            if (points.isEmpty()) {
+                Text(
+                    text = "07:00〜22:00 の範囲に表示できるメッセージがありません",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                return@Column
+            }
+
             Column(
                 modifier = Modifier.pointerInput(date, points.size) {
                     detectHorizontalDragGestures(
@@ -1204,6 +1271,12 @@ private fun DailyMessagePseudoTrendCard(
                         selectedIndex = sharedSelectedIndex,
                         onSelectedIndexChange = { sharedSelectedIndex = it },
                         showSelectionLabel = false,
+                        xValues = pointXValues,
+                        comparisonXValues = comparisonPointXValues,
+                        axisStartLabel = "07:00",
+                        axisEndLabel = detailAxisEndLabel,
+                        xAxisMinOverride = DetailChartStartMinutes,
+                        xAxisMaxOverride = detailAxisMaxMinutes,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
@@ -1220,6 +1293,12 @@ private fun DailyMessagePseudoTrendCard(
                         selectedIndex = sharedSelectedIndex,
                         onSelectedIndexChange = { sharedSelectedIndex = it },
                         showSelectionLabel = false,
+                        xValues = pointXValues,
+                        comparisonXValues = comparisonPointXValues,
+                        axisStartLabel = "07:00",
+                        axisEndLabel = detailAxisEndLabel,
+                        xAxisMinOverride = DetailChartStartMinutes,
+                        xAxisMaxOverride = detailAxisMaxMinutes,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
@@ -1243,6 +1322,12 @@ private fun DailyMessagePseudoTrendCard(
                         selectedIndex = sharedSelectedIndex,
                         onSelectedIndexChange = { sharedSelectedIndex = it },
                         showSelectionLabel = false,
+                        xValues = pointXValues,
+                        comparisonXValues = comparisonPointXValues,
+                        axisStartLabel = "07:00",
+                        axisEndLabel = detailAxisEndLabel,
+                        xAxisMinOverride = DetailChartStartMinutes,
+                        xAxisMaxOverride = detailAxisMaxMinutes,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
@@ -1259,6 +1344,12 @@ private fun DailyMessagePseudoTrendCard(
                         selectedIndex = sharedSelectedIndex,
                         onSelectedIndexChange = { sharedSelectedIndex = it },
                         showSelectionLabel = false,
+                        xValues = pointXValues,
+                        comparisonXValues = comparisonPointXValues,
+                        axisStartLabel = "07:00",
+                        axisEndLabel = detailAxisEndLabel,
+                        xAxisMinOverride = DetailChartStartMinutes,
+                        xAxisMaxOverride = detailAxisMaxMinutes,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
@@ -1404,6 +1495,10 @@ private fun SimpleLineChart(
     selectedIndex: Int? = null,
     onSelectedIndexChange: ((Int) -> Unit)? = null,
     showSelectionLabel: Boolean = true,
+    xValues: List<Float> = emptyList(),
+    comparisonXValues: List<Float> = emptyList(),
+    xAxisMinOverride: Float? = null,
+    xAxisMaxOverride: Float? = null,
     modifier: Modifier = Modifier
 ) {
     val gridColor = MaterialTheme.colorScheme.outlineVariant
@@ -1419,13 +1514,39 @@ private fun SimpleLineChart(
     val topPadPx = with(density) { 10.dp.toPx() }
     val bottomPadPx = with(density) { 10.dp.toPx() }
 
+    val useSharedXAxis = xValues.size == values.size
+    val mainXValues = remember(values, xValues) {
+        if (xValues.size == values.size) xValues else values.indices.map { it.toFloat() }
+    }
+    val mainComparisonXValues = remember(comparisonValues, comparisonXValues) {
+        if (comparisonXValues.size == comparisonValues.size) {
+            comparisonXValues
+        } else {
+            comparisonValues.indices.map { it.toFloat() }
+        }
+    }
+
+    val axisMinX = xAxisMinOverride ?: if (useSharedXAxis) {
+        DetailChartStartMinutes
+    } else {
+        0f
+    }
+    val axisMaxX = xAxisMaxOverride ?: if (useSharedXAxis) {
+        DetailChartEndMinutes
+    } else {
+        maxOf(
+            (values.lastIndex).coerceAtLeast(1),
+            (comparisonValues.lastIndex).coerceAtLeast(1)
+        ).toFloat()
+    }
+
     Box(modifier = modifier.background(MaterialTheme.colorScheme.surface)) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
                 .onSizeChanged { chartSize = it }
-                .pointerInput(values, labels, chartSize) {
+                .pointerInput(values, labels, chartSize, mainXValues, axisMinX, axisMaxX) {
                     detectTapGestures { tapOffset ->
                         if (values.isEmpty()) return@detectTapGestures
 
@@ -1433,13 +1554,12 @@ private fun SimpleLineChart(
                         if (chartWidth <= 0f) return@detectTapGestures
 
                         val clampedX = (tapOffset.x - leftPadPx).coerceIn(0f, chartWidth)
-                        val rawIndex = if (values.size <= 1) {
-                            0f
-                        } else {
-                            (clampedX / chartWidth) * values.lastIndex.toFloat()
-                        }
+                        val tappedAxisX = axisMinX + (clampedX / chartWidth) * (axisMaxX - axisMinX)
 
-                        val newIndex = rawIndex.roundToInt().coerceIn(0, values.lastIndex)
+                        val newIndex = mainXValues.indices
+                            .minByOrNull { index -> abs(mainXValues[index] - tappedAxisX) }
+                            ?: 0
+
                         if (onSelectedIndexChange != null) {
                             onSelectedIndexChange(newIndex)
                         } else {
@@ -1464,48 +1584,53 @@ private fun SimpleLineChart(
                 )
             }
 
-            fun buildPoints(targetValues: List<Float>): List<Offset> {
-                val normalized = targetValues.map { value ->
-                    val ratio = if (abs(maxValue - minValue) < 0.0001f) {
+            fun buildPoints(targetValues: List<Float>, targetXValues: List<Float>): List<Offset> {
+                return targetValues.mapIndexed { index, value ->
+                    val yRatio = if (abs(maxValue - minValue) < 0.0001f) {
                         0.5f
                     } else {
-                        ((value - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
+                        1f - ((value - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
                     }
-                    1f - ratio
-                }
 
-                return normalized.mapIndexed { index, yRatio ->
-                    val x = if (targetValues.size == 1) {
-                        leftPadPx + chartWidth / 2f
+                    val axisX = targetXValues.getOrElse(index) { index.toFloat() }
+                    val xRatio = if (abs(axisMaxX - axisMinX) < 0.0001f) {
+                        0.5f
                     } else {
-                        leftPadPx + chartWidth * (index.toFloat() / targetValues.lastIndex.toFloat())
+                        ((axisX - axisMinX) / (axisMaxX - axisMinX)).coerceIn(0f, 1f)
                     }
-                    val y = topPadPx + chartHeight * yRatio
-                    Offset(x, y)
+
+                    Offset(
+                        x = leftPadPx + chartWidth * xRatio,
+                        y = topPadPx + chartHeight * yRatio
+                    )
+                }
+            }
+
+            fun buildLinePath(points: List<Offset>): Path {
+                return Path().apply {
+                    moveTo(points.first().x, points.first().y)
+                    for (i in 1 until points.size) {
+                        val point = points[i]
+                        lineTo(point.x, point.y)
+                    }
                 }
             }
 
             fun drawSeries(points: List<Offset>, color: Color, strokeWidthDp: Int) {
                 if (points.size >= 2) {
-                    val path = Path().apply {
-                        moveTo(points.first().x, points.first().y)
-                        for (i in 1 until points.size) {
-                            lineTo(points[i].x, points[i].y)
-                        }
-                    }
-
                     drawPath(
-                        path = path,
+                        path = buildLinePath(points),
                         color = color,
                         style = Stroke(
                             width = strokeWidthDp.dp.toPx(),
-                            cap = StrokeCap.Round
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
                         )
                     )
                 }
             }
 
-            val comparisonPointsOnChart = buildPoints(comparisonValues)
+            val comparisonPointsOnChart = buildPoints(comparisonValues, mainComparisonXValues)
             if (comparisonPointsOnChart.isNotEmpty()) {
                 drawSeries(
                     points = comparisonPointsOnChart,
@@ -1514,7 +1639,7 @@ private fun SimpleLineChart(
                 )
             }
 
-            val points = buildPoints(values)
+            val points = buildPoints(values, mainXValues)
             drawSeries(
                 points = points,
                 color = lineColor,
@@ -1575,23 +1700,21 @@ private fun SimpleLineChart(
 
 @Composable
 private fun CompactChartLabelRow(
-    labels: List<String>,
+    firstLabel: String,
+    lastLabel: String,
     modifier: Modifier = Modifier
 ) {
-    val first = labels.firstOrNull().orEmpty()
-    val last = labels.lastOrNull().orEmpty()
-
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = first,
+            text = firstLabel,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = last,
+            text = lastLabel,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.End
