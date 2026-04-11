@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewStream
 import androidx.compose.material3.AlertDialog
@@ -82,7 +83,8 @@ private enum class JournalScreenMode {
     Journal,
     Analytics,
     Heatmap,
-    DailyRecord
+    DailyRecord,
+    Reflection
 }
 
 @Composable
@@ -111,6 +113,7 @@ fun ChatRoute() {
     var showHeatmap by remember { mutableStateOf(false) }
     var showDailyRecordScreen by remember { mutableStateOf(false) }
     var showPersonalityAnalytics by remember { mutableStateOf(false) }
+    var showReflectionScreen by remember { mutableStateOf(false) }
     var filterState by remember { mutableStateOf(JournalFilterState()) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
@@ -125,6 +128,7 @@ fun ChatRoute() {
     }
 
     val currentMode = when {
+        showReflectionScreen -> JournalScreenMode.Reflection
         showDailyRecordScreen -> JournalScreenMode.DailyRecord
         showPersonalityAnalytics -> JournalScreenMode.Analytics
         showHeatmap -> JournalScreenMode.Heatmap
@@ -139,6 +143,7 @@ fun ChatRoute() {
         showHeatmap = false
         showDailyRecordScreen = false
         showPersonalityAnalytics = false
+        showReflectionScreen = false
         showFilterSheet = false
     }
 
@@ -146,6 +151,7 @@ fun ChatRoute() {
         showFilterSheet = false
         showDailyRecordScreen = false
         showHeatmap = false
+        showReflectionScreen = false
         showPersonalityAnalytics = true
     }
 
@@ -153,6 +159,7 @@ fun ChatRoute() {
         showFilterSheet = false
         showDailyRecordScreen = false
         showPersonalityAnalytics = false
+        showReflectionScreen = false
         showHeatmap = true
     }
 
@@ -160,7 +167,19 @@ fun ChatRoute() {
         showFilterSheet = false
         showHeatmap = false
         showPersonalityAnalytics = false
+        showReflectionScreen = false
         showDailyRecordScreen = true
+    }
+
+    var reflectionInitialDate by remember { mutableStateOf(todayDateStringForRoute()) }
+
+    fun openReflection(date: String = todayDateStringForRoute()) {
+        showFilterSheet = false
+        showHeatmap = false
+        showPersonalityAnalytics = false
+        showDailyRecordScreen = false
+        reflectionInitialDate = date
+        showReflectionScreen = true
     }
 
     BackHandler(enabled = currentMode != JournalScreenMode.Journal) {
@@ -227,7 +246,7 @@ fun ChatRoute() {
 
                 Toast.makeText(
                     context,
-                    "リストア完了: ${result.messageCount}件 / 日次データ${result.dailyRecordCount}件",
+                    "リストア完了: ${result.messageCount}件 / 日次データ${result.dailyRecordCount}件 / 振り返り${result.dailyReflectionCount}件",
                     Toast.LENGTH_SHORT
                 ).show()
             } catch (e: Exception) {
@@ -344,7 +363,8 @@ fun ChatRoute() {
                                 onOpenJournal = { switchToJournal() },
                                 onOpenAnalytics = { openAnalytics() },
                                 onOpenHeatmap = { openHeatmap() },
-                                onOpenDailyRecord = { openDailyRecord() }
+                                onOpenDailyRecord = { openDailyRecord() },
+                                onOpenReflection = { openReflection() }
                             )
 
                             if (currentMode == JournalScreenMode.Journal) {
@@ -385,9 +405,18 @@ fun ChatRoute() {
                                     onClose = {
                                         switchToJournal()
                                         dailyRecordsVersion++
-                                    }
+                                    },
+                                    onOpenReflection = { date -> openReflection(date) }
                                 )
                             }
+                        }
+
+                        JournalScreenMode.Reflection -> {
+                            DailyReflectionScreen(
+                                state = state,
+                                initialDate = reflectionInitialDate,
+                                onClose = { switchToJournal() }
+                            )
                         }
 
                         JournalScreenMode.Analytics -> {
@@ -519,6 +548,7 @@ private fun JournalBottomModeBar(
     onOpenAnalytics: () -> Unit,
     onOpenHeatmap: () -> Unit,
     onOpenDailyRecord: () -> Unit,
+    onOpenReflection: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -554,6 +584,13 @@ private fun JournalBottomModeBar(
             icon = Icons.Default.Today,
             selected = currentMode == JournalScreenMode.DailyRecord,
             onClick = onOpenDailyRecord
+        )
+
+        CompactActionChip(
+            text = "振り返り",
+            icon = Icons.Default.EditNote,
+            selected = currentMode == JournalScreenMode.Reflection,
+            onClick = onOpenReflection
         )
     }
 }
@@ -718,6 +755,11 @@ private fun CompactActionChip(
             )
         }
     }
+}
+
+
+private fun todayDateStringForRoute(): String {
+    return SimpleDateFormat("yyyy-MM-dd", Locale.JAPAN).format(Date())
 }
 
 private fun shareJournalBackup(
