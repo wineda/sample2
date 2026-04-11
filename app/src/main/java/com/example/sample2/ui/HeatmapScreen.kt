@@ -214,6 +214,7 @@ fun EmotionHeatmapBlock(
     toDate: Long?
 ) {
     var selectedPair by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val uiSpec = emotion.toUiSpec()
 
     val heatmapData = buildEmotionHeatmap(
         messages = messages,
@@ -234,9 +235,9 @@ fun EmotionHeatmapBlock(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                painter = painterResource(id = emotion.iconRes),
+                painter = painterResource(id = uiSpec.iconRes),
                 contentDescription = emotion.label,
-                tint = emotion.color,
+                tint = uiSpec.color,
                 modifier = Modifier.size(16.dp)
             )
 
@@ -280,7 +281,7 @@ fun EmotionHeatmapBlock(
                             .weight(1f)
                             .aspectRatio(1f)
                             .padding(1.dp)
-                            .background(colorForCount(emotion.color, value))
+                            .background(colorForCount(uiSpec.color, value))
                             .clickable {
                                 selectedPair = day to slot
                             }
@@ -339,6 +340,7 @@ fun ActionHeatmapBlock(
     toDate: Long?
 ) {
     var selectedPair by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val uiSpec = action.toUiSpec()
 
     val heatmapData = buildActionHeatmap(
         messages = messages,
@@ -359,9 +361,9 @@ fun ActionHeatmapBlock(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                painter = painterResource(id = action.iconRes),
+                painter = painterResource(id = uiSpec.iconRes),
                 contentDescription = action.label,
-                tint = action.color,
+                tint = uiSpec.color,
                 modifier = Modifier.size(16.dp)
             )
 
@@ -405,7 +407,7 @@ fun ActionHeatmapBlock(
                             .weight(1f)
                             .aspectRatio(1f)
                             .padding(1.dp)
-                            .background(colorForCount(action.color, value))
+                            .background(colorForCount(uiSpec.color, value))
                             .clickable {
                                 selectedPair = day to slot
                             }

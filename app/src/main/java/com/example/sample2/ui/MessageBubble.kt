@@ -282,12 +282,13 @@ fun MessageActionOverlay(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             rowTypes.forEach { type ->
+                                val uiSpec = type.toUiSpec()
                                 ActionFlagIconButton(
                                     modifier = Modifier.weight(1f),
-                                    iconRes = type.iconRes,
+                                    iconRes = uiSpec.iconRes,
                                     label = type.label,
                                     checked = type.matches(editingFlags),
-                                    activeColor = type.color,
+                                    activeColor = uiSpec.color,
                                     onClick = {
                                         editingFlags = editingFlags.toggle(type)
                                     }
@@ -315,8 +316,9 @@ fun MessageActionOverlay(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     EmotionType.entries.forEach { type ->
+                        val uiSpec = type.toUiSpec()
                         EmotionSliderRow(
-                            iconRes = type.iconRes,
+                            iconRes = uiSpec.iconRes,
                             value = type.scoreOf(editingEmotions).toFloat(),
                             label = type.label,
                             onChange = { newValue ->
@@ -519,18 +521,20 @@ private data class StatusUi(
 )
 
 private fun ActionType.toStatusUi(): StatusUi {
+    val uiSpec = toUiSpec()
     return StatusUi(
         label = label,
-        iconRes = iconRes,
-        color = color
+        iconRes = uiSpec.iconRes,
+        color = uiSpec.color
     )
 }
 
 private fun EmotionType.toStatusUi(): StatusUi {
+    val uiSpec = toUiSpec()
     return StatusUi(
         label = label,
-        iconRes = iconRes,
-        color = color
+        iconRes = uiSpec.iconRes,
+        color = uiSpec.color
     )
 }
 
