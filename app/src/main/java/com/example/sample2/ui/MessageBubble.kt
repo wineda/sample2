@@ -79,7 +79,7 @@ private val BubbleTextVerticalPaddingCompact = 4.dp
 @Composable
 fun MessageBubble(
     message: MessageV2,
-    state: ChatState,
+    state: JournalViewModel,
     onDelete: () -> Unit,
     onUpdate: (MessageV2) -> Unit
 ) {
@@ -212,7 +212,7 @@ fun getRelativeLabel(timestamp: Long): String {
 @Composable
 fun MessageActionOverlay(
     message: MessageV2,
-    state: ChatState,
+    state: JournalViewModel,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
     onUpdate: (MessageV2) -> Unit

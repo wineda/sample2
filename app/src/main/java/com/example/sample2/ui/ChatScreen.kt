@@ -65,7 +65,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.sample2.model.JournalJsonStorage
+import com.example.sample2.data.DefaultJournalRepository
+import com.example.sample2.data.JournalBackupService
+import com.example.sample2.data.JournalLocalDataSource
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.ui.theme.ChatGptTheme
 import com.example.sample2.util.formatDate
@@ -83,13 +85,25 @@ private enum class JournalScreenMode {
     DailyRecord
 }
 
+@Composable
+fun ChatScreen() {
+    ChatRoute()
+}
+
 @SuppressLint("UnrememberedMutableState")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen() {
+fun ChatRoute() {
     val context = LocalContext.current
-    val state = remember {
-        ChatState(context).apply {
+    val localDataSource = remember(context) { JournalLocalDataSource(context) }
+    val backupService = remember(context, localDataSource) {
+        JournalBackupService(context, localDataSource)
+    }
+    val repository = remember(localDataSource, backupService) {
+        DefaultJournalRepository(localDataSource, backupService)
+    }
+    val state = remember(repository) {
+        JournalViewModel(repository).apply {
             isSingleLineMode = true
         }
     }
@@ -102,7 +116,7 @@ fun ChatScreen() {
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
-        JournalJsonStorage.loadDailyRecords(context)
+        state.loadDailyRecords()
     }
 
     val hasActiveFilter = remember(filterState) {
@@ -194,7 +208,7 @@ fun ChatScreen() {
     ) { uri ->
         uri?.let {
             try {
-                JournalJsonStorage.exportBackupToUri(context, it)
+                state.exportBackupToUri(it)
                 Toast.makeText(context, "バックアップを保存しました", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -208,9 +222,7 @@ fun ChatScreen() {
     ) { uri ->
         uri?.let {
             try {
-                val result = JournalJsonStorage.restoreBackupFromUri(context, it)
-                state.messages.clear()
-                state.messages.addAll(JournalJsonStorage.loadMessages(context))
+                val result = state.restoreBackupFromUri(it)
                 dailyRecordsVersion++
 
                 Toast.makeText(
@@ -300,7 +312,7 @@ fun ChatScreen() {
                         },
                         onShare = {
                             try {
-                                shareJournalBackup(context)
+                                shareJournalBackup(context, repository)
                             } catch (e: Exception) {
                                 e.printStackTrace()
                                 Toast.makeText(context, "共有に失敗しました", Toast.LENGTH_SHORT).show()
@@ -383,7 +395,7 @@ fun ChatScreen() {
                                 messages = state.messages,
                                 dailyRecords = dailyRecords,
                                 onUpdateDailyRecord = { updated ->
-                                    JournalJsonStorage.upsertDailyRecord(context, updated)
+                                    state.upsertDailyRecord(updated)
                                     dailyRecordsVersion++
                                 },
                                 modifier = Modifier.padding(padding)
@@ -708,14 +720,17 @@ private fun CompactActionChip(
     }
 }
 
-private fun shareJournalBackup(context: android.content.Context) {
+private fun shareJournalBackup(
+    context: android.content.Context,
+    repository: DefaultJournalRepository
+) {
     val backupFile = File(
         context.cacheDir,
         "journal-share-${System.currentTimeMillis()}.json"
     )
 
     backupFile.outputStream().use { output ->
-        JournalJsonStorage.exportBackup(context, output)
+        repository.exportBackup(output)
     }
 
     val uri = FileProvider.getUriForFile(

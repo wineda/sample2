@@ -64,7 +64,7 @@ private enum class HeatmapCategory(val label: String) {
 
 @Composable
 fun HeatmapScreen(
-    state: ChatState,
+    state: JournalViewModel,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
