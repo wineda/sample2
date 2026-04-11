@@ -1,8 +1,5 @@
 package com.example.sample2.data
 
-import androidx.compose.ui.graphics.Color
-import com.example.sample2.R
-
 data class MessageV2(
     val id: String,
     val timestamp: Long,
@@ -66,8 +63,6 @@ data class EmotionItem(
 ) {
     val key: String get() = type.key
     val label: String get() = type.label
-    val iconRes: Int get() = type.iconRes
-    val color: Color get() = type.color
     val enabled: Boolean get() = score > 0
 }
 
@@ -77,50 +72,36 @@ data class ActionItem(
 ) {
     val key: String get() = type.key
     val label: String get() = type.label
-    val iconRes: Int get() = type.iconRes
-    val color: Color get() = type.color
 }
 
 enum class EmotionType(
     val key: String,
     val label: String,
-    val iconRes: Int,
-    val color: Color,
     private val scorer: (EmotionMetrics) -> Int
 ) {
     ANXIETY(
         key = "anxiety",
         label = "不安",
-        iconRes = R.drawable.ic_anxiety,
-        color = Color(0xFF9C27B0),
         scorer = { it.anxiety }
     ),
     ANGRY(
         key = "angry",
         label = "怒り",
-        iconRes = R.drawable.ic_angry,
-        color = Color(0xFFE53935),
         scorer = { it.angry }
     ),
     SAD(
         key = "sad",
         label = "悲しみ",
-        iconRes = R.drawable.ic_sad,
-        color = Color(0xFF1E88E5),
         scorer = { it.sad }
     ),
     HAPPY(
         key = "happy",
         label = "喜び",
-        iconRes = R.drawable.ic_happy,
-        color = Color(0xFFFB8C00),
         scorer = { it.happy }
     ),
     CALM(
         key = "calm",
         label = "安心",
-        iconRes = R.drawable.ic_satisfied,
-        color = Color(0xFF43A047),
         scorer = { it.calm }
     );
 
@@ -132,50 +113,36 @@ enum class EmotionType(
 enum class ActionType(
     val key: String,
     val label: String,
-    val iconRes: Int,
-    val color: Color,
     private val matcher: (ActionFlags) -> Boolean
 ) {
     EXERCISED(
         key = "exercised",
         label = "運動",
-        iconRes = R.drawable.ic_directions_run,
-        color = Color(0xFF8D6E63),
         matcher = { it.exercised }
     ),
     SOCIALIZED(
         key = "socialized",
         label = "会話",
-        iconRes = R.drawable.ic_form,
-        color = Color(0xFF8D6E63),
         matcher = { it.socialized }
     ),
     INTENT(
         key = "intent",
         label = "ゴール",
-        iconRes = R.drawable.ic_rocket,
-        color = Color(0xFF8BC34A),
         matcher = { it.intent }
     ),
     INSIGHT(
         key = "insight",
         label = "気づき",
-        iconRes = R.drawable.ic_wb_incandescent,
-        color = Color(0xFF8BC34A),
         matcher = { it.insight }
     ),
     REFLECTION(
         key = "reflection",
         label = "内省",
-        iconRes = R.drawable.ic_cognition,
-        color = Color(0xFF8BC34A),
         matcher = { it.reflection }
     ),
     QUICK_ACTION(
         key = "quick_action",
         label = "すぐやる",
-        iconRes = R.drawable.ic_sprint,
-        color = Color(0xFF8BC34A),
         matcher = { it.quickAction }
     ),
 
@@ -183,36 +150,26 @@ enum class ActionType(
     PENDING_TASK(
         key = "pending_task",
         label = "未処理",
-        iconRes = R.drawable.ic_hourglass,
-        color = Color(0xFF5E35B1),
         matcher = { it.pendingTask }
     ),
     MEETING_STRESS(
         key = "meeting_stress",
         label = "会議負荷",
-        iconRes = android.R.drawable.ic_dialog_alert,
-        color = Color(0xFF5E35B1),
         matcher = { it.meetingStress }
     ),
     SMARTPHONE_DRIFT(
         key = "smartphone_drift",
         label = "スマホ逸脱",
-        iconRes = R.drawable.ic_clock_loader_40,
-        color = Color(0xFF5E35B1),
         matcher = { it.smartphoneDrift }
     ),
     ALCOHOL(
         key = "alcohol",
         label = "飲酒",
-        iconRes = R.drawable.ic_beer_meal,
-        color = Color(0xFF5E35B1),
         matcher = { it.alcohol }
     ),
     HANGOVER(
         key = "hangover",
         label = "体調不良",
-        iconRes = android.R.drawable.ic_delete,
-        color = Color(0xFF5E35B1),
         matcher = { it.hangover }
     );
 
