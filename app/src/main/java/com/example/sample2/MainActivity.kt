@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.*
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
-import com.example.sample2.ui.ChatScreen
+import com.example.sample2.ui.ChatRoute
 import com.example.sample2.ui.theme.ChatGptTheme
 
 val ChatBackground = Color(0xFFF5F5F5)
@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, true)
         setContent {
             ChatGptTheme() {
-                ChatScreen()
+                ChatRoute()
             }
         }
     }
