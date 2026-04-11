@@ -70,7 +70,8 @@ import java.util.Locale
 @Composable
 fun DailyRecordScreen(
     onClose: () -> Unit,
-    initialDate: String = todayDateString()
+    initialDate: String = todayDateString(),
+    onOpenReflection: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -174,6 +175,7 @@ fun DailyRecordScreen(
                 onPrev = { selectedDate = shiftDate(selectedDate, -1) },
                 onNext = { selectedDate = shiftDate(selectedDate, 1) },
                 onToday = { selectedDate = todayDateString() },
+                onOpenReflection = { onOpenReflection(selectedDate) },
                 onPickDate = {
                     showDatePicker(
                         context = context,
@@ -230,6 +232,7 @@ private fun DateHeaderCard(
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onToday: () -> Unit,
+    onOpenReflection: () -> Unit,
     onPickDate: () -> Unit
 ) {
     ElevatedCard(
@@ -286,7 +289,8 @@ private fun DateHeaderCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 FilterChip(
                     selected = false,
@@ -295,6 +299,13 @@ private fun DateHeaderCard(
                     leadingIcon = {
                         Icon(Icons.Default.Today, contentDescription = null)
                     },
+                    colors = actionChipColors()
+                )
+
+                FilterChip(
+                    selected = false,
+                    onClick = onOpenReflection,
+                    label = { Text("振り返り") },
                     colors = actionChipColors()
                 )
             }

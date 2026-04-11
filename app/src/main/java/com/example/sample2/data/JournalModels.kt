@@ -47,6 +47,17 @@ data class DailyRecord(
  * durationMinutes を主軸にしておくと扱いやすい
  * start/end は分かる時だけ入れる
  */
+
+
+data class DailyReflection(
+    val date: String,
+    val wins: String = "",
+    val difficulties: String = "",
+    val insights: String = "",
+    val tomorrowFirstAction: String = "",
+    val summary: String = "",
+    val updatedAt: Long = 0L
+)
 data class SleepData(
     val durationMinutes: Int = 0,
     val quality: Int = 0,          // 0〜5 など

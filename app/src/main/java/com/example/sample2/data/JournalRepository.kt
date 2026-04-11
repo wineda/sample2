@@ -9,6 +9,9 @@ interface JournalRepository {
     fun loadDailyRecords(): List<DailyRecord>
     fun upsertDailyRecord(record: DailyRecord)
     fun findDailyRecordOrNull(date: String): DailyRecord?
+    fun loadDailyReflections(): List<DailyReflection>
+    fun upsertDailyReflection(reflection: DailyReflection)
+    fun findDailyReflectionOrNull(date: String): DailyReflection?
     fun exportBackupToUri(uri: Uri)
     fun restoreBackupFromUri(uri: Uri): JournalJsonStorage.RestoreResult
 }

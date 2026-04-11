@@ -24,6 +24,16 @@ class DefaultJournalRepository(
         return localDataSource.findDailyRecordOrNull(date)
     }
 
+    override fun loadDailyReflections(): List<DailyReflection> = localDataSource.loadDailyReflections()
+
+    override fun upsertDailyReflection(reflection: DailyReflection) {
+        localDataSource.upsertDailyReflection(reflection)
+    }
+
+    override fun findDailyReflectionOrNull(date: String): DailyReflection? {
+        return localDataSource.findDailyReflectionOrNull(date)
+    }
+
     override fun exportBackupToUri(uri: Uri) {
         backupService.exportToUri(uri)
     }
