@@ -57,6 +57,19 @@ data class SleepData(
         get() = quality >= 3
 }
 
+/**
+ * 1日1件の振り返りデータ
+ * date は yyyy-MM-dd を想定
+ */
+data class DailyReflection(
+    val date: String,
+    val summary: String = "",
+    val wins: String = "",
+    val difficulties: String = "",
+    val tomorrowFirstAction: String = "",
+    val updatedAt: Long = 0L
+)
+
 data class EmotionItem(
     val type: EmotionType,
     val score: Int

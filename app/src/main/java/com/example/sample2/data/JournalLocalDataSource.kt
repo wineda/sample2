@@ -14,6 +14,9 @@ class JournalLocalDataSource(
 
     fun loadDailyRecords(): List<DailyRecord> = JournalJsonStorage.loadDailyRecords(context)
 
+    fun loadDailyReflections(): List<DailyReflection> =
+        JournalJsonStorage.loadDailyReflections(context)
+
     fun saveDailyRecords(records: List<DailyRecord>) {
         JournalJsonStorage.saveDailyRecords(context, records)
     }
@@ -22,7 +25,15 @@ class JournalLocalDataSource(
         JournalJsonStorage.upsertDailyRecord(context, record)
     }
 
+    fun upsertDailyReflection(reflection: DailyReflection) {
+        JournalJsonStorage.upsertDailyReflection(context, reflection)
+    }
+
     fun findDailyRecordOrNull(date: String): DailyRecord? {
         return JournalJsonStorage.findDailyRecordOrNull(context, date)
+    }
+
+    fun findDailyReflectionOrNull(date: String): DailyReflection? {
+        return JournalJsonStorage.findDailyReflectionOrNull(context, date)
     }
 }

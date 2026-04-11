@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.sample2.data.DailyRecord
+import com.example.sample2.data.DailyReflection
 import com.example.sample2.data.JournalRepository
 import com.example.sample2.data.MessageV2
 import com.example.sample2.model.JournalJsonStorage
@@ -54,9 +55,14 @@ class JournalViewModel(
     }
 
     fun loadDailyRecords(): List<DailyRecord> = repository.loadDailyRecords()
+    fun loadDailyReflections(): List<DailyReflection> = repository.loadDailyReflections()
 
     fun upsertDailyRecord(record: DailyRecord) {
         repository.upsertDailyRecord(record)
+    }
+
+    fun upsertDailyReflection(reflection: DailyReflection) {
+        repository.upsertDailyReflection(reflection)
     }
 
     fun exportBackupToUri(uri: android.net.Uri) {

@@ -7,6 +7,9 @@ interface JournalRepository {
     fun loadMessages(): List<MessageV2>
     fun saveMessages(messages: List<MessageV2>)
     fun loadDailyRecords(): List<DailyRecord>
+    fun loadDailyReflections(): List<DailyReflection>
+    fun upsertDailyReflection(reflection: DailyReflection)
+    fun findDailyReflectionOrNull(date: String): DailyReflection?
     fun upsertDailyRecord(record: DailyRecord)
     fun findDailyRecordOrNull(date: String): DailyRecord?
     fun exportBackupToUri(uri: Uri)

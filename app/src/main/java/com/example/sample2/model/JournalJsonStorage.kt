@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.DailyRecord
+import com.example.sample2.data.DailyReflection
 import com.example.sample2.data.EmotionMetrics
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.SleepData
@@ -18,15 +19,17 @@ object JournalJsonStorage {
 
     private const val MESSAGES_FILE_NAME = "messages_v2.json"
     private const val DAILY_RECORDS_FILE_NAME = "daily_records.json"
+    private const val DAILY_REFLECTIONS_FILE_NAME = "daily_reflections.json"
 
     // quickAction を追加したので版を上げる
-    private const val BACKUP_VERSION = 3
+    private const val BACKUP_VERSION = 4
 
     private val DATE_REGEX = Regex("""\d{4}-\d{2}-\d{2}""")
 
     data class RestoreResult(
         val messageCount: Int,
-        val dailyRecordCount: Int
+        val dailyRecordCount: Int,
+        val dailyReflectionCount: Int = 0
     )
 
     fun loadMessages(context: Context): List<MessageV2> {
@@ -83,6 +86,43 @@ object JournalJsonStorage {
         writeAtomically(file, array.toString(2))
     }
 
+    fun loadDailyReflections(context: Context): List<DailyReflection> {
+        val file = File(context.filesDir, DAILY_REFLECTIONS_FILE_NAME)
+        if (!file.exists()) return emptyList()
+
+        return try {
+            val text = file.readText(Charsets.UTF_8)
+            val array = JSONArray(text)
+            val items = buildList {
+                for (i in 0 until array.length()) {
+                    add(parseDailyReflection(array.getJSONObject(i)))
+                }
+            }
+            normalizeDailyReflections(items)
+        } catch (e: Exception) {
+            throw IllegalStateException("daily_reflections.json の読込に失敗しました", e)
+        }
+    }
+
+    fun saveDailyReflections(context: Context, reflections: List<DailyReflection>) {
+        val normalized = normalizeDailyReflections(reflections)
+        val array = JSONArray()
+        normalized.forEach { array.put(it.toJson()) }
+
+        val file = File(context.filesDir, DAILY_REFLECTIONS_FILE_NAME)
+        writeAtomically(file, array.toString(2))
+    }
+
+    fun upsertDailyReflection(context: Context, reflection: DailyReflection) {
+        val current = loadDailyReflections(context).associateBy { it.date }.toMutableMap()
+        current[reflection.date] = normalizeDailyReflection(reflection)
+        saveDailyReflections(context, current.values.toList())
+    }
+
+    fun findDailyReflectionOrNull(context: Context, date: String): DailyReflection? {
+        return loadDailyReflections(context).firstOrNull { it.date == date }
+    }
+
     fun upsertDailyRecord(context: Context, record: DailyRecord) {
         val current = loadDailyRecords(context).associateBy { it.date }.toMutableMap()
         current[record.date] = normalizeDailyRecord(record)
@@ -109,7 +149,8 @@ object JournalJsonStorage {
     fun exportBackup(context: Context, outputStream: OutputStream) {
         val backup = buildBackupJson(
             messages = loadMessages(context),
-            dailyRecords = loadDailyRecords(context)
+            dailyRecords = loadDailyRecords(context),
+            dailyReflections = loadDailyReflections(context)
         )
         outputStream.writer(Charsets.UTF_8).use { writer ->
             writer.write(backup.toString(2))
@@ -132,19 +173,23 @@ object JournalJsonStorage {
 
         val messages = parseMessagesFromBackup(root)
         val dailyRecords = parseDailyRecordsFromBackup(root)
+        val dailyReflections = parseDailyReflectionsFromBackup(root)
 
         saveMessages(context, messages)
         saveDailyRecords(context, dailyRecords)
+        saveDailyReflections(context, dailyReflections)
 
         return RestoreResult(
             messageCount = messages.size,
-            dailyRecordCount = dailyRecords.size
+            dailyRecordCount = dailyRecords.size,
+            dailyReflectionCount = dailyReflections.size
         )
     }
 
     private fun buildBackupJson(
         messages: List<MessageV2>,
-        dailyRecords: List<DailyRecord>
+        dailyRecords: List<DailyRecord>,
+        dailyReflections: List<DailyReflection>
     ): JSONObject {
         val messageArray = JSONArray()
         normalizeMessages(messages).forEach { messageArray.put(it.toJson()) }
@@ -152,11 +197,15 @@ object JournalJsonStorage {
         val dailyRecordArray = JSONArray()
         normalizeDailyRecords(dailyRecords).forEach { dailyRecordArray.put(it.toJson()) }
 
+        val dailyReflectionArray = JSONArray()
+        normalizeDailyReflections(dailyReflections).forEach { dailyReflectionArray.put(it.toJson()) }
+
         return JSONObject().apply {
             put("version", BACKUP_VERSION)
             put("exportedAt", System.currentTimeMillis())
             put("messages", messageArray)
             put("dailyRecords", dailyRecordArray)
+            put("dailyReflections", dailyReflectionArray)
         }
     }
 
@@ -178,6 +227,16 @@ object JournalJsonStorage {
             }
         }
         return normalizeDailyRecords(items)
+    }
+
+    private fun parseDailyReflectionsFromBackup(root: JSONObject): List<DailyReflection> {
+        val array = root.optJSONArray("dailyReflections") ?: JSONArray()
+        val items = buildList {
+            for (i in 0 until array.length()) {
+                add(parseDailyReflection(array.getJSONObject(i)))
+            }
+        }
+        return normalizeDailyReflections(items)
     }
 
     private fun parseMessage(obj: JSONObject): MessageV2 {
@@ -235,6 +294,17 @@ object JournalJsonStorage {
         )
     }
 
+    private fun parseDailyReflection(obj: JSONObject): DailyReflection {
+        return DailyReflection(
+            date = obj.optString("date", ""),
+            summary = obj.optString("summary", ""),
+            wins = obj.optString("wins", ""),
+            difficulties = obj.optString("difficulties", ""),
+            tomorrowFirstAction = obj.optString("tomorrowFirstAction", ""),
+            updatedAt = obj.optLong("updatedAt", 0L)
+        )
+    }
+
     private fun MessageV2.toJson(): JSONObject {
         return JSONObject().apply {
             put("id", id)
@@ -277,6 +347,17 @@ object JournalJsonStorage {
             put("date", date)
             put("sleep", sleep.toJson())
             put("steps", steps)
+        }
+    }
+
+    private fun DailyReflection.toJson(): JSONObject {
+        return JSONObject().apply {
+            put("date", date)
+            put("summary", summary)
+            put("wins", wins)
+            put("difficulties", difficulties)
+            put("tomorrowFirstAction", tomorrowFirstAction)
+            put("updatedAt", updatedAt)
         }
     }
 
@@ -333,6 +414,32 @@ object JournalJsonStorage {
         return record.copy(
             steps = record.steps.coerceAtLeast(0),
             sleep = normalizeSleepData(record.sleep)
+        )
+    }
+
+    private fun normalizeDailyReflections(reflections: List<DailyReflection>): List<DailyReflection> {
+        return reflections
+            .asSequence()
+            .filter { DATE_REGEX.matches(it.date) }
+            .map(::normalizeDailyReflection)
+            .filter {
+                it.summary.isNotBlank() ||
+                        it.wins.isNotBlank() ||
+                        it.difficulties.isNotBlank() ||
+                        it.tomorrowFirstAction.isNotBlank()
+            }
+            .groupBy { it.date }
+            .map { (_, grouped) -> grouped.maxByOrNull { it.updatedAt } ?: grouped.last() }
+            .sortedBy { it.date }
+    }
+
+    private fun normalizeDailyReflection(reflection: DailyReflection): DailyReflection {
+        return reflection.copy(
+            summary = reflection.summary.trim(),
+            wins = reflection.wins.trim(),
+            difficulties = reflection.difficulties.trim(),
+            tomorrowFirstAction = reflection.tomorrowFirstAction.trim(),
+            updatedAt = reflection.updatedAt.coerceAtLeast(0L)
         )
     }
 

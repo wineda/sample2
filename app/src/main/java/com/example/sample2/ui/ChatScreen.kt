@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewStream
+import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
@@ -65,6 +66,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.sample2.data.DailyReflection
 import com.example.sample2.data.DefaultJournalRepository
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
@@ -82,7 +84,8 @@ private enum class JournalScreenMode {
     Journal,
     Analytics,
     Heatmap,
-    DailyRecord
+    DailyRecord,
+    ReflectionTimeline
 }
 
 @Composable
@@ -111,12 +114,18 @@ fun ChatRoute() {
     var showHeatmap by remember { mutableStateOf(false) }
     var showDailyRecordScreen by remember { mutableStateOf(false) }
     var showPersonalityAnalytics by remember { mutableStateOf(false) }
+    var showReflectionTimeline by remember { mutableStateOf(false) }
     var filterState by remember { mutableStateOf(JournalFilterState()) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
+    var dailyReflectionsVersion by remember { mutableIntStateOf(0) }
+    var openedReflection by remember { mutableStateOf<DailyReflection?>(null) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
+    }
+    val dailyReflections = remember(dailyReflectionsVersion) {
+        state.loadDailyReflections()
     }
 
     val hasActiveFilter = remember(filterState) {
@@ -126,6 +135,7 @@ fun ChatRoute() {
 
     val currentMode = when {
         showDailyRecordScreen -> JournalScreenMode.DailyRecord
+        showReflectionTimeline -> JournalScreenMode.ReflectionTimeline
         showPersonalityAnalytics -> JournalScreenMode.Analytics
         showHeatmap -> JournalScreenMode.Heatmap
         else -> JournalScreenMode.Journal
@@ -139,6 +149,7 @@ fun ChatRoute() {
         showHeatmap = false
         showDailyRecordScreen = false
         showPersonalityAnalytics = false
+        showReflectionTimeline = false
         showFilterSheet = false
     }
 
@@ -160,7 +171,16 @@ fun ChatRoute() {
         showFilterSheet = false
         showHeatmap = false
         showPersonalityAnalytics = false
+        showReflectionTimeline = false
         showDailyRecordScreen = true
+    }
+
+    fun openReflectionTimeline() {
+        showFilterSheet = false
+        showHeatmap = false
+        showPersonalityAnalytics = false
+        showDailyRecordScreen = false
+        showReflectionTimeline = true
     }
 
     BackHandler(enabled = currentMode != JournalScreenMode.Journal) {
@@ -224,10 +244,11 @@ fun ChatRoute() {
             try {
                 val result = state.restoreBackupFromUri(it)
                 dailyRecordsVersion++
+                dailyReflectionsVersion++
 
                 Toast.makeText(
                     context,
-                    "リストア完了: ${result.messageCount}件 / 日次データ${result.dailyRecordCount}件",
+                    "リストア完了: ${result.messageCount}件 / 日次データ${result.dailyRecordCount}件 / 振り返り${result.dailyReflectionCount}件",
                     Toast.LENGTH_SHORT
                 ).show()
             } catch (e: Exception) {
@@ -344,7 +365,8 @@ fun ChatRoute() {
                                 onOpenJournal = { switchToJournal() },
                                 onOpenAnalytics = { openAnalytics() },
                                 onOpenHeatmap = { openHeatmap() },
-                                onOpenDailyRecord = { openDailyRecord() }
+                                onOpenDailyRecord = { openDailyRecord() },
+                                onOpenReflectionTimeline = { openReflectionTimeline() }
                             )
 
                             if (currentMode == JournalScreenMode.Journal) {
@@ -388,6 +410,14 @@ fun ChatRoute() {
                                     }
                                 )
                             }
+                        }
+
+                        JournalScreenMode.ReflectionTimeline -> {
+                            ReflectionTimelineScreen(
+                                reflections = dailyReflections,
+                                onOpenReflection = { openedReflection = it },
+                                modifier = Modifier.padding(padding)
+                            )
                         }
 
                         JournalScreenMode.Analytics -> {
@@ -500,6 +530,13 @@ fun ChatRoute() {
             }
         }
 
+        openedReflection?.let { reflection ->
+            ReflectionDetailDialog(
+                reflection = reflection,
+                onDismiss = { openedReflection = null }
+            )
+        }
+
         state.selectedMessage?.let { msg ->
             MessageActionOverlay(
                 message = msg,
@@ -519,6 +556,7 @@ private fun JournalBottomModeBar(
     onOpenAnalytics: () -> Unit,
     onOpenHeatmap: () -> Unit,
     onOpenDailyRecord: () -> Unit,
+    onOpenReflectionTimeline: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -554,6 +592,13 @@ private fun JournalBottomModeBar(
             icon = Icons.Default.Today,
             selected = currentMode == JournalScreenMode.DailyRecord,
             onClick = onOpenDailyRecord
+        )
+
+        CompactActionChip(
+            text = "振り返り",
+            icon = Icons.Default.AutoStories,
+            selected = currentMode == JournalScreenMode.ReflectionTimeline,
+            onClick = onOpenReflectionTimeline
         )
     }
 }
