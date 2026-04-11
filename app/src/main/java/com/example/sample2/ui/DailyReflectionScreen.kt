@@ -54,7 +54,8 @@ import java.util.Locale
 fun DailyReflectionScreen(
     state: JournalViewModel,
     initialDate: String = todayDateString(),
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onSaved: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -127,6 +128,7 @@ fun DailyReflectionScreen(
                                 )
                             )
                             Toast.makeText(context, "振り返りを保存しました", Toast.LENGTH_SHORT).show()
+                            onSaved()
                             onClose()
                         },
                         modifier = Modifier.weight(1f)
