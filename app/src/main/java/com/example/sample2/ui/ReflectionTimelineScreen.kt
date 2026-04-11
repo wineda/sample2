@@ -41,7 +41,7 @@ private enum class ReflectionRangeFilter(
     ALL("すべて")
 }
 
-data class ReflectionListUiState(
+private data class ReflectionListUiState(
     val query: String = "",
     val rangeFilter: ReflectionRangeFilter = ReflectionRangeFilter.ALL
 )
