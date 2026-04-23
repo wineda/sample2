@@ -78,8 +78,6 @@ class PersonalityAnalyticsUnitTest {
                 socialized = 2,
                 delegate = 0,
                 intent = 1,
-                insight = 0,
-                reflection = 1,
                 quickAction = 3,
                 pendingTask = 0,
                 meetingStress = 0,
@@ -128,8 +126,6 @@ class PersonalityAnalyticsUnitTest {
                 socialized = 0,
                 delegate = 0,
                 intent = 0,
-                insight = 0,
-                reflection = 0,
                 quickAction = 0,
                 pendingTask = 3,
                 meetingStress = 0,
@@ -155,7 +151,7 @@ class PersonalityAnalyticsUnitTest {
             sleepQuality = null,
             steps = null,
             emotions = DailyEmotionAverages(anxiety = 2.0, angry = 1.0, sad = 2.0, happy = 0.0, calm = 0.0),
-            flags = DailyFlagCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            flags = DailyFlagCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         )
         val actionOnly = DailyStructuredFeatures(
             sleepHours = null,
@@ -167,8 +163,6 @@ class PersonalityAnalyticsUnitTest {
                 socialized = 1,
                 delegate = 0,
                 intent = 1,
-                insight = 1,
-                reflection = 1,
                 quickAction = 2,
                 pendingTask = 0,
                 meetingStress = 0,
@@ -368,8 +362,6 @@ class PersonalityAnalyticsUnitTest {
             socialized = 0,
             delegate = 0,
             intent = 0,
-            insight = 0,
-            reflection = 0,
             quickAction = quickAction,
             pendingTask = pendingTask,
             meetingStress = 0,

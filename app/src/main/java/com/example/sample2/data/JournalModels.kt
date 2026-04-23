@@ -21,8 +21,6 @@ data class ActionFlags(
     val socialized: Boolean = false,
     val delegate: Boolean = false,
     val intent: Boolean = false,
-    val insight: Boolean = false,
-    val reflection: Boolean = false,
     val quickAction: Boolean = false,
 
     // 負荷フラグ
@@ -146,16 +144,6 @@ enum class ActionType(
         key = "intent",
         label = "ゴール",
         matcher = { it.intent }
-    ),
-    INSIGHT(
-        key = "insight",
-        label = "気づき",
-        matcher = { it.insight }
-    ),
-    REFLECTION(
-        key = "reflection",
-        label = "内省",
-        matcher = { it.reflection }
     ),
     QUICK_ACTION(
         key = "quick_action",

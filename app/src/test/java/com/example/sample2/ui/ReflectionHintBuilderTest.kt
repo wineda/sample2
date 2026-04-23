@@ -50,7 +50,7 @@ class ReflectionHintBuilderTest {
                     timestamp = timestamp,
                     text = "b",
                     emotions = EmotionMetrics(happy = 2),
-                    flags = ActionFlags(exercised = true, insight = true)
+                    flags = ActionFlags(exercised = true, intent = true)
                 )
             ),
             allDailyRecords = listOf(
