@@ -553,7 +553,8 @@ private fun ActionFlags.toggle(type: ActionType): ActionFlags {
         ActionType.EXERCISED -> copy(exercised = !exercised)
         ActionType.SOCIALIZED -> copy(socialized = !socialized)
         ActionType.DELEGATE -> copy(delegate = !delegate)
-        ActionType.INTENT -> copy(intent = !intent)
+        ActionType.CHALLENGE -> copy(challenge = !challenge)
+        ActionType.BREAKDOWN -> copy(breakdown = !breakdown)
         ActionType.INSTRUCT -> copy(instruct = !instruct)
         ActionType.QUICK_ACTION -> copy(quickAction = !quickAction)
 

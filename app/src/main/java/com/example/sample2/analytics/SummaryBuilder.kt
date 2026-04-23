@@ -22,7 +22,8 @@ internal class SummaryBuilder(
 
         val sleepDelta = PersonalityMath.compareHigherIsBetter(features.sleepHours, baseline.sleepHours, 1.5)
         val stepsDelta = PersonalityMath.compareHigherIsBetter(features.steps?.toDouble(), baseline.steps, 3000.0)
-        val intentDelta = PersonalityMath.compareHigherIsBetter(f.intent.toDouble(), baseline.flags.intent, 1.0)
+        val challengeDelta = PersonalityMath.compareHigherIsBetter(f.challenge.toDouble(), baseline.flags.challenge, 1.0)
+        val breakdownDelta = PersonalityMath.compareHigherIsBetter(f.breakdown.toDouble(), baseline.flags.breakdown, 1.0)
         val socializedDelta = PersonalityMath.compareHigherIsBetter(f.socialized.toDouble(), baseline.flags.socialized, 1.0)
         val quickActionDelta = PersonalityMath.compareHigherIsBetter(f.quickAction.toDouble(), baseline.flags.quickAction, 1.0)
         val anxietyDelta = PersonalityMath.compareLowerIsBetter(
@@ -52,7 +53,8 @@ internal class SummaryBuilder(
         if (sleepDelta >= 0.35) plus += "睡眠が平常より良い"
         if (stepsDelta >= 0.35) plus += "歩数が平常より多い"
         if (socializedDelta >= 0.35) plus += "会話が平常より多い"
-        if (intentDelta >= 0.35) plus += "挑戦が平常より多い"
+        if (challengeDelta >= 0.35) plus += "チャレンジが平常より多い"
+        if (breakdownDelta >= 0.35) plus += "細分化が平常より多い"
         if (quickActionDelta >= 0.35) plus += "すぐやるが平常より多い"
         if (happyDelta >= 0.35) plus += "喜びが平常より高い"
         if (calmDelta >= 0.35) plus += "安心感が平常より高い"
