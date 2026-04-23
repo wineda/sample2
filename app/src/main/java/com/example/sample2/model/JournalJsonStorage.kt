@@ -265,8 +265,6 @@ object JournalJsonStorage {
             socialized = obj.optBoolean("socialized", false),
             delegate = obj.optBoolean("delegate", false),
             intent = obj.optBoolean("intent", false),
-            insight = obj.optBoolean("insight", false),
-            reflection = obj.optBoolean("reflection", false),
 
             // 旧JSONに存在しない項目は false 既定で後方互換
             pendingTask = obj.optBoolean("pendingTask", false),
@@ -333,8 +331,6 @@ object JournalJsonStorage {
             put("socialized", socialized)
             put("delegate", delegate)
             put("intent", intent)
-            put("insight", insight)
-            put("reflection", reflection)
 
             put("pendingTask", pendingTask)
             put("quickAction", quickAction)

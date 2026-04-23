@@ -24,8 +24,6 @@ internal class FeatureExtractor {
             socialized = messages.count { it.flags.socialized },
             delegate = messages.count { it.flags.delegate },
             intent = messages.count { it.flags.intent },
-            insight = messages.count { it.flags.insight },
-            reflection = messages.count { it.flags.reflection },
             quickAction = messages.count { it.flags.quickAction },
             pendingTask = messages.count { it.flags.pendingTask },
             meetingStress = messages.count { it.flags.meetingStress },

@@ -19,8 +19,6 @@ internal class ScoreCalculator {
         val exercisedNorm = PersonalityMath.normalizeCount(f.exercised, 2)
         val socializedNorm = PersonalityMath.normalizeCount(f.socialized, 2)
         val intentNorm = PersonalityMath.normalizeCount(f.intent, 2)
-        val insightNorm = PersonalityMath.normalizeCount(f.insight, 2)
-        val reflectionNorm = PersonalityMath.normalizeCount(f.reflection, 2)
         val quickActionNorm = PersonalityMath.normalizeCount(f.quickAction, 3)
 
         val pendingTaskNorm = PersonalityMath.normalizeCount(f.pendingTask, 3)
@@ -72,8 +70,6 @@ internal class ScoreCalculator {
                 2.0 * exercisedNorm +
                 6.0 * socializedNorm +
                 3.0 * intentNorm +
-                2.0 * insightNorm +
-                3.0 * reflectionNorm +
                 5.0 * quickActionReliefNorm -
                 stabilityNegativeLoad * stabilityPendingAmplifier -
                 7.0 * effectivePendingTaskNorm -
@@ -91,8 +87,6 @@ internal class ScoreCalculator {
                 0.2 * exercisedNorm -
                 0.2 * socializedNorm -
                 0.5 * intentNorm -
-                0.5 * insightNorm -
-                0.3 * reflectionNorm -
                 0.9 * quickActionReliefNorm +
                 1.4 * effectivePendingTaskNorm +
                 0.4 * alcoholNorm +
@@ -106,8 +100,6 @@ internal class ScoreCalculator {
                 14.0 * exercisedNorm +
                 3.0 * socializedNorm +
                 4.0 * intentNorm +
-                3.0 * insightNorm +
-                2.0 * reflectionNorm +
                 6.0 * quickActionReliefNorm +
                 10.0 * happyNorm +
                 1.0 * calmNorm -
@@ -119,8 +111,6 @@ internal class ScoreCalculator {
         val controlRaw =
             50.0 +
                 15.0 * intentNorm +
-                14.0 * insightNorm +
-                12.0 * reflectionNorm +
                 5.0 * socializedNorm +
                 3.0 * exercisedNorm +
                 1.5 * happyNorm +
