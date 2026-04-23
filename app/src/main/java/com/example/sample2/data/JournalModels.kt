@@ -19,6 +19,7 @@ data class EmotionMetrics(
 data class ActionFlags(
     val exercised: Boolean = false,
     val socialized: Boolean = false,
+    val delegate: Boolean = false,
     val intent: Boolean = false,
     val insight: Boolean = false,
     val reflection: Boolean = false,
@@ -135,6 +136,11 @@ enum class ActionType(
         key = "socialized",
         label = "会話",
         matcher = { it.socialized }
+    ),
+    DELEGATE(
+        key = "delegate",
+        label = "委譲",
+        matcher = { it.delegate }
     ),
     INTENT(
         key = "intent",

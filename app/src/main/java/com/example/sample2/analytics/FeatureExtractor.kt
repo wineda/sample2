@@ -22,6 +22,7 @@ internal class FeatureExtractor {
         val flags = DailyFlagCounts(
             exercised = messages.count { it.flags.exercised },
             socialized = messages.count { it.flags.socialized },
+            delegate = messages.count { it.flags.delegate },
             intent = messages.count { it.flags.intent },
             insight = messages.count { it.flags.insight },
             reflection = messages.count { it.flags.reflection },

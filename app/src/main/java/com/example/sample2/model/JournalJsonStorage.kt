@@ -263,6 +263,7 @@ object JournalJsonStorage {
         return ActionFlags(
             exercised = obj.optBoolean("exercised", false),
             socialized = obj.optBoolean("socialized", false),
+            delegate = obj.optBoolean("delegate", false),
             intent = obj.optBoolean("intent", false),
             insight = obj.optBoolean("insight", false),
             reflection = obj.optBoolean("reflection", false),
@@ -330,6 +331,7 @@ object JournalJsonStorage {
         return JSONObject().apply {
             put("exercised", exercised)
             put("socialized", socialized)
+            put("delegate", delegate)
             put("intent", intent)
             put("insight", insight)
             put("reflection", reflection)
