@@ -554,6 +554,7 @@ private fun ActionFlags.toggle(type: ActionType): ActionFlags {
         ActionType.SOCIALIZED -> copy(socialized = !socialized)
         ActionType.DELEGATE -> copy(delegate = !delegate)
         ActionType.INTENT -> copy(intent = !intent)
+        ActionType.INSTRUCT -> copy(instruct = !instruct)
         ActionType.QUICK_ACTION -> copy(quickAction = !quickAction)
 
         ActionType.PENDING_TASK -> copy(pendingTask = !pendingTask)

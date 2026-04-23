@@ -31,6 +31,7 @@ fun ActionType.toUiSpec(): ActionUiSpec {
         ActionType.SOCIALIZED -> ActionUiSpec(R.drawable.ic_form, Color(0xFF8D6E63))
         ActionType.DELEGATE -> ActionUiSpec(android.R.drawable.ic_menu_share, Color(0xFF8D6E63))
         ActionType.INTENT -> ActionUiSpec(R.drawable.ic_rocket, Color(0xFF8BC34A))
+        ActionType.INSTRUCT -> ActionUiSpec(R.drawable.ic_wb_incandescent, Color(0xFF8BC34A))
         ActionType.QUICK_ACTION -> ActionUiSpec(R.drawable.ic_sprint, Color(0xFF8BC34A))
         ActionType.PENDING_TASK -> ActionUiSpec(R.drawable.ic_hourglass, Color(0xFF5E35B1))
         ActionType.MEETING_STRESS -> ActionUiSpec(android.R.drawable.ic_dialog_alert, Color(0xFF5E35B1))
