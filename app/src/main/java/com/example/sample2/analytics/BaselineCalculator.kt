@@ -23,6 +23,7 @@ internal class BaselineCalculator {
                 flags = DailyFlagAverages(
                     exercised = PersonalityMath.blend(current?.flags?.exercised?.toDouble(), 0.4, 0.35),
                     socialized = PersonalityMath.blend(current?.flags?.socialized?.toDouble(), 0.7, 0.35),
+                    delegate = PersonalityMath.blend(current?.flags?.delegate?.toDouble(), 0.4, 0.35),
                     intent = PersonalityMath.blend(current?.flags?.intent?.toDouble(), 0.4, 0.35),
                     insight = PersonalityMath.blend(current?.flags?.insight?.toDouble(), 0.4, 0.35),
                     reflection = PersonalityMath.blend(current?.flags?.reflection?.toDouble(), 0.5, 0.35),
@@ -50,6 +51,7 @@ internal class BaselineCalculator {
             flags = DailyFlagAverages(
                 exercised = recent.map { it.flags.exercised.toDouble() }.averageOr(0.4),
                 socialized = recent.map { it.flags.socialized.toDouble() }.averageOr(0.7),
+                delegate = recent.map { it.flags.delegate.toDouble() }.averageOr(0.4),
                 intent = recent.map { it.flags.intent.toDouble() }.averageOr(0.4),
                 insight = recent.map { it.flags.insight.toDouble() }.averageOr(0.4),
                 reflection = recent.map { it.flags.reflection.toDouble() }.averageOr(0.5),

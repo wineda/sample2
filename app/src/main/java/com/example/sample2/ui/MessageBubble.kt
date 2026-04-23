@@ -552,6 +552,7 @@ private fun ActionFlags.toggle(type: ActionType): ActionFlags {
     return when (type) {
         ActionType.EXERCISED -> copy(exercised = !exercised)
         ActionType.SOCIALIZED -> copy(socialized = !socialized)
+        ActionType.DELEGATE -> copy(delegate = !delegate)
         ActionType.INTENT -> copy(intent = !intent)
         ActionType.INSIGHT -> copy(insight = !insight)
         ActionType.REFLECTION -> copy(reflection = !reflection)

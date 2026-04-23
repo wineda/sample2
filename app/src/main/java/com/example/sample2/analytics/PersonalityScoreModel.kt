@@ -19,6 +19,7 @@ data class DailyEmotionAverages(
 data class DailyFlagCounts(
     val exercised: Int,
     val socialized: Int,
+    val delegate: Int,
     val intent: Int,
     val insight: Int,
     val reflection: Int,
@@ -75,6 +76,7 @@ data class WeeklyPersonalityScore(
 data class DailyFlagAverages(
     val exercised: Double,
     val socialized: Double,
+    val delegate: Double,
     val intent: Double,
     val insight: Double,
     val reflection: Double,

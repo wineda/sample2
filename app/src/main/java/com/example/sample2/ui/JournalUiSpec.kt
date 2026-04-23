@@ -29,6 +29,7 @@ fun ActionType.toUiSpec(): ActionUiSpec {
     return when (this) {
         ActionType.EXERCISED -> ActionUiSpec(R.drawable.ic_directions_run, Color(0xFF8D6E63))
         ActionType.SOCIALIZED -> ActionUiSpec(R.drawable.ic_form, Color(0xFF8D6E63))
+        ActionType.DELEGATE -> ActionUiSpec(android.R.drawable.ic_menu_share, Color(0xFF8D6E63))
         ActionType.INTENT -> ActionUiSpec(R.drawable.ic_rocket, Color(0xFF8BC34A))
         ActionType.INSIGHT -> ActionUiSpec(R.drawable.ic_wb_incandescent, Color(0xFF8BC34A))
         ActionType.REFLECTION -> ActionUiSpec(R.drawable.ic_cognition, Color(0xFF8BC34A))
