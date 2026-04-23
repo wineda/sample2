@@ -18,7 +18,8 @@ internal class ScoreCalculator {
 
         val exercisedNorm = PersonalityMath.normalizeCount(f.exercised, 2)
         val socializedNorm = PersonalityMath.normalizeCount(f.socialized, 2)
-        val intentNorm = PersonalityMath.normalizeCount(f.intent, 2)
+        val challengeNorm = PersonalityMath.normalizeCount(f.challenge, 2)
+        val breakdownNorm = PersonalityMath.normalizeCount(f.breakdown, 3)
         val quickActionNorm = PersonalityMath.normalizeCount(f.quickAction, 3)
 
         val pendingTaskNorm = PersonalityMath.normalizeCount(f.pendingTask, 3)
@@ -69,7 +70,8 @@ internal class ScoreCalculator {
                 3.0 * stepsNorm +
                 2.0 * exercisedNorm +
                 6.0 * socializedNorm +
-                3.0 * intentNorm +
+                3.0 * challengeNorm +
+                2.0 * breakdownNorm +
                 5.0 * quickActionReliefNorm -
                 stabilityNegativeLoad * stabilityPendingAmplifier -
                 7.0 * effectivePendingTaskNorm -
@@ -86,7 +88,8 @@ internal class ScoreCalculator {
                 0.3 * stepsNorm -
                 0.2 * exercisedNorm -
                 0.2 * socializedNorm -
-                0.5 * intentNorm -
+                0.5 * challengeNorm -
+                0.4 * breakdownNorm -
                 0.9 * quickActionReliefNorm +
                 1.4 * effectivePendingTaskNorm +
                 0.4 * alcoholNorm +
@@ -99,7 +102,8 @@ internal class ScoreCalculator {
                 14.0 * stepsNorm +
                 14.0 * exercisedNorm +
                 3.0 * socializedNorm +
-                4.0 * intentNorm +
+                4.0 * challengeNorm +
+                3.0 * breakdownNorm +
                 6.0 * quickActionReliefNorm +
                 10.0 * happyNorm +
                 1.0 * calmNorm -
@@ -110,7 +114,8 @@ internal class ScoreCalculator {
 
         val controlRaw =
             50.0 +
-                15.0 * intentNorm +
+                12.0 * challengeNorm +
+                14.0 * breakdownNorm +
                 5.0 * socializedNorm +
                 3.0 * exercisedNorm +
                 1.5 * happyNorm +

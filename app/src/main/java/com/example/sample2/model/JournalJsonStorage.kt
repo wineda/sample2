@@ -264,7 +264,8 @@ object JournalJsonStorage {
             exercised = obj.optBoolean("exercised", false),
             socialized = obj.optBoolean("socialized", false),
             delegate = obj.optBoolean("delegate", false),
-            intent = obj.optBoolean("intent", false),
+            challenge = obj.optBoolean("challenge", obj.optBoolean("intent", false)),
+            breakdown = obj.optBoolean("breakdown", false),
             instruct = obj.optBoolean("instruct", false),
 
             // 旧JSONに存在しない項目は false 既定で後方互換
@@ -331,7 +332,9 @@ object JournalJsonStorage {
             put("exercised", exercised)
             put("socialized", socialized)
             put("delegate", delegate)
-            put("intent", intent)
+            put("challenge", challenge)
+            put("intent", challenge)
+            put("breakdown", breakdown)
             put("instruct", instruct)
 
             put("pendingTask", pendingTask)

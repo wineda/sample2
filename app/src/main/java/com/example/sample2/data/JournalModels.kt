@@ -20,7 +20,8 @@ data class ActionFlags(
     val exercised: Boolean = false,
     val socialized: Boolean = false,
     val delegate: Boolean = false,
-    val intent: Boolean = false,
+    val challenge: Boolean = false,
+    val breakdown: Boolean = false,
     val instruct: Boolean = false,
     val quickAction: Boolean = false,
 
@@ -141,10 +142,15 @@ enum class ActionType(
         label = "委譲",
         matcher = { it.delegate }
     ),
-    INTENT(
-        key = "intent",
-        label = "ゴール",
-        matcher = { it.intent }
+    CHALLENGE(
+        key = "challenge",
+        label = "チャレンジ",
+        matcher = { it.challenge }
+    ),
+    BREAKDOWN(
+        key = "breakdown",
+        label = "細分化",
+        matcher = { it.breakdown }
     ),
     INSTRUCT(
         key = "instruct",
