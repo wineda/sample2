@@ -700,7 +700,7 @@ private fun CombinedEmotionChart(
     val labels = scores.map { it.date.toShortLabel() }
     val series = listOf(
         LineSeries("安定度", StabilityChartColor, scores.map { it.stability.toFloat() }),
-        LineSeries("不安", AnxietyChartColor, scores.map { (it.anxiety * 10f).coerceIn(0f, 100f) }),
+        LineSeries("不安", AnxietyChartColor, scores.map { (it.anxiety * 10.0).coerceIn(0.0, 100.0).toFloat() }),
         LineSeries("活力", EnergyChartColor, scores.map { it.energy.toFloat() }),
         LineSeries("制御感", ControlChartColor, scores.map { it.control.toFloat() })
     )
