@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import com.example.sample2.analytics.DailyPersonalityScore
 import com.example.sample2.analytics.PersonalityScoreModel
 import com.example.sample2.analytics.PersonalityState
+import com.example.sample2.data.ActionType
 import com.example.sample2.data.DailyRecord
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.SleepData
@@ -117,6 +118,11 @@ private enum class DetailCompareMode(
     PREVIOUS_DAY("先日と比較"),
     PREVIOUS_WEEK("先週と比較")
 }
+
+private data class ActionFlagCount(
+    val type: ActionType,
+    val count: Int
+)
 
 private fun nextAnalyticsPeriod(period: AnalyticsPeriod): AnalyticsPeriod {
     val periods = AnalyticsPeriod.entries
@@ -219,6 +225,38 @@ fun PersonalityAnalyticsScreen(
 
     val filteredRawScoresAsc = remember(filteredRawScoresDesc) {
         filteredRawScoresDesc.sortedBy { it.date }
+    }
+
+    val filteredDateSet = remember(filteredRawScoresDesc) {
+        filteredRawScoresDesc.mapTo(linkedSetOf()) { it.date }
+    }
+
+    val filteredMessages = remember(messages, filteredDateSet) {
+        messages.filter { message ->
+            val messageDate = Instant.ofEpochMilli(message.timestamp)
+                .atZone(ZoneId.of("Asia/Tokyo"))
+                .toLocalDate()
+            messageDate in filteredDateSet
+        }
+    }
+
+    val targetActionTypes = remember {
+        listOf(
+            ActionType.DELEGATE,
+            ActionType.CHALLENGE,
+            ActionType.BREAKDOWN,
+            ActionType.INSTRUCT,
+            ActionType.QUICK_ACTION
+        )
+    }
+
+    val actionFlagCounts = remember(filteredMessages, targetActionTypes) {
+        targetActionTypes.map { type ->
+            ActionFlagCount(
+                type = type,
+                count = filteredMessages.count { message -> type.matches(message.flags) }
+            )
+        }
     }
 
     val selectedDate = remember(filteredRawScoresDesc, selectedDateText) {
@@ -373,6 +411,14 @@ fun PersonalityAnalyticsScreen(
                             }
                         )
                     }
+
+                    item {
+                        ActionFlagCountChartCard(
+                            actionCounts = actionFlagCounts,
+                            totalMessages = filteredMessages.size,
+                            periodLabel = selectedPeriod.label
+                        )
+                    }
                 }
             }
 
@@ -397,6 +443,63 @@ fun PersonalityAnalyticsScreen(
                             }
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionFlagCountChartCard(
+    actionCounts: List<ActionFlagCount>,
+    totalMessages: Int,
+    periodLabel: String,
+    modifier: Modifier = Modifier
+) {
+    val maxCount = actionCounts.maxOfOrNull { it.count } ?: 0
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "ActionFlags 出現回数",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "$periodLabel・$totalMessages 件のメッセージ",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            actionCounts.forEach { item ->
+                val progress = if (maxCount == 0) 0f else item.count / maxCount.toFloat()
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = item.type.label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "${item.count}回",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
