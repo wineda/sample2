@@ -33,8 +33,8 @@ fun ActionType.toUiSpec(): ActionUiSpec {
     return when (this) {
         ActionType.EXERCISED -> ActionUiSpec(R.drawable.ic_directions_run, orange)
         ActionType.SOCIALIZED -> ActionUiSpec(R.drawable.ic_form, orange)
-        ActionType.DELEGATE -> ActionUiSpec(android.R.drawable.ic_menu_share, green)
-        ActionType.CHALLENGE -> ActionUiSpec(R.drawable.ic_rocket, Color(0xFF8BC34A))
+        ActionType.DELEGATE -> ActionUiSpec(R.drawable.ic_arrow_forward, green)
+        ActionType.CHALLENGE -> ActionUiSpec(R.drawable.ic_rocket, green)
         ActionType.BREAKDOWN -> ActionUiSpec(android.R.drawable.ic_menu_sort_by_size, green)
         ActionType.INSTRUCT -> ActionUiSpec(R.drawable.ic_wb_incandescent, green)
         ActionType.QUICK_ACTION -> ActionUiSpec(R.drawable.ic_sprint, green)
