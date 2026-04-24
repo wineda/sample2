@@ -7,6 +7,7 @@ import com.example.sample2.util.getTimeSlot
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.max
 
 fun buildEmotionHeatmap(
     messages: List<MessageV2>,
@@ -106,4 +107,49 @@ private fun toDaySlot(
     val day = dayFormat.format(cal.time)
     val slot = getTimeSlot(cal.get(Calendar.HOUR_OF_DAY))
     return day to slot
+}
+
+fun buildDailyActionTotalSeries(
+    messages: List<MessageV2>,
+    actions: Set<ActionType>,
+    fromDate: Long? = null,
+    toDate: Long? = null
+): List<Pair<Long, Int>> {
+    if (actions.isEmpty()) return emptyList()
+
+    val inRangeMessages = messages.filter { message ->
+        isInDateRange(message.timestamp, fromDate, toDate)
+    }
+
+    if (inRangeMessages.isEmpty()) return emptyList()
+
+    val calendar = Calendar.getInstance()
+
+    fun toStartOfDay(timestamp: Long): Long {
+        calendar.timeInMillis = timestamp
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        return calendar.timeInMillis
+    }
+
+    val dayTotals = inRangeMessages
+        .groupingBy { message -> toStartOfDay(message.timestamp) }
+        .fold(0) { acc, message ->
+            val actionCount = actions.count { action -> action.matches(message.flags) }
+            acc + actionCount
+        }
+
+    val startDay = fromDate?.let(::toStartOfDay) ?: dayTotals.keys.minOrNull() ?: return emptyList()
+    val endDay = toDate?.let(::toStartOfDay) ?: dayTotals.keys.maxOrNull() ?: startDay
+
+    val oneDayMs = 24L * 60L * 60L * 1000L
+    val boundedEndDay = max(startDay, endDay)
+
+    return generateSequence(startDay) { previous ->
+        (previous + oneDayMs).takeIf { it <= boundedEndDay }
+    }.map { dayStart ->
+        dayStart to (dayTotals[dayStart] ?: 0)
+    }.toList()
 }

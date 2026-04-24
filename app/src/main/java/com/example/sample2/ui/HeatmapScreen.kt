@@ -44,7 +44,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.sample2.analytics.buildDailyActionTotalSeries
 import com.example.sample2.analytics.buildActionHeatmap
 import com.example.sample2.analytics.buildEmotionHeatmap
 import com.example.sample2.analytics.getMessagesForActionSlot
@@ -61,6 +63,14 @@ private enum class HeatmapCategory(val label: String) {
     EMOTION("感情"),
     ACTION("行動")
 }
+
+private val FocusActionTypes = setOf(
+    ActionType.DELEGATE,
+    ActionType.CHALLENGE,
+    ActionType.BREAKDOWN,
+    ActionType.INSTRUCT,
+    ActionType.QUICK_ACTION
+)
 
 @Composable
 fun HeatmapScreen(
@@ -154,26 +164,129 @@ fun HeatmapScreen(
                 }
 
                 HeatmapCategory.ACTION -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(bottom = 12.dp)
+                    Column(
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        items(ActionType.values().toList()) { action ->
-                            Surface(
-                                tonalElevation = 2.dp,
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
+                        DailyActionTotalChart(
+                            messages = messages,
+                            fromDate = fromDate,
+                            toDate = toDate
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(bottom = 12.dp)
+                        ) {
+                            items(ActionType.values().toList()) { action ->
+                                Surface(
+                                    tonalElevation = 2.dp,
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    ActionHeatmapBlock(
+                                        action = action,
+                                        messages = messages,
+                                        fromDate = fromDate,
+                                        toDate = toDate
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DailyActionTotalChart(
+    messages: List<MessageV2>,
+    fromDate: Long?,
+    toDate: Long?
+) {
+    val dateFormatter = remember { SimpleDateFormat("M/d", Locale.JAPAN) }
+    val series = remember(messages, fromDate, toDate) {
+        buildDailyActionTotalSeries(
+            messages = messages,
+            actions = FocusActionTypes,
+            fromDate = fromDate,
+            toDate = toDate
+        )
+    }
+    val maxValue = (series.maxOfOrNull { it.second } ?: 0).coerceAtLeast(1)
+
+    Surface(
+        tonalElevation = 2.dp,
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp)
+        ) {
+            Text(
+                text = "主要Action(日次総計)",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "委譲 / チャレンジ / 細分化 / 指示 / すぐやる",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (series.isEmpty()) {
+                Text(
+                    text = "対象期間のデータがありません",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    series.forEach { (day, total) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = dateFormatter.format(Date(day)),
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.width(44.dp)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(14.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = RoundedCornerShape(999.dp)
+                                    )
                             ) {
-                                ActionHeatmapBlock(
-                                    action = action,
-                                    messages = messages,
-                                    fromDate = fromDate,
-                                    toDate = toDate
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth((total.toFloat() / maxValue.toFloat()).coerceIn(0f, 1f))
+                                        .height(14.dp)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            shape = RoundedCornerShape(999.dp)
+                                        )
                                 )
                             }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = total.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.width(24.dp)
+                            )
                         }
                     }
                 }
