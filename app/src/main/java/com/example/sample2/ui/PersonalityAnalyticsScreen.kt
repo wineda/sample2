@@ -75,6 +75,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.sample2.analytics.DailyPersonalityScore
 import com.example.sample2.analytics.PersonalityScoreModel
 import com.example.sample2.analytics.PersonalityState
@@ -119,9 +120,10 @@ private enum class DetailCompareMode(
     PREVIOUS_WEEK("先週と比較")
 }
 
-private data class ActionFlagCount(
-    val type: ActionType,
-    val count: Int
+private data class LineSeries(
+    val label: String,
+    val color: Color,
+    val values: List<Float>
 )
 
 private fun nextAnalyticsPeriod(period: AnalyticsPeriod): AnalyticsPeriod {
@@ -250,11 +252,25 @@ fun PersonalityAnalyticsScreen(
         )
     }
 
-    val actionFlagCounts = remember(filteredMessages, targetActionTypes) {
-        targetActionTypes.map { type ->
-            ActionFlagCount(
-                type = type,
-                count = filteredMessages.count { message -> type.matches(message.flags) }
+    val chartDates = remember(filteredRawScoresAsc) {
+        filteredRawScoresAsc.map { it.date }
+    }
+
+    val actionFlagSeries = remember(filteredMessages, targetActionTypes, chartDates) {
+        val messageCountByDate = filteredMessages.groupBy { message ->
+            Instant.ofEpochMilli(message.timestamp)
+                .atZone(TokyoZoneId)
+                .toLocalDate()
+        }
+        targetActionTypes.mapIndexed { index, type ->
+            LineSeries(
+                label = type.label,
+                color = ActionChartColors[index % ActionChartColors.size],
+                values = chartDates.map { date ->
+                    messageCountByDate[date].orEmpty().count { message ->
+                        type.matches(message.flags)
+                    }.toFloat()
+                }
             )
         }
     }
@@ -414,7 +430,8 @@ fun PersonalityAnalyticsScreen(
 
                     item {
                         ActionFlagCountChartCard(
-                            actionCounts = actionFlagCounts,
+                            labels = chartDates.map { it.toShortLabel() },
+                            series = actionFlagSeries,
                             totalMessages = filteredMessages.size,
                             periodLabel = selectedPeriod.label
                         )
@@ -451,12 +468,13 @@ fun PersonalityAnalyticsScreen(
 
 @Composable
 private fun ActionFlagCountChartCard(
-    actionCounts: List<ActionFlagCount>,
+    labels: List<String>,
+    series: List<LineSeries>,
     totalMessages: Int,
     periodLabel: String,
     modifier: Modifier = Modifier
 ) {
-    val maxCount = actionCounts.maxOfOrNull { it.count } ?: 0
+    val maxCount = series.flatMap { it.values }.maxOrNull() ?: 0f
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -468,7 +486,7 @@ private fun ActionFlagCountChartCard(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text = "ActionFlags 出現回数",
+                text = "ActionFlags 日次推移",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -478,30 +496,15 @@ private fun ActionFlagCountChartCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            actionCounts.forEach { item ->
-                val progress = if (maxCount == 0) 0f else item.count / maxCount.toFloat()
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = item.type.label,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            text = "${item.count}回",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
+            MultiLineChart(
+                labels = labels,
+                series = series,
+                minValue = 0f,
+                maxValue = maxCount.coerceAtLeast(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+            )
         }
     }
 }
@@ -637,11 +640,11 @@ private fun OverallTrendChartCard(
                 }
             }
 
-            CompactChartsGrid(
+            CombinedEmotionChart(
                 scores = scores,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(360.dp)
+                    .height(250.dp)
             )
         }
     }
@@ -682,71 +685,165 @@ private fun StateBadge(
     }
 }
 
+private val ActionChartColors = listOf(
+    Color(0xFF1E88E5),
+    Color(0xFF43A047),
+    Color(0xFFFB8C00),
+    Color(0xFFE53935),
+    Color(0xFF8E24AA)
+)
+
 @Composable
-private fun CompactChartsGrid(
+private fun CombinedEmotionChart(
     scores: List<DailyPersonalityScore>,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            CompactMetricChartCard(
-                title = "安定度",
-                values = scores.map { it.stability.toFloat() },
-                labels = scores.map { it.date.toShortLabel() },
-                absoluteMin = 0f,
-                absoluteMax = 100f,
-                lineColor = StabilityChartColor,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
+    val labels = scores.map { it.date.toShortLabel() }
+    val series = listOf(
+        LineSeries("安定度", StabilityChartColor, scores.map { it.stability.toFloat() }),
+        LineSeries("不安", AnxietyChartColor, scores.map { (it.anxiety * 10.0).coerceIn(0.0, 100.0).toFloat() }),
+        LineSeries("活力", EnergyChartColor, scores.map { it.energy.toFloat() }),
+        LineSeries("制御感", ControlChartColor, scores.map { it.control.toFloat() })
+    )
+    MultiLineChart(
+        labels = labels,
+        series = series,
+        minValue = 0f,
+        maxValue = 100f,
+        modifier = modifier
+    )
+}
 
-            CompactMetricChartCard(
-                title = "不安",
-                values = scores.map { it.anxiety.toFloat() },
-                labels = scores.map { it.date.toShortLabel() },
-                absoluteMin = 0f,
-                absoluteMax = 10f,
-                lineColor = AnxietyChartColor,
+@Composable
+private fun MultiLineChart(
+    labels: List<String>,
+    series: List<LineSeries>,
+    minValue: Float,
+    maxValue: Float,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                series.forEach { item ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(8.dp)
+                                .height(8.dp)
+                                .background(item.color, RoundedCornerShape(999.dp))
+                        )
+                        Text(
+                            text = item.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 10.sp
+                        )
+                    }
+                }
+            }
+            SimpleMultiLineChart(
+                series = series,
+                minValue = minValue,
+                maxValue = maxValue,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight()
+                    .fillMaxWidth()
+            )
+            CompactChartLabelRow(
+                firstLabel = labels.firstOrNull().orEmpty(),
+                lastLabel = labels.lastOrNull().orEmpty()
             )
         }
+    }
+}
 
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+@Composable
+private fun SimpleMultiLineChart(
+    series: List<LineSeries>,
+    minValue: Float,
+    maxValue: Float,
+    modifier: Modifier = Modifier
+) {
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
+    Box(modifier = modifier.background(MaterialTheme.colorScheme.surface)) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
         ) {
-            CompactMetricChartCard(
-                title = "活力",
-                values = scores.map { it.energy.toFloat() },
-                labels = scores.map { it.date.toShortLabel() },
-                absoluteMin = 0f,
-                absoluteMax = 100f,
-                lineColor = EnergyChartColor,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
+            val leftPad = 6.dp.toPx()
+            val rightPad = 6.dp.toPx()
+            val topPad = 10.dp.toPx()
+            val bottomPad = 10.dp.toPx()
+            val chartWidth = size.width - leftPad - rightPad
+            val chartHeight = size.height - topPad - bottomPad
+            if (chartWidth <= 0f || chartHeight <= 0f) return@Canvas
 
-            CompactMetricChartCard(
-                title = "制御感",
-                values = scores.map { it.control.toFloat() },
-                labels = scores.map { it.date.toShortLabel() },
-                absoluteMin = 0f,
-                absoluteMax = 100f,
-                lineColor = ControlChartColor,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
+            repeat(4) { i ->
+                val y = topPad + chartHeight * (i / 3f)
+                drawLine(
+                    color = gridColor,
+                    start = Offset(leftPad, y),
+                    end = Offset(size.width - rightPad, y),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+
+            fun buildPoints(values: List<Float>): List<Offset> {
+                if (values.isEmpty()) return emptyList()
+                val denominator = (values.lastIndex).coerceAtLeast(1).toFloat()
+                return values.mapIndexed { index, value ->
+                    val xRatio = index / denominator
+                    val yRatio = if (abs(maxValue - minValue) < 0.0001f) {
+                        0.5f
+                    } else {
+                        1f - ((value - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
+                    }
+                    Offset(
+                        x = leftPad + chartWidth * xRatio,
+                        y = topPad + chartHeight * yRatio
+                    )
+                }
+            }
+
+            series.forEach { item ->
+                val points = buildPoints(item.values)
+                if (points.size >= 2) {
+                    val path = Path().apply {
+                        moveTo(points.first().x, points.first().y)
+                        for (i in 1 until points.size) {
+                            lineTo(points[i].x, points[i].y)
+                        }
+                    }
+                    drawPath(
+                        path = path,
+                        color = item.color,
+                        style = Stroke(
+                            width = 2.2.dp.toPx(),
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
+                        )
+                    )
+                }
+                points.forEach { point ->
+                    drawCircle(
+                        color = item.color,
+                        radius = 2.dp.toPx(),
+                        center = point
+                    )
+                }
+            }
         }
     }
 }
