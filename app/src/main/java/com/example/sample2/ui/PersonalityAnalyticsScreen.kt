@@ -461,9 +461,6 @@ fun PersonalityAnalyticsScreen(
                         OverallTrendChartCard(
                             scores = filteredRawScoresAsc,
                             currentPeriod = selectedPeriod,
-                            onInfoClick = {
-                                infoDialogName = AnalyticsInfoKind.CHARTS.name
-                            },
                             onSwipeToBroaderPeriod = {
                                 selectedPeriodName = nextAnalyticsPeriod(selectedPeriod).name
                             },
@@ -476,9 +473,7 @@ fun PersonalityAnalyticsScreen(
                     item {
                         ActionFlagCountChartCard(
                             labels = chartDates.map { it.toShortLabel() },
-                            series = actionFlagSeries,
-                            totalMessages = filteredMessages.size,
-                            periodLabel = selectedPeriod.label
+                            series = actionFlagSeries
                         )
                     }
                     item {
@@ -555,8 +550,6 @@ fun PersonalityAnalyticsScreen(
 private fun ActionFlagCountChartCard(
     labels: List<String>,
     series: List<LineSeries>,
-    totalMessages: Int,
-    periodLabel: String,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -573,11 +566,6 @@ private fun ActionFlagCountChartCard(
                 text = "仕事推移",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "$periodLabel・$totalMessages 件のメッセージ",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             MultiLineChart(
@@ -615,11 +603,6 @@ private fun SleepAndStepsChartCard(
                 text = "運動・睡眠 推移",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "睡眠時間(時間) / 歩数(千歩)",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             MultiLineChart(
@@ -714,7 +697,6 @@ private fun DetailQuickMetaRow(
 private fun OverallTrendChartCard(
     scores: List<DailyPersonalityScore>,
     currentPeriod: AnalyticsPeriod,
-    onInfoClick: () -> Unit,
     onSwipeToBroaderPeriod: () -> Unit,
     onSwipeToNarrowerPeriod: () -> Unit,
     modifier: Modifier = Modifier
@@ -759,13 +741,6 @@ private fun OverallTrendChartCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = onInfoClick) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "グラフ説明"
-                    )
-                }
             }
 
             CombinedEmotionChart(
