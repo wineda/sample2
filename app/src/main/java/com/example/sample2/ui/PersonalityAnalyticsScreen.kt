@@ -34,7 +34,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.AlertDialog
@@ -47,7 +46,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -107,11 +105,6 @@ enum class AnalyticsDisplayMode {
     MAP
 }
 
-private enum class AnalyticsInfoKind {
-    DETAIL,
-    CHARTS
-}
-
 private enum class AnalyticsPeriod(
     val label: String
 ) {
@@ -125,7 +118,7 @@ private enum class DetailCompareMode(
     val label: String
 ) {
     NONE("比較なし"),
-    PREVIOUS_DAY("先日と比較"),
+    PREVIOUS_DAY("前日と比較"),
     PREVIOUS_WEEK("先週と比較")
 }
 
@@ -133,6 +126,13 @@ private data class LineSeries(
     val label: String,
     val color: Color,
     val values: List<Float>
+)
+
+private data class TimedLineSeries(
+    val label: String,
+    val color: Color,
+    val values: List<Float>,
+    val xValues: List<Float>
 )
 
 private fun nextAnalyticsPeriod(period: AnalyticsPeriod): AnalyticsPeriod {
@@ -228,9 +228,6 @@ fun PersonalityAnalyticsScreen(
     }
     var detailCompareModeName by rememberSaveable {
         mutableStateOf(DetailCompareMode.NONE.name)
-    }
-    var infoDialogName by rememberSaveable {
-        mutableStateOf<String?>(null)
     }
     val initialPreset = remember { PeriodPreset.values().first() }
     val initialRange = remember { initialPreset.resolveRange() }
@@ -375,13 +372,6 @@ fun PersonalityAnalyticsScreen(
         comparisonDate?.let { dailyRecordMap[it.toString()] }
     }
 
-    infoDialogName?.let { name ->
-        AnalyticsInfoDialog(
-            kind = AnalyticsInfoKind.valueOf(name),
-            onDismiss = { infoDialogName = null }
-        )
-    }
-
     Column(modifier = modifier.fillMaxSize()) {
         if (availableDisplayModes.size > 1) {
             AnalyticsDisplayModeToggle(
@@ -437,15 +427,11 @@ fun PersonalityAnalyticsScreen(
                             date = selectedDate,
                             messages = selectedDayMessages,
                             dailyRecord = selectedDayRecord,
-                            summaryScore = selectedRawScore,
                             compareMode = detailCompareMode,
                             onCompareModeChange = { detailCompareModeName = it.name },
                             comparisonDate = comparisonDate,
                             comparisonMessages = comparisonDayMessages,
                             comparisonDailyRecord = comparisonDayRecord,
-                            onInfoClick = {
-                                infoDialogName = AnalyticsInfoKind.DETAIL.name
-                            },
                             onSwipeToOlderDate = {
                                 val currentIndex = filteredRawScoresDesc.indexOfFirst { it.date == selectedDate }
                                 if (currentIndex in 0 until filteredRawScoresDesc.lastIndex) {
@@ -463,9 +449,7 @@ fun PersonalityAnalyticsScreen(
 
                     item {
                         DetailQuickMetaRow(
-                            selectedDate = selectedDate,
-                            score = selectedRawScore,
-                            messageCount = selectedDayMessages.size
+                            selectedDate = selectedDate
                         )
                     }
                 }
@@ -651,42 +635,8 @@ private fun SleepAndStepsChartCard(
 }
 
 @Composable
-private fun AnalyticsInfoDialog(
-    kind: AnalyticsInfoKind,
-    onDismiss: () -> Unit
-) {
-    val title: String
-    val body: String
-
-    when (kind) {
-        AnalyticsInfoKind.DETAIL -> {
-            title = "詳細"
-            body = "選択した1日の中で、メッセージごとの変化を見ます。前日の影響は混ぜません。"
-        }
-
-        AnalyticsInfoKind.CHARTS -> {
-            title = "グラフ"
-            body = "日ごとの raw スコアの全体推移です。日内の細かい変化は含みません。"
-        }
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(body) },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("閉じる")
-            }
-        }
-    )
-}
-
-@Composable
 private fun DetailQuickMetaRow(
     selectedDate: LocalDate?,
-    score: DailyPersonalityScore?,
-    messageCount: Int,
     modifier: Modifier = Modifier
 ) {
     val dateText = selectedDate?.let {
@@ -701,24 +651,6 @@ private fun DetailQuickMetaRow(
             text = dateText,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        score?.let {
-            StateBadge(
-                label = it.state.label,
-                state = it.state
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Text(
-            text = "メッセージ $messageCount 件",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -863,6 +795,11 @@ private fun CombinedEmotionChart(
 private fun MultiLineChart(
     labels: List<String>,
     series: List<LineSeries>,
+    comparisonSeries: List<LineSeries>? = null,
+    seriesXValues: Map<String, List<Float>> = emptyMap(),
+    comparisonSeriesXValues: Map<String, List<Float>> = emptyMap(),
+    xAxisMin: Float? = null,
+    xAxisMax: Float? = null,
     minValue: Float,
     maxValue: Float,
     yAxisTicks: List<Float>? = null,
@@ -932,6 +869,13 @@ private fun MultiLineChart(
             }
             SimpleMultiLineChart(
                 series = displayedSeries,
+                comparisonSeries = comparisonSeries.orEmpty().filter { compared ->
+                    compared.label !in hiddenSeriesLabels
+                },
+                seriesXValues = seriesXValues,
+                comparisonSeriesXValues = comparisonSeriesXValues,
+                xAxisMin = xAxisMin,
+                xAxisMax = xAxisMax,
                 minValue = minValue,
                 maxValue = maxValue,
                 yAxisTicks = yAxisTicks,
@@ -950,6 +894,11 @@ private fun MultiLineChart(
 @Composable
 private fun SimpleMultiLineChart(
     series: List<LineSeries>,
+    comparisonSeries: List<LineSeries> = emptyList(),
+    seriesXValues: Map<String, List<Float>> = emptyMap(),
+    comparisonSeriesXValues: Map<String, List<Float>> = emptyMap(),
+    xAxisMin: Float? = null,
+    xAxisMax: Float? = null,
     minValue: Float,
     maxValue: Float,
     yAxisTicks: List<Float>? = null,
@@ -1014,9 +963,14 @@ private fun SimpleMultiLineChart(
 
             fun buildPoints(values: List<Float>): List<Offset> {
                 if (values.isEmpty()) return emptyList()
-                val denominator = (values.lastIndex).coerceAtLeast(1).toFloat()
                 return values.mapIndexed { index, value ->
-                    val xRatio = index / denominator
+                    val xValue = index.toFloat()
+                    val denominator = (values.lastIndex).coerceAtLeast(1).toFloat()
+                    val xRatio = if (xAxisMin != null && xAxisMax != null) {
+                        ((xValue - xAxisMin) / (xAxisMax - xAxisMin)).coerceIn(0f, 1f)
+                    } else {
+                        index / denominator
+                    }
                     val yRatio = if (abs(maxValue - minValue) < 0.0001f) {
                         0.5f
                     } else {
@@ -1029,8 +983,56 @@ private fun SimpleMultiLineChart(
                 }
             }
 
+            fun buildPoints(values: List<Float>, xValues: List<Float>): List<Offset> {
+                if (values.isEmpty()) return emptyList()
+                val denominator = (values.lastIndex).coerceAtLeast(1).toFloat()
+                return values.mapIndexed { index, value ->
+                    val xValue = xValues.getOrElse(index) { index.toFloat() }
+                    val xRatio = if (xAxisMin != null && xAxisMax != null) {
+                        ((xValue - xAxisMin) / (xAxisMax - xAxisMin)).coerceIn(0f, 1f)
+                    } else {
+                        index / denominator
+                    }
+                    val yRatio = if (abs(maxValue - minValue) < 0.0001f) {
+                        0.5f
+                    } else {
+                        1f - ((value - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
+                    }
+                    Offset(
+                        x = leftPad + chartWidth * xRatio,
+                        y = topPad + chartHeight * yRatio
+                    )
+                }
+            }
+
+            comparisonSeries.forEach { item ->
+                val points = buildPoints(item.values, comparisonSeriesXValues[item.label].orEmpty())
+                if (points.size >= 2) {
+                    val path = Path().apply {
+                        moveTo(points.first().x, points.first().y)
+                        for (i in 1 until points.size) {
+                            lineTo(points[i].x, points[i].y)
+                        }
+                    }
+                    drawPath(
+                        path = path,
+                        color = item.color.copy(alpha = 0.4f),
+                        style = Stroke(
+                            width = 2.dp.toPx(),
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
+                        )
+                    )
+                }
+            }
+
             series.forEach { item ->
-                val points = buildPoints(item.values)
+                val xValues = seriesXValues[item.label].orEmpty()
+                val points = if (xValues.size == item.values.size) {
+                    buildPoints(item.values, xValues)
+                } else {
+                    buildPoints(item.values)
+                }
                 if (points.size >= 2) {
                     val path = if (smoothLine && points.size >= 3) {
                         buildSmoothLinePath(points)
@@ -1498,13 +1500,11 @@ private fun DailyMessagePseudoTrendCard(
     date: LocalDate?,
     messages: List<MessageV2>,
     dailyRecord: DailyRecord?,
-    summaryScore: DailyPersonalityScore?,
     compareMode: DetailCompareMode,
     onCompareModeChange: (DetailCompareMode) -> Unit,
     comparisonDate: LocalDate?,
     comparisonMessages: List<MessageV2>,
     comparisonDailyRecord: DailyRecord?,
-    onInfoClick: () -> Unit,
     onSwipeToOlderDate: () -> Unit,
     onSwipeToNewerDate: () -> Unit,
     modifier: Modifier = Modifier
@@ -1516,30 +1516,65 @@ private fun DailyMessagePseudoTrendCard(
         ).filter { isDetailChartVisibleTime(it.timestamp) }
     }
 
-    val timeLabels = remember(points) {
-        points.map { formatTime(it.timestamp) }
-    }
     val detailSeries = remember(points) {
         listOf(
-            LineSeries(
+            TimedLineSeries(
                 label = "安定度",
                 color = StabilityChartColor,
-                values = points.map { it.stability }
+                values = points.map { it.stability },
+                xValues = points.map { minutesOfDay(it.timestamp) }
             ),
-            LineSeries(
+            TimedLineSeries(
                 label = "不安",
                 color = AnxietyChartColor,
-                values = points.map { (it.anxiety * 10f).coerceIn(0f, 100f) }
+                values = points.map { (it.anxiety * 10f).coerceIn(0f, 100f) },
+                xValues = points.map { minutesOfDay(it.timestamp) }
             ),
-            LineSeries(
+            TimedLineSeries(
                 label = "活力",
                 color = EnergyChartColor,
-                values = points.map { it.energy }
+                values = points.map { it.energy },
+                xValues = points.map { minutesOfDay(it.timestamp) }
             ),
-            LineSeries(
+            TimedLineSeries(
                 label = "制御感",
                 color = ControlChartColor,
-                values = points.map { it.control }
+                values = points.map { it.control },
+                xValues = points.map { minutesOfDay(it.timestamp) }
+            )
+        )
+    }
+    val comparisonPoints = remember(comparisonMessages, comparisonDailyRecord) {
+        PersonalityScoreModel.buildIntradayScoreSeries(
+            messages = comparisonMessages,
+            dailyRecord = comparisonDailyRecord
+        ).filter { isDetailChartVisibleTime(it.timestamp) }
+    }
+    val comparisonSeries = remember(comparisonPoints) {
+        listOf(
+            TimedLineSeries(
+                label = "安定度",
+                color = StabilityChartColor,
+                values = comparisonPoints.map { it.stability },
+                xValues = comparisonPoints.map { minutesOfDay(it.timestamp) }
+            ),
+            TimedLineSeries(
+                label = "不安",
+                color = AnxietyChartColor,
+                values = comparisonPoints.map { (it.anxiety * 10f).coerceIn(0f, 100f) },
+                xValues = comparisonPoints.map { minutesOfDay(it.timestamp) }
+            ),
+            TimedLineSeries(
+                label = "活力",
+                color = EnergyChartColor,
+                values = comparisonPoints.map { it.energy },
+                xValues = comparisonPoints.map { minutesOfDay(it.timestamp) }
+            ),
+            TimedLineSeries(
+                label = "制御感",
+                color = ControlChartColor,
+                values = comparisonPoints.map { it.control },
+                xValues = comparisonPoints.map { minutesOfDay(it.timestamp) }
             )
         )
     }
@@ -1551,9 +1586,9 @@ private fun DailyMessagePseudoTrendCard(
                     if (comparisonMessages.isNotEmpty()) {
                         "比較対象: ${it.monthValue}/${it.dayOfMonth}"
                     } else {
-                        "先日データなし"
+                        "前日データなし"
                     }
-                } ?: "先日データなし"
+                } ?: "前日データなし"
             }
             DetailCompareMode.PREVIOUS_WEEK -> {
                 comparisonDate?.let {
@@ -1588,30 +1623,6 @@ private fun DailyMessagePseudoTrendCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = onInfoClick) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "詳細グラフの説明"
-                    )
-                }
-            }
-
-            summaryScore?.let {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    StateBadge(
-                        label = it.state.label,
-                        state = it.state
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "メッセージ ${messages.size}件",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
 
             DetailCompareModeSelector(
@@ -1668,8 +1679,19 @@ private fun DailyMessagePseudoTrendCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 MultiLineChart(
-                    labels = timeLabels,
-                    series = detailSeries,
+                    labels = listOf("07:00", "10:00", "13:00", "16:00", "19:00", "22:00"),
+                    series = detailSeries.map { LineSeries(it.label, it.color, it.values) },
+                    comparisonSeries = comparisonSeries.map {
+                        LineSeries(
+                            label = it.label,
+                            color = it.color.copy(alpha = 0.4f),
+                            values = it.values
+                        )
+                    }.takeIf { compareMode != DetailCompareMode.NONE },
+                    seriesXValues = detailSeries.associate { it.label to it.xValues },
+                    comparisonSeriesXValues = comparisonSeries.associate { it.label to it.xValues },
+                    xAxisMin = DetailChartStartMinutes,
+                    xAxisMax = DetailChartEndMinutes,
                     minValue = 0f,
                     maxValue = 100f,
                     yAxisTicks = listOf(0f, 25f, 50f, 75f, 100f),
