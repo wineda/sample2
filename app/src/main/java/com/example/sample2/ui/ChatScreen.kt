@@ -32,13 +32,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.ShowChart
-import androidx.compose.material.icons.filled.Splitscreen
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.EditNote
@@ -70,7 +66,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.sample2.data.ActionType
 import com.example.sample2.data.DefaultJournalRepository
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
@@ -216,8 +214,8 @@ fun ChatRoute() {
         }
     }
 
-    val workActionSummary = remember(displayMessages) {
-        WorkActionSummary.fromMessages(displayMessages)
+    val workActionSummary = remember(state.messages) {
+        WorkActionSummary.fromMessages(state.messages.filter { it.isToday() })
     }
 
     val dateLabel = buildJournalDateLabel(
@@ -773,28 +771,23 @@ private fun WorkActionSummaryRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         WorkActionSummaryItem(
-            icon = Icons.Default.Send,
-            label = "委譲",
+            actionType = ActionType.DELEGATE,
             count = summary.delegate
         )
         WorkActionSummaryItem(
-            icon = Icons.Default.Flag,
-            label = "チャレンジ",
+            actionType = ActionType.CHALLENGE,
             count = summary.challenge
         )
         WorkActionSummaryItem(
-            icon = Icons.Default.Splitscreen,
-            label = "細分化",
+            actionType = ActionType.BREAKDOWN,
             count = summary.breakdown
         )
         WorkActionSummaryItem(
-            icon = Icons.Default.EditNote,
-            label = "指示",
+            actionType = ActionType.INSTRUCT,
             count = summary.instruct
         )
         WorkActionSummaryItem(
-            icon = Icons.Default.PlayArrow,
-            label = "すぐやる",
+            actionType = ActionType.QUICK_ACTION,
             count = summary.quickAction
         )
     }
@@ -802,10 +795,10 @@ private fun WorkActionSummaryRow(
 
 @Composable
 private fun WorkActionSummaryItem(
-    icon: ImageVector,
-    label: String,
+    actionType: ActionType,
     count: Int
 ) {
+    val uiSpec = actionType.toUiSpec()
     val iconColor = if (count > 0) {
         MaterialTheme.colorScheme.tertiary
     } else {
@@ -823,8 +816,8 @@ private fun WorkActionSummaryItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = icon,
-            contentDescription = "$label: $count",
+            painter = painterResource(id = uiSpec.iconRes),
+            contentDescription = "${actionType.label}: $count",
             tint = iconColor,
             modifier = Modifier.size(16.dp)
         )
@@ -834,6 +827,16 @@ private fun WorkActionSummaryItem(
             style = MaterialTheme.typography.labelMedium
         )
     }
+}
+
+private fun MessageV2.isToday(): Boolean {
+    val target = Calendar.getInstance().apply {
+        timeInMillis = timestamp
+    }
+    val today = Calendar.getInstance()
+
+    return target.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+            target.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)
 }
 
 @Composable
