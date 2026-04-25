@@ -93,6 +93,7 @@ import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
 import com.example.sample2.util.formatTime
 import java.time.Instant
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -490,15 +491,21 @@ fun PersonalityAnalyticsScreen(
                     }
 
                     item {
+                        val chartXAxisLabels = buildChartXAxisLabels(
+                            dates = chartDates,
+                            period = selectedPeriod
+                        )
                         ActionFlagCountChartCard(
-                            labels = chartDates.map { it.toShortLabel() },
-                            series = actionFlagSeries
+                            labels = chartXAxisLabels,
+                            series = actionFlagSeries,
+                            smoothLine = selectedPeriod == AnalyticsPeriod.ALL
                         )
                     }
                     item {
                         SleepAndStepsChartCard(
-                            labels = chartDates.map { it.toShortLabel() },
-                            series = sleepAndStepsSeries
+                            labels = chartXAxisLabels,
+                            series = sleepAndStepsSeries,
+                            smoothLine = selectedPeriod == AnalyticsPeriod.ALL
                         )
                     }
                 }
@@ -569,6 +576,7 @@ fun PersonalityAnalyticsScreen(
 private fun ActionFlagCountChartCard(
     labels: List<String>,
     series: List<LineSeries>,
+    smoothLine: Boolean,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -594,6 +602,7 @@ private fun ActionFlagCountChartCard(
                 maxValue = 15f,
                 yAxisTicks = listOf(0f, 5f, 10f, 15f),
                 toggleableLegend = true,
+                smoothLine = smoothLine,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
@@ -606,6 +615,7 @@ private fun ActionFlagCountChartCard(
 private fun SleepAndStepsChartCard(
     labels: List<String>,
     series: List<LineSeries>,
+    smoothLine: Boolean,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -631,6 +641,7 @@ private fun SleepAndStepsChartCard(
                 maxValue = 10f,
                 yAxisTicks = listOf(0f, 2f, 4f, 6f, 8f, 10f),
                 toggleableLegend = true,
+                smoothLine = smoothLine,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
@@ -764,6 +775,7 @@ private fun OverallTrendChartCard(
 
             CombinedEmotionChart(
                 scores = scores,
+                period = currentPeriod,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(250.dp)
@@ -820,9 +832,15 @@ private val StepsChartColor = Color(0xFF00897B)
 @Composable
 private fun CombinedEmotionChart(
     scores: List<DailyPersonalityScore>,
+    period: AnalyticsPeriod,
     modifier: Modifier = Modifier
 ) {
-    val labels = scores.map { it.date.toShortLabel() }
+    val labels = remember(scores, period) {
+        buildChartXAxisLabels(
+            dates = scores.map { it.date },
+            period = period
+        )
+    }
     val series = listOf(
         LineSeries("安定度", StabilityChartColor, scores.map { it.stability.toFloat() }),
         LineSeries("不安", AnxietyChartColor, scores.map { (it.anxiety * 10.0).coerceIn(0.0, 100.0).toFloat() }),
@@ -836,6 +854,7 @@ private fun CombinedEmotionChart(
         maxValue = 100f,
         yAxisTicks = listOf(0f, 25f, 50f, 75f, 100f),
         toggleableLegend = true,
+        smoothLine = period == AnalyticsPeriod.ALL,
         modifier = modifier
     )
 }
@@ -848,6 +867,7 @@ private fun MultiLineChart(
     maxValue: Float,
     yAxisTicks: List<Float>? = null,
     toggleableLegend: Boolean = false,
+    smoothLine: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var hiddenSeriesLabels by remember(series) {
@@ -915,13 +935,13 @@ private fun MultiLineChart(
                 minValue = minValue,
                 maxValue = maxValue,
                 yAxisTicks = yAxisTicks,
+                smoothLine = smoothLine,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
             )
-            CompactChartLabelRow(
-                firstLabel = labels.firstOrNull().orEmpty(),
-                lastLabel = labels.lastOrNull().orEmpty()
+            CompactChartTickLabelRow(
+                labels = labels
             )
         }
     }
@@ -933,6 +953,7 @@ private fun SimpleMultiLineChart(
     minValue: Float,
     maxValue: Float,
     yAxisTicks: List<Float>? = null,
+    smoothLine: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val gridColor = MaterialTheme.colorScheme.outlineVariant
@@ -1011,10 +1032,14 @@ private fun SimpleMultiLineChart(
             series.forEach { item ->
                 val points = buildPoints(item.values)
                 if (points.size >= 2) {
-                    val path = Path().apply {
-                        moveTo(points.first().x, points.first().y)
-                        for (i in 1 until points.size) {
-                            lineTo(points[i].x, points[i].y)
+                    val path = if (smoothLine && points.size >= 3) {
+                        buildSmoothLinePath(points)
+                    } else {
+                        Path().apply {
+                            moveTo(points.first().x, points.first().y)
+                            for (i in 1 until points.size) {
+                                lineTo(points[i].x, points[i].y)
+                            }
                         }
                     }
                     drawPath(
@@ -1109,9 +1134,11 @@ private fun CompactMetricChartCard(
                     .fillMaxWidth()
             )
 
-            CompactChartLabelRow(
-                firstLabel = axisStartLabel ?: labels.firstOrNull().orEmpty(),
-                lastLabel = axisEndLabel ?: labels.lastOrNull().orEmpty()
+            CompactChartTickLabelRow(
+                labels = listOf(
+                    axisStartLabel ?: labels.firstOrNull().orEmpty(),
+                    axisEndLabel ?: labels.lastOrNull().orEmpty()
+                )
             )
         }
     }
@@ -1987,26 +2014,29 @@ private fun SimpleLineChart(
 }
 
 @Composable
-private fun CompactChartLabelRow(
-    firstLabel: String,
-    lastLabel: String,
+private fun CompactChartTickLabelRow(
+    labels: List<String>,
     modifier: Modifier = Modifier
 ) {
+    if (labels.isEmpty()) return
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(
-            text = firstLabel,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = lastLabel,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End
-        )
+        labels.forEachIndexed { index, label ->
+            Text(
+                text = label,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = when (index) {
+                    0 -> TextAlign.Start
+                    labels.lastIndex -> TextAlign.End
+                    else -> TextAlign.Center
+                },
+                maxLines = 1
+            )
+        }
     }
 }
 
@@ -2181,4 +2211,43 @@ private fun filterScoresByPeriod(
 
 private fun LocalDate.toShortLabel(): String {
     return format(DateTimeFormatter.ofPattern("M/d(E)", Locale.JAPAN))
+}
+
+private fun LocalDate.toDayWeekLabel(): String {
+    return format(DateTimeFormatter.ofPattern("d(E)", Locale.JAPAN))
+}
+
+private fun buildSmoothLinePath(points: List<Offset>): Path {
+    return Path().apply {
+        moveTo(points.first().x, points.first().y)
+        for (i in 1 until points.size) {
+            val previous = points[i - 1]
+            val current = points[i]
+            val controlX = (previous.x + current.x) / 2f
+            cubicTo(
+                controlX, previous.y,
+                controlX, current.y,
+                current.x, current.y
+            )
+        }
+    }
+}
+
+private fun buildChartXAxisLabels(
+    dates: List<LocalDate>,
+    period: AnalyticsPeriod
+): List<String> {
+    return when (period) {
+        AnalyticsPeriod.DAYS_7 -> dates.map { it.toDayWeekLabel() }
+        AnalyticsPeriod.DAYS_14,
+        AnalyticsPeriod.DAYS_30 -> dates.map { date ->
+            if (date.dayOfWeek == DayOfWeek.MONDAY) date.toDayWeekLabel() else ""
+        }
+        AnalyticsPeriod.ALL -> dates.map { "" }.toMutableList().apply {
+            if (isNotEmpty()) {
+                this[0] = dates.first().toDayWeekLabel()
+                this[lastIndex] = dates.last().toDayWeekLabel()
+            }
+        }
+    }
 }
