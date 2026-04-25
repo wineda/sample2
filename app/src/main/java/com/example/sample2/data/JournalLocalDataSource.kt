@@ -2,6 +2,7 @@ package com.example.sample2.data
 
 import android.content.Context
 import com.example.sample2.model.JournalJsonStorage
+import com.example.sample2.widget.WorkModeSummaryWidgetProvider
 
 class JournalLocalDataSource(
     private val context: Context
@@ -10,6 +11,7 @@ class JournalLocalDataSource(
 
     fun saveMessages(messages: List<MessageV2>) {
         JournalJsonStorage.saveMessages(context, messages)
+        WorkModeSummaryWidgetProvider.updateAll(context)
     }
 
     fun loadDailyRecords(): List<DailyRecord> = JournalJsonStorage.loadDailyRecords(context)

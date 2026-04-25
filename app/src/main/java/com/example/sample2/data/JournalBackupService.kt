@@ -3,6 +3,7 @@ package com.example.sample2.data
 import android.content.Context
 import android.net.Uri
 import com.example.sample2.model.JournalJsonStorage
+import com.example.sample2.widget.WorkModeSummaryWidgetProvider
 import java.io.OutputStream
 
 class JournalBackupService(
@@ -14,7 +15,9 @@ class JournalBackupService(
     }
 
     fun restoreFromUri(uri: Uri): JournalJsonStorage.RestoreResult {
-        return JournalJsonStorage.restoreBackupFromUri(context, uri)
+        return JournalJsonStorage.restoreBackupFromUri(context, uri).also {
+            WorkModeSummaryWidgetProvider.updateAll(context)
+        }
     }
 
     fun export(outputStream: OutputStream) {
