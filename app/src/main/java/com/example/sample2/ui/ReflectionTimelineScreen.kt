@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -29,10 +30,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.example.sample2.data.DailyReflection
 import java.time.LocalDate
@@ -117,11 +120,18 @@ fun ReflectionTimelineScreen(
                                 fieldFilter = if (uiState.fieldFilter == filter) null else filter
                             )
                         },
-                        label = { Text(filter.label) },
+                        label = {
+                            Text(
+                                text = filter.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 11.sp
+                            )
+                        },
                         leadingIcon = {
                             Icon(
                                 imageVector = filter.icon,
-                                contentDescription = null
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
                             )
                         }
                     )
@@ -251,10 +261,14 @@ private fun TimelineSnippetLine(
     fullText: Boolean
 ) {
     val displayText = text.ifBlank { "-" }
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
+            modifier = Modifier.size(16.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
