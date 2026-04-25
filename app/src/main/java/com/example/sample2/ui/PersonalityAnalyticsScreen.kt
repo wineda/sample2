@@ -334,6 +334,13 @@ fun PersonalityAnalyticsScreen(
         )
     }
 
+    val chartXAxisLabels = remember(chartDates, selectedPeriod) {
+        buildChartXAxisLabels(
+            dates = chartDates,
+            period = selectedPeriod
+        )
+    }
+
     val selectedDate = remember(filteredRawScoresDesc, selectedDateText) {
         val requested = selectedDateText?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
         requested?.takeIf { date -> filteredRawScoresDesc.any { it.date == date } }
@@ -473,11 +480,6 @@ fun PersonalityAnalyticsScreen(
                             }
                         )
                     }
-                    val chartXAxisLabels = buildChartXAxisLabels(
-                        dates = chartDates,
-                        period = selectedPeriod
-                    )
-
                     item {
                         ActionFlagCountChartCard(
                             labels = chartXAxisLabels,
