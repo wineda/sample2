@@ -207,9 +207,6 @@ fun ChatRoute() {
         derivedStateOf {
             state.messages
                 .filter { filterState.matches(it) }
-                .filter { message ->
-                    !workModeEnabled || message.hasWorkAction()
-                }
                 .sortedBy { it.timestamp }
         }
     }
@@ -563,7 +560,7 @@ fun ChatRoute() {
                                 JournalMessageListPane(
                                     messages = displayMessages,
                                     listState = listState,
-                                    isSingleLineMode = state.isSingleLineMode || workModeEnabled,
+                                    isSingleLineMode = state.isSingleLineMode,
                                     timestampOf = { it.timestamp },
                                     modifier = Modifier
                                         .weight(1f)
