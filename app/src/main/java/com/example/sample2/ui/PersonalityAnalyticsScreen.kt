@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -94,8 +93,7 @@ import kotlin.math.roundToInt
 
 private enum class AnalyticsDisplayMode {
     DETAIL,
-    CHARTS,
-    CARDS
+    CHARTS
 }
 
 private enum class AnalyticsInfoKind {
@@ -256,6 +254,14 @@ fun PersonalityAnalyticsScreen(
         filteredRawScoresAsc.map { it.date }
     }
 
+    val dailyRecordByLocalDate = remember(dailyRecords) {
+        dailyRecords.mapNotNull { record ->
+            runCatching { LocalDate.parse(record.date) }.getOrNull()?.let { date ->
+                date to record
+            }
+        }.toMap()
+    }
+
     val actionFlagSeries = remember(filteredMessages, targetActionTypes, chartDates) {
         val messageCountByDate = filteredMessages.groupBy { message ->
             Instant.ofEpochMilli(message.timestamp)
@@ -273,6 +279,21 @@ fun PersonalityAnalyticsScreen(
                 }
             )
         }
+    }
+
+    val sleepAndStepsSeries = remember(chartDates, dailyRecordByLocalDate) {
+        val sleepHoursSeries = chartDates.map { date ->
+            val minutes = dailyRecordByLocalDate[date]?.sleep?.durationMinutes ?: 0
+            (minutes / 60f).roundToInt().toFloat().coerceAtLeast(0f)
+        }
+        val stepsInThousandsSeries = chartDates.map { date ->
+            val steps = dailyRecordByLocalDate[date]?.steps ?: 0
+            (steps / 1000f).roundToInt().toFloat().coerceAtLeast(0f)
+        }
+        listOf(
+            LineSeries(label = "睡眠時間(h)", color = SleepChartColor, values = sleepHoursSeries),
+            LineSeries(label = "歩数(千歩)", color = StepsChartColor, values = stepsInThousandsSeries)
+        )
     }
 
     val selectedDate = remember(filteredRawScoresDesc, selectedDateText) {
@@ -436,28 +457,10 @@ fun PersonalityAnalyticsScreen(
                             periodLabel = selectedPeriod.label
                         )
                     }
-                }
-            }
-
-            AnalyticsDisplayMode.CARDS -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(
-                        items = filteredRawScoresDesc,
-                        key = { it.date.toString() }
-                    ) { score ->
-                        DailyPersonalityScoreCard(
-                            score = score,
-                            dailyRecord = dailyRecordMap[score.date.toString()],
-                            onUpdateDailyRecord = onUpdateDailyRecord,
-                            selected = score.date == selectedDate,
-                            onClick = {
-                                selectedDateText = score.date.toString()
-                                displayModeName = AnalyticsDisplayMode.DETAIL.name
-                            }
+                    item {
+                        SleepAndStepsChartCard(
+                            labels = chartDates.map { it.toShortLabel() },
+                            series = sleepAndStepsSeries
                         )
                     }
                 }
@@ -486,7 +489,7 @@ private fun ActionFlagCountChartCard(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text = "ActionFlags 日次推移",
+                text = "仕事推移",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -500,7 +503,51 @@ private fun ActionFlagCountChartCard(
                 labels = labels,
                 series = series,
                 minValue = 0f,
-                maxValue = maxCount.coerceAtLeast(1f),
+                maxValue = 15f,
+                yTickValues = listOf(0f, 5f, 10f, 15f),
+                toggleableLegend = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SleepAndStepsChartCard(
+    labels: List<String>,
+    series: List<LineSeries>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "運動・睡眠 推移",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "睡眠時間(時間) / 歩数(千歩)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            MultiLineChart(
+                labels = labels,
+                series = series,
+                minValue = 0f,
+                maxValue = 10f,
+                yTickValues = listOf(0f, 2f, 4f, 6f, 8f, 10f),
+                toggleableLegend = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
@@ -627,7 +674,7 @@ private fun OverallTrendChartCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "全体推移",
+                    text = "感情推移",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -692,6 +739,8 @@ private val ActionChartColors = listOf(
     Color(0xFFE53935),
     Color(0xFF8E24AA)
 )
+private val SleepChartColor = Color(0xFF3949AB)
+private val StepsChartColor = Color(0xFF00897B)
 
 @Composable
 private fun CombinedEmotionChart(
@@ -710,6 +759,8 @@ private fun CombinedEmotionChart(
         series = series,
         minValue = 0f,
         maxValue = 100f,
+        yTickValues = listOf(0f, 25f, 50f, 75f, 100f),
+        toggleableLegend = true,
         modifier = modifier
     )
 }
@@ -720,8 +771,17 @@ private fun MultiLineChart(
     series: List<LineSeries>,
     minValue: Float,
     maxValue: Float,
+    yTickValues: List<Float>? = null,
+    toggleableLegend: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    var hiddenSeriesLabels by remember(series) {
+        mutableStateOf(setOf<String>())
+    }
+    val displayedSeries = remember(series, hiddenSeriesLabels) {
+        series.filterNot { it.label in hiddenSeriesLabels }
+    }
+
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -735,6 +795,17 @@ private fun MultiLineChart(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 series.forEach { item ->
                     Row(
+                        modifier = if (toggleableLegend) {
+                            Modifier.clickable {
+                                hiddenSeriesLabels = if (item.label in hiddenSeriesLabels) {
+                                    hiddenSeriesLabels - item.label
+                                } else {
+                                    hiddenSeriesLabels + item.label
+                                }
+                            }
+                        } else {
+                            Modifier
+                        },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -742,24 +813,60 @@ private fun MultiLineChart(
                             modifier = Modifier
                                 .width(8.dp)
                                 .height(8.dp)
-                                .background(item.color, RoundedCornerShape(999.dp))
+                                .background(
+                                    if (item.label in hiddenSeriesLabels) {
+                                        item.color.copy(alpha = 0.3f)
+                                    } else {
+                                        item.color
+                                    },
+                                    RoundedCornerShape(999.dp)
+                                )
                         )
                         Text(
                             text = item.label,
                             style = MaterialTheme.typography.labelSmall,
-                            fontSize = 10.sp
+                            fontSize = 10.sp,
+                            color = if (item.label in hiddenSeriesLabels) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
                         )
                     }
                 }
             }
-            SimpleMultiLineChart(
-                series = series,
-                minValue = minValue,
-                maxValue = maxValue,
+            Row(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-            )
+            ) {
+                yTickValues?.let { ticks ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(end = 6.dp),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        ticks.sortedDescending().forEach { tick ->
+                            Text(
+                                text = tick.toInt().toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 9.sp
+                            )
+                        }
+                    }
+                }
+                SimpleMultiLineChart(
+                    series = displayedSeries,
+                    minValue = minValue,
+                    maxValue = maxValue,
+                    yTickValues = yTickValues,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                )
+            }
             CompactChartLabelRow(
                 firstLabel = labels.firstOrNull().orEmpty(),
                 lastLabel = labels.lastOrNull().orEmpty()
@@ -773,6 +880,7 @@ private fun SimpleMultiLineChart(
     series: List<LineSeries>,
     minValue: Float,
     maxValue: Float,
+    yTickValues: List<Float>? = null,
     modifier: Modifier = Modifier
 ) {
     val gridColor = MaterialTheme.colorScheme.outlineVariant
@@ -790,8 +898,26 @@ private fun SimpleMultiLineChart(
             val chartHeight = size.height - topPad - bottomPad
             if (chartWidth <= 0f || chartHeight <= 0f) return@Canvas
 
-            repeat(4) { i ->
-                val y = topPad + chartHeight * (i / 3f)
+            val normalizedTicks = yTickValues
+                ?.filter { it in minValue..maxValue }
+                ?.distinct()
+                ?.sortedDescending()
+                .orEmpty()
+
+            val gridRatios = if (normalizedTicks.isNotEmpty()) {
+                normalizedTicks.map { tick ->
+                    if (abs(maxValue - minValue) < 0.0001f) {
+                        0.5f
+                    } else {
+                        1f - ((tick - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
+                    }
+                }
+            } else {
+                List(4) { index -> index / 3f }
+            }
+
+            gridRatios.forEach { ratio ->
+                val y = topPad + chartHeight * ratio
                 drawLine(
                     color = gridColor,
                     start = Offset(leftPad, y),
@@ -956,13 +1082,6 @@ private fun AnalyticsDisplayModeToggle(
                 label = "グラフ",
                 icon = { Icon(Icons.Default.ShowChart, contentDescription = null) },
                 onClick = { onChange(AnalyticsDisplayMode.CHARTS) }
-            )
-            ToggleChipLikeButton(
-                modifier = Modifier.weight(1f),
-                selected = current == AnalyticsDisplayMode.CARDS,
-                label = "カード",
-                icon = { Icon(Icons.Default.ViewAgenda, contentDescription = null) },
-                onClick = { onChange(AnalyticsDisplayMode.CARDS) }
             )
         }
     }
