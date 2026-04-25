@@ -214,8 +214,10 @@ fun ChatRoute() {
         }
     }
 
-    val workActionSummary = remember(state.messages) {
-        WorkActionSummary.fromMessages(state.messages.filter { it.isToday() })
+    val workActionSummary by remember {
+        derivedStateOf {
+            WorkActionSummary.fromMessages(state.messages.filter { it.isToday() })
+        }
     }
 
     val dateLabel = buildJournalDateLabel(
