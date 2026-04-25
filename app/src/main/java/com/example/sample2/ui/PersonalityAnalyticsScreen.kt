@@ -21,10 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -68,7 +65,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -260,9 +256,13 @@ fun PersonalityAnalyticsScreen(
         PeriodPreset.valueOf(heatmapPeriodName)
     }
 
-    val filteredRawScoresDesc = remember(allRawScores, selectedPeriod) {
+    val allRawScoresDesc = remember(allRawScores) {
+        allRawScores.sortedByDescending { it.date }
+    }
+
+    val filteredRawScoresDesc = remember(allRawScoresDesc, selectedPeriod) {
         filterScoresByPeriod(
-            scores = allRawScores.sortedByDescending { it.date },
+            scores = allRawScoresDesc,
             period = selectedPeriod
         )
     }
@@ -347,10 +347,9 @@ fun PersonalityAnalyticsScreen(
         )
     }
 
-    val selectedDate = remember(filteredRawScoresDesc, selectedDateText) {
+    val selectedDate = remember(allRawScoresDesc, selectedDateText) {
         val requested = selectedDateText?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
-        requested?.takeIf { date -> filteredRawScoresDesc.any { it.date == date } }
-            ?: filteredRawScoresDesc.firstOrNull()?.date
+        requested ?: allRawScoresDesc.firstOrNull()?.date
     }
 
     val selectedRawScore = remember(filteredRawScoresDesc, selectedDate) {
@@ -429,7 +428,7 @@ fun PersonalityAnalyticsScreen(
                 ) {
                     item {
                         SelectedDateSelectorRow(
-                            dates = filteredRawScoresDesc.map { it.date },
+                            dates = allRawScoresDesc.map { it.date },
                             selectedDate = selectedDate,
                             onSelectDate = { selectedDateText = it.toString() }
                         )
@@ -446,15 +445,15 @@ fun PersonalityAnalyticsScreen(
                             comparisonMessages = comparisonDayMessages,
                             comparisonDailyRecord = comparisonDayRecord,
                             onSwipeToOlderDate = {
-                                val currentIndex = filteredRawScoresDesc.indexOfFirst { it.date == selectedDate }
-                                if (currentIndex in 0 until filteredRawScoresDesc.lastIndex) {
-                                    selectedDateText = filteredRawScoresDesc[currentIndex + 1].date.toString()
+                                val currentIndex = allRawScoresDesc.indexOfFirst { it.date == selectedDate }
+                                if (currentIndex in 0 until allRawScoresDesc.lastIndex) {
+                                    selectedDateText = allRawScoresDesc[currentIndex + 1].date.toString()
                                 }
                             },
                             onSwipeToNewerDate = {
-                                val currentIndex = filteredRawScoresDesc.indexOfFirst { it.date == selectedDate }
+                                val currentIndex = allRawScoresDesc.indexOfFirst { it.date == selectedDate }
                                 if (currentIndex > 0) {
-                                    selectedDateText = filteredRawScoresDesc[currentIndex - 1].date.toString()
+                                    selectedDateText = allRawScoresDesc[currentIndex - 1].date.toString()
                                 }
                             }
                         )
@@ -1369,93 +1368,41 @@ private fun SelectedDateSelectorRow(
     onSelectDate: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val listState = rememberLazyListState()
-    val selectedIndex = remember(dates, selectedDate) {
-        dates.indexOf(selectedDate).takeIf { it >= 0 } ?: 0
-    }
-    val swipeThresholdPx = with(LocalDensity.current) { 28.dp.toPx() }
-    var accumulatedDrag by remember(dates, selectedDate) { mutableStateOf(0f) }
     var showCalendarDialog by rememberSaveable(dates, selectedDate) { mutableStateOf(false) }
-    val selectableDateSet = remember(dates) { dates.toSet() }
 
-    LaunchedEffect(selectedIndex, dates) {
-        if (dates.isNotEmpty()) {
-            listState.animateScrollToItem(selectedIndex.coerceIn(0, dates.lastIndex))
-        }
-    }
-
-    LazyRow(
-        state = listState,
+    Row(
         modifier = modifier
-            .fillMaxWidth()
-            .pointerInput(dates, selectedDate) {
-                detectHorizontalDragGestures(
-                    onHorizontalDrag = { change, dragAmount ->
-                        change.consume()
-                        accumulatedDrag += dragAmount
-                    },
-                    onDragEnd = {
-                        val currentIndex = dates.indexOf(selectedDate).takeIf { it >= 0 } ?: 0
-                        when {
-                            accumulatedDrag <= -swipeThresholdPx && currentIndex < dates.lastIndex -> {
-                                onSelectDate(dates[currentIndex + 1])
-                            }
-                            accumulatedDrag >= swipeThresholdPx && currentIndex > 0 -> {
-                                onSelectDate(dates[currentIndex - 1])
-                            }
-                        }
-                        accumulatedDrag = 0f
-                    },
-                    onDragCancel = {
-                        accumulatedDrag = 0f
-                    }
-                )
-            },
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        itemsIndexed(
-            items = dates,
-            key = { _, date -> date.toString() }
-        ) { _, date ->
-            FilterChip(
-                selected = date == selectedDate,
-                onClick = { onSelectDate(date) },
-                label = { Text(date.toShortLabel()) },
-                colors = selectionChipColors()
-            )
-        }
+        Text(
+            text = selectedDate?.let {
+                DateTimeFormatter.ofPattern("M月d日(E)", Locale.JAPAN).format(it)
+            } ?: "日付未選択",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f)
+        )
 
-        item(key = "calendar_selector") {
-            AssistChip(
-                onClick = { showCalendarDialog = true },
-                label = { Text("カレンダー") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = null
-                    )
-                }
-            )
-        }
+        AssistChip(
+            onClick = { showCalendarDialog = true },
+            label = { Text("カレンダー") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = null
+                )
+            }
+        )
     }
 
     if (showCalendarDialog) {
         AvailableDatePickerDialog(
-            availableDates = selectableDateSet,
             initialDate = selectedDate,
             onDismiss = { showCalendarDialog = false },
             onConfirm = { pickedDate ->
-                if (pickedDate in selectableDateSet) {
-                    onSelectDate(pickedDate)
-                    showCalendarDialog = false
-                } else {
-                    android.widget.Toast.makeText(
-                        context,
-                        "データがある日のみ選択できます",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                }
+                onSelectDate(pickedDate)
+                showCalendarDialog = false
             }
         )
     }
@@ -1464,18 +1411,17 @@ private fun SelectedDateSelectorRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AvailableDatePickerDialog(
-    availableDates: Set<LocalDate>,
     initialDate: LocalDate?,
     onDismiss: () -> Unit,
     onConfirm: (LocalDate) -> Unit
 ) {
     val zoneId = remember { ZoneId.systemDefault() }
     val today = remember(zoneId) { LocalDate.now(zoneId) }
-    val selectableDates = remember(availableDates, today, zoneId) {
+    val selectableDates = remember(today, zoneId) {
         object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                 val date = Instant.ofEpochMilli(utcTimeMillis).atZone(zoneId).toLocalDate()
-                return !date.isAfter(today) && date in availableDates
+                return !date.isAfter(today)
             }
         }
     }
@@ -1814,7 +1760,9 @@ private fun DailyMessagePseudoTrendCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = date?.let { "${it.monthValue}月${it.dayOfMonth}日 の日内推移" } ?: "日内推移",
+                    text = date?.let {
+                        "${DateTimeFormatter.ofPattern("M月d日(E)", Locale.JAPAN).format(it)} の日内推移"
+                    } ?: "日内推移",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -2466,10 +2414,6 @@ private fun filterScoresByPeriod(
     }
 
     return scores.filter { it.date >= from }
-}
-
-private fun LocalDate.toShortLabel(): String {
-    return format(DateTimeFormatter.ofPattern("M/d(E)", Locale.JAPAN))
 }
 
 private fun LocalDate.toDayWeekLabel(): String {
