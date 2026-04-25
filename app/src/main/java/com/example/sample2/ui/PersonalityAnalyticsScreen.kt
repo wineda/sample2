@@ -1492,48 +1492,29 @@ private fun DailyMessagePseudoTrendCard(
     val timeLabels = remember(points) {
         points.map { formatTime(it.timestamp) }
     }
-    val pointXValues = remember(points) {
-        points.map { minutesOfDay(it.timestamp) }
-    }
-    val comparisonPoints = remember(compareMode, comparisonMessages, comparisonDailyRecord) {
-        if (compareMode == DetailCompareMode.NONE || comparisonMessages.isEmpty()) {
-            emptyList()
-        } else {
-            PersonalityScoreModel.buildIntradayScoreSeries(
-                messages = comparisonMessages,
-                dailyRecord = comparisonDailyRecord
-            ).filter { isDetailChartVisibleTime(it.timestamp) }
-        }
-    }
-    val comparisonPointXValues = remember(comparisonPoints) {
-        comparisonPoints.map { minutesOfDay(it.timestamp) }
-    }
-    val detailAxisMaxMinutes = remember(compareMode, pointXValues) {
-        if (compareMode == DetailCompareMode.NONE) {
-            pointXValues.maxOrNull()?.coerceIn(DetailChartStartMinutes, DetailChartEndMinutes)
-                ?: DetailChartEndMinutes
-        } else {
-            DetailChartEndMinutes
-        }
-    }
-    val detailAxisEndLabel = remember(compareMode, detailAxisMaxMinutes) {
-        if (compareMode == DetailCompareMode.NONE) {
-            formatMinuteLabel(detailAxisMaxMinutes)
-        } else {
-            "22:00"
-        }
-    }
-    var sharedSelectedIndex by remember(points) { mutableStateOf<Int?>(null) }
-    val selectedTimeLabel = sharedSelectedIndex?.let { timeLabels.getOrNull(it) }
-    val selectedMessagesAtTime = remember(sharedSelectedIndex, points, messages) {
-        val selectedPoint = sharedSelectedIndex?.let { points.getOrNull(it) }
-        if (selectedPoint == null) {
-            emptyList()
-        } else {
-            messages
-                .filter { formatTime(it.timestamp) == formatTime(selectedPoint.timestamp) }
-                .sortedBy { it.timestamp }
-        }
+    val detailSeries = remember(points) {
+        listOf(
+            LineSeries(
+                label = "安定度",
+                color = StabilityChartColor,
+                values = points.map { it.stability }
+            ),
+            LineSeries(
+                label = "不安",
+                color = AnxietyChartColor,
+                values = points.map { (it.anxiety * 10f).coerceIn(0f, 100f) }
+            ),
+            LineSeries(
+                label = "活力",
+                color = EnergyChartColor,
+                values = points.map { it.energy }
+            ),
+            LineSeries(
+                label = "制御感",
+                color = ControlChartColor,
+                values = points.map { it.control }
+            )
+        )
     }
     val comparisonLabel = remember(compareMode, comparisonDate, comparisonMessages) {
         when (compareMode) {
@@ -1603,21 +1584,6 @@ private fun DailyMessagePseudoTrendCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    selectedTimeLabel?.let { label ->
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ) {
-                            Text(
-                                text = label,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
                 }
             }
 
@@ -1674,115 +1640,17 @@ private fun DailyMessagePseudoTrendCard(
                 },
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
+                MultiLineChart(
+                    labels = timeLabels,
+                    series = detailSeries,
+                    minValue = 0f,
+                    maxValue = 100f,
+                    yAxisTicks = listOf(0f, 25f, 50f, 75f, 100f),
+                    toggleableLegend = true,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(145.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    CompactMetricChartCard(
-                        title = "安定度",
-                        values = points.map { it.stability },
-                        comparisonValues = comparisonPoints.map { it.stability },
-                        labels = timeLabels,
-                        absoluteMin = 0f,
-                        absoluteMax = 100f,
-                        lineColor = StabilityChartColor,
-                        selectedIndex = sharedSelectedIndex,
-                        onSelectedIndexChange = { sharedSelectedIndex = it },
-                        showSelectionLabel = false,
-                        xValues = pointXValues,
-                        comparisonXValues = comparisonPointXValues,
-                        axisStartLabel = "07:00",
-                        axisEndLabel = detailAxisEndLabel,
-                        xAxisMinOverride = DetailChartStartMinutes,
-                        xAxisMaxOverride = detailAxisMaxMinutes,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                    )
-
-                    CompactMetricChartCard(
-                        title = "不安",
-                        values = points.map { it.anxiety },
-                        comparisonValues = comparisonPoints.map { it.anxiety },
-                        labels = timeLabels,
-                        absoluteMin = 0f,
-                        absoluteMax = 10f,
-                        lineColor = AnxietyChartColor,
-                        selectedIndex = sharedSelectedIndex,
-                        onSelectedIndexChange = { sharedSelectedIndex = it },
-                        showSelectionLabel = false,
-                        xValues = pointXValues,
-                        comparisonXValues = comparisonPointXValues,
-                        axisStartLabel = "07:00",
-                        axisEndLabel = detailAxisEndLabel,
-                        xAxisMinOverride = DetailChartStartMinutes,
-                        xAxisMaxOverride = detailAxisMaxMinutes,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    CompactMetricChartCard(
-                        title = "活力",
-                        values = points.map { it.energy },
-                        comparisonValues = comparisonPoints.map { it.energy },
-                        labels = timeLabels,
-                        absoluteMin = 0f,
-                        absoluteMax = 100f,
-                        lineColor = EnergyChartColor,
-                        selectedIndex = sharedSelectedIndex,
-                        onSelectedIndexChange = { sharedSelectedIndex = it },
-                        showSelectionLabel = false,
-                        xValues = pointXValues,
-                        comparisonXValues = comparisonPointXValues,
-                        axisStartLabel = "07:00",
-                        axisEndLabel = detailAxisEndLabel,
-                        xAxisMinOverride = DetailChartStartMinutes,
-                        xAxisMaxOverride = detailAxisMaxMinutes,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                    )
-
-                    CompactMetricChartCard(
-                        title = "制御感",
-                        values = points.map { it.control },
-                        comparisonValues = comparisonPoints.map { it.control },
-                        labels = timeLabels,
-                        absoluteMin = 0f,
-                        absoluteMax = 100f,
-                        lineColor = ControlChartColor,
-                        selectedIndex = sharedSelectedIndex,
-                        onSelectedIndexChange = { sharedSelectedIndex = it },
-                        showSelectionLabel = false,
-                        xValues = pointXValues,
-                        comparisonXValues = comparisonPointXValues,
-                        axisStartLabel = "07:00",
-                        axisEndLabel = detailAxisEndLabel,
-                        xAxisMinOverride = DetailChartStartMinutes,
-                        xAxisMaxOverride = detailAxisMaxMinutes,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                    )
-                }
-
-                if (selectedMessagesAtTime.isNotEmpty()) {
-                    SelectedMessagesAtTimeCard(
-                        timeLabel = selectedTimeLabel.orEmpty(),
-                        messages = selectedMessagesAtTime,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                        .height(260.dp)
+                )
             }
         }
     }
