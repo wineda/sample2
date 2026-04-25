@@ -41,6 +41,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -49,13 +50,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -422,18 +426,12 @@ fun PersonalityAnalyticsScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
-                        SelectedDateSelectorRow(
-                            dates = filteredRawScoresDesc.map { it.date },
-                            selectedDate = selectedDate,
-                            onSelectDate = { selectedDateText = it.toString() }
-                        )
-                    }
-
-                    item {
                         DailyMessagePseudoTrendCard(
                             date = selectedDate,
                             messages = selectedDayMessages,
                             dailyRecord = selectedDayRecord,
+                            availableDates = filteredRawScoresDesc.mapTo(linkedSetOf()) { it.date },
+                            onSelectDate = { selectedDateText = it.toString() },
                             compareMode = detailCompareMode,
                             onCompareModeChange = { detailCompareModeName = it.name },
                             comparisonDate = comparisonDate,
@@ -1576,6 +1574,8 @@ private fun DailyMessagePseudoTrendCard(
     date: LocalDate?,
     messages: List<MessageV2>,
     dailyRecord: DailyRecord?,
+    availableDates: Set<LocalDate>,
+    onSelectDate: (LocalDate) -> Unit,
     compareMode: DetailCompareMode,
     onCompareModeChange: (DetailCompareMode) -> Unit,
     comparisonDate: LocalDate?,
@@ -1748,73 +1748,133 @@ private fun DailyMessagePseudoTrendCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                return@Column
-            }
-
-            if (points.isEmpty()) {
+            } else if (points.isEmpty()) {
                 Text(
                     text = "07:00〜22:00 の範囲に表示できるメッセージがありません",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                return@Column
+            } else {
+                Column(
+                    modifier = Modifier.pointerInput(date, points.size) {
+                        detectHorizontalDragGestures(
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                accumulatedDrag += dragAmount
+                            },
+                            onDragEnd = {
+                                when {
+                                    accumulatedDrag <= -swipeThresholdPx -> onSwipeToOlderDate()
+                                    accumulatedDrag >= swipeThresholdPx -> onSwipeToNewerDate()
+                                }
+                                accumulatedDrag = 0f
+                            },
+                            onDragCancel = {
+                                accumulatedDrag = 0f
+                            }
+                        )
+                    },
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MultiLineChart(
+                        labels = listOf("07:00", "10:00", "13:00", "16:00", "19:00", "22:00"),
+                        series = detailSeries.map { LineSeries(it.label, it.color, it.values) },
+                        comparisonSeries = comparisonSeries.map {
+                            LineSeries(
+                                label = it.label,
+                                color = it.color.copy(alpha = 0.4f),
+                                values = it.values
+                            )
+                        }.takeIf { compareMode != DetailCompareMode.NONE },
+                        seriesXValues = detailSeries.associate { it.label to it.xValues },
+                        comparisonSeriesXValues = comparisonSeries.associate { it.label to it.xValues },
+                        selectedXAxisValue = selectedPoint?.let { minutesOfDay(it.timestamp) },
+                        onSelectedXAxisValueChange = { tappedMinutes ->
+                            selectedChartMinutes = tappedMinutes
+                        },
+                        xAxisMin = DetailChartStartMinutes,
+                        xAxisMax = DetailChartEndMinutes,
+                        minValue = 0f,
+                        maxValue = 100f,
+                        yAxisTicks = listOf(0f, 25f, 50f, 75f, 100f),
+                        toggleableLegend = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(260.dp)
+                    )
+
+                    if (selectedMessages.isNotEmpty() && selectedTimeLabel != null) {
+                        SelectedMessagesAtTimeCard(
+                            timeLabel = selectedTimeLabel,
+                            messages = selectedMessages,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
             }
 
-            Column(
-                modifier = Modifier.pointerInput(date, points.size) {
-                    detectHorizontalDragGestures(
-                        onHorizontalDrag = { change, dragAmount ->
-                            change.consume()
-                            accumulatedDrag += dragAmount
-                        },
-                        onDragEnd = {
-                            when {
-                                accumulatedDrag <= -swipeThresholdPx -> onSwipeToOlderDate()
-                                accumulatedDrag >= swipeThresholdPx -> onSwipeToNewerDate()
-                            }
-                            accumulatedDrag = 0f
-                        },
-                        onDragCancel = {
-                            accumulatedDrag = 0f
-                        }
-                    )
-                },
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                MultiLineChart(
-                    labels = listOf("07:00", "10:00", "13:00", "16:00", "19:00", "22:00"),
-                    series = detailSeries.map { LineSeries(it.label, it.color, it.values) },
-                    comparisonSeries = comparisonSeries.map {
-                        LineSeries(
-                            label = it.label,
-                            color = it.color.copy(alpha = 0.4f),
-                            values = it.values
-                        )
-                    }.takeIf { compareMode != DetailCompareMode.NONE },
-                    seriesXValues = detailSeries.associate { it.label to it.xValues },
-                    comparisonSeriesXValues = comparisonSeries.associate { it.label to it.xValues },
-                    selectedXAxisValue = selectedPoint?.let { minutesOfDay(it.timestamp) },
-                    onSelectedXAxisValueChange = { tappedMinutes ->
-                        selectedChartMinutes = tappedMinutes
-                    },
-                    xAxisMin = DetailChartStartMinutes,
-                    xAxisMax = DetailChartEndMinutes,
-                    minValue = 0f,
-                    maxValue = 100f,
-                    yAxisTicks = listOf(0f, 25f, 50f, 75f, 100f),
-                    toggleableLegend = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(260.dp)
-                )
+            HorizontalDivider()
 
-                if (selectedMessages.isNotEmpty() && selectedTimeLabel != null) {
-                    SelectedMessagesAtTimeCard(
-                        timeLabel = selectedTimeLabel,
-                        messages = selectedMessages,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            DetailDateCalendar(
+                selectedDate = date,
+                availableDates = availableDates,
+                onSelectDate = onSelectDate
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DetailDateCalendar(
+    selectedDate: LocalDate?,
+    availableDates: Set<LocalDate>,
+    onSelectDate: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val selectedMillis = remember(selectedDate) {
+        selectedDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+    }
+    key(selectedDate, availableDates) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedMillis,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return runCatching {
+                        Instant.ofEpochMilli(utcTimeMillis)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate() in availableDates
+                    }.getOrDefault(false)
                 }
+            }
+        )
+
+        Text(
+            text = "日付を選択",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            modifier = modifier
+        )
+
+        DatePicker(
+            state = datePickerState,
+            showModeToggle = false,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        datePickerState.selectedDateMillis?.let { millis ->
+            val pickedDate = runCatching {
+                Instant.ofEpochMilli(millis)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            }.getOrNull()
+
+            val isValid = pickedDate != null && pickedDate in availableDates
+            Button(
+                onClick = { if (pickedDate != null) onSelectDate(pickedDate) },
+                enabled = isValid && pickedDate != selectedDate
+            ) {
+                Text("この日を表示")
             }
         }
     }
