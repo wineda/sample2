@@ -658,7 +658,7 @@ private fun JournalBottomModeBar(
             icon = Icons.Default.EditNote,
             selected = currentMode == JournalScreenMode.Reflection,
             onClick = onOpenReflection
-        }
+        )
     }
 }
 
