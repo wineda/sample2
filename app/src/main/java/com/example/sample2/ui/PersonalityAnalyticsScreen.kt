@@ -798,6 +798,8 @@ private fun MultiLineChart(
     comparisonSeries: List<LineSeries>? = null,
     seriesXValues: Map<String, List<Float>> = emptyMap(),
     comparisonSeriesXValues: Map<String, List<Float>> = emptyMap(),
+    selectedXAxisValue: Float? = null,
+    onSelectedXAxisValueChange: ((Float) -> Unit)? = null,
     xAxisMin: Float? = null,
     xAxisMax: Float? = null,
     minValue: Float,
@@ -874,6 +876,8 @@ private fun MultiLineChart(
                 },
                 seriesXValues = seriesXValues,
                 comparisonSeriesXValues = comparisonSeriesXValues,
+                selectedXAxisValue = selectedXAxisValue,
+                onSelectedXAxisValueChange = onSelectedXAxisValueChange,
                 xAxisMin = xAxisMin,
                 xAxisMax = xAxisMax,
                 minValue = minValue,
@@ -897,6 +901,8 @@ private fun SimpleMultiLineChart(
     comparisonSeries: List<LineSeries> = emptyList(),
     seriesXValues: Map<String, List<Float>> = emptyMap(),
     comparisonSeriesXValues: Map<String, List<Float>> = emptyMap(),
+    selectedXAxisValue: Float? = null,
+    onSelectedXAxisValueChange: ((Float) -> Unit)? = null,
     xAxisMin: Float? = null,
     xAxisMax: Float? = null,
     minValue: Float,
@@ -941,6 +947,48 @@ private fun SimpleMultiLineChart(
                 .weight(1f)
                 .fillMaxHeight()
                 .background(MaterialTheme.colorScheme.surface)
+                .pointerInput(
+                    series,
+                    comparisonSeries,
+                    seriesXValues,
+                    xAxisMin,
+                    xAxisMax
+                ) {
+                    detectTapGestures { tapOffset ->
+                        val allAxisXs = buildList {
+                            series.forEach { item ->
+                                val custom = seriesXValues[item.label].orEmpty()
+                                if (custom.size == item.values.size) {
+                                    addAll(custom)
+                                } else {
+                                    addAll(item.values.indices.map { it.toFloat() })
+                                }
+                            }
+                        }
+                        if (allAxisXs.isEmpty()) return@detectTapGestures
+
+                        val leftPad = 6.dp.toPx()
+                        val rightPad = 6.dp.toPx()
+                        val chartWidth = size.width - leftPad - rightPad
+                        if (chartWidth <= 0f) return@detectTapGestures
+
+                        val inferredMin = allAxisXs.minOrNull() ?: 0f
+                        val inferredMax = allAxisXs.maxOrNull() ?: inferredMin + 1f
+                        val axisMinResolved = xAxisMin ?: inferredMin
+                        val axisMaxResolved = xAxisMax ?: inferredMax
+                        if (abs(axisMaxResolved - axisMinResolved) < 0.0001f) {
+                            return@detectTapGestures
+                        }
+
+                        val clampedX = (tapOffset.x - leftPad).coerceIn(0f, chartWidth)
+                        val tappedAxisX = axisMinResolved +
+                            (clampedX / chartWidth) * (axisMaxResolved - axisMinResolved)
+                        val nearestAxisX = allAxisXs.minByOrNull { axisX ->
+                            abs(axisX - tappedAxisX)
+                        } ?: return@detectTapGestures
+                        onSelectedXAxisValueChange?.invoke(nearestAxisX)
+                    }
+                }
         ) {
             val leftPad = 6.dp.toPx()
             val rightPad = 6.dp.toPx()
@@ -951,6 +999,18 @@ private fun SimpleMultiLineChart(
             if (chartWidth <= 0f || chartHeight <= 0f) return@Canvas
 
             val guideDenominator = (guideValues.lastIndex).coerceAtLeast(1).toFloat()
+            val allMainAxisXs = buildList {
+                series.forEach { item ->
+                    val custom = seriesXValues[item.label].orEmpty()
+                    if (custom.size == item.values.size) {
+                        addAll(custom)
+                    } else {
+                        addAll(item.values.indices.map { it.toFloat() })
+                    }
+                }
+            }
+            val axisMinResolved = xAxisMin ?: allMainAxisXs.minOrNull() ?: 0f
+            val axisMaxResolved = xAxisMax ?: allMainAxisXs.maxOrNull() ?: 1f
             repeat(guideValues.size) { i ->
                 val y = topPad + chartHeight * (i / guideDenominator)
                 drawLine(
@@ -966,8 +1026,8 @@ private fun SimpleMultiLineChart(
                 return values.mapIndexed { index, value ->
                     val xValue = index.toFloat()
                     val denominator = (values.lastIndex).coerceAtLeast(1).toFloat()
-                    val xRatio = if (xAxisMin != null && xAxisMax != null) {
-                        ((xValue - xAxisMin) / (xAxisMax - xAxisMin)).coerceIn(0f, 1f)
+                    val xRatio = if (abs(axisMaxResolved - axisMinResolved) >= 0.0001f) {
+                        ((xValue - axisMinResolved) / (axisMaxResolved - axisMinResolved)).coerceIn(0f, 1f)
                     } else {
                         index / denominator
                     }
@@ -988,8 +1048,8 @@ private fun SimpleMultiLineChart(
                 val denominator = (values.lastIndex).coerceAtLeast(1).toFloat()
                 return values.mapIndexed { index, value ->
                     val xValue = xValues.getOrElse(index) { index.toFloat() }
-                    val xRatio = if (xAxisMin != null && xAxisMax != null) {
-                        ((xValue - xAxisMin) / (xAxisMax - xAxisMin)).coerceIn(0f, 1f)
+                    val xRatio = if (abs(axisMaxResolved - axisMinResolved) >= 0.0001f) {
+                        ((xValue - axisMinResolved) / (axisMaxResolved - axisMinResolved)).coerceIn(0f, 1f)
                     } else {
                         index / denominator
                     }
@@ -1061,6 +1121,18 @@ private fun SimpleMultiLineChart(
                         center = point
                     )
                 }
+            }
+
+            if (selectedXAxisValue != null && abs(axisMaxResolved - axisMinResolved) >= 0.0001f) {
+                val selectedXRatio = ((selectedXAxisValue - axisMinResolved) / (axisMaxResolved - axisMinResolved))
+                    .coerceIn(0f, 1f)
+                val selectedX = leftPad + chartWidth * selectedXRatio
+                drawLine(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+                    start = Offset(selectedX, topPad),
+                    end = Offset(selectedX, size.height - bottomPad),
+                    strokeWidth = 1.5.dp.toPx()
+                )
             }
         }
     }
@@ -1601,6 +1673,33 @@ private fun DailyMessagePseudoTrendCard(
             }
         }
     }
+    var selectedChartMinutes by remember(date, points) {
+        mutableStateOf(points.lastOrNull()?.let { minutesOfDay(it.timestamp) })
+    }
+    LaunchedEffect(points) {
+        if (points.isNotEmpty() && selectedChartMinutes == null) {
+            selectedChartMinutes = minutesOfDay(points.last().timestamp)
+        }
+    }
+    val selectedPoint = remember(points, selectedChartMinutes) {
+        val selected = selectedChartMinutes ?: return@remember null
+        points.minByOrNull { point ->
+            abs(minutesOfDay(point.timestamp) - selected)
+        }
+    }
+    val selectedTimeLabel = remember(selectedPoint) {
+        selectedPoint?.let { formatMinuteLabel(minutesOfDay(it.timestamp)) }
+    }
+    val selectedMessages = remember(messages, selectedPoint) {
+        val anchorTimestamp = selectedPoint?.timestamp ?: return@remember emptyList()
+        val anchorMinutes = minutesOfDay(anchorTimestamp)
+        val nearestDistance = messages.minOfOrNull { message ->
+            abs(minutesOfDay(message.timestamp) - anchorMinutes)
+        } ?: return@remember emptyList()
+        messages.filter { message ->
+            abs(minutesOfDay(message.timestamp) - anchorMinutes) <= nearestDistance
+        }
+    }
     val swipeThresholdPx = with(LocalDensity.current) { 36.dp.toPx() }
     var accumulatedDrag by remember(date) { mutableStateOf(0f) }
 
@@ -1690,6 +1789,10 @@ private fun DailyMessagePseudoTrendCard(
                     }.takeIf { compareMode != DetailCompareMode.NONE },
                     seriesXValues = detailSeries.associate { it.label to it.xValues },
                     comparisonSeriesXValues = comparisonSeries.associate { it.label to it.xValues },
+                    selectedXAxisValue = selectedPoint?.let { minutesOfDay(it.timestamp) },
+                    onSelectedXAxisValueChange = { tappedMinutes ->
+                        selectedChartMinutes = tappedMinutes
+                    },
                     xAxisMin = DetailChartStartMinutes,
                     xAxisMax = DetailChartEndMinutes,
                     minValue = 0f,
@@ -1700,6 +1803,14 @@ private fun DailyMessagePseudoTrendCard(
                         .fillMaxWidth()
                         .height(260.dp)
                 )
+
+                if (selectedMessages.isNotEmpty() && selectedTimeLabel != null) {
+                    SelectedMessagesAtTimeCard(
+                        timeLabel = selectedTimeLabel,
+                        messages = selectedMessages,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }
@@ -1769,6 +1880,23 @@ private fun SelectedMessagesAtTimeCard(
                         text = message.extractDisplayText(),
                         style = MaterialTheme.typography.bodyMedium
                     )
+
+                    val enabledFlags = message.enabledActionFlagLabels()
+                    val emotionDetails = message.emotionDetails()
+                    if (enabledFlags.isNotEmpty()) {
+                        Text(
+                            text = "フラグ: ${enabledFlags.joinToString(" / ")}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (emotionDetails.isNotEmpty()) {
+                        Text(
+                            text = "感情: ${emotionDetails.joinToString(" / ")}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -1791,6 +1919,19 @@ private fun MessageV2.extractDisplayText(): String {
         ?: tryGet("text")
         ?: tryGet("content")
         ?: "（メッセージ本文を取得できませんでした）"
+}
+
+private fun MessageV2.enabledActionFlagLabels(): List<String> {
+    return ActionType.entries
+        .filter { action -> action.matches(flags) }
+        .map { action -> action.label }
+}
+
+private fun MessageV2.emotionDetails(): List<String> {
+    return EmotionType.entries.mapNotNull { emotion ->
+        val score = emotion.scoreOf(emotions)
+        if (score > 0) "${emotion.label} $score" else null
+    }
 }
 
 @Composable
