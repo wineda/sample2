@@ -72,6 +72,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -92,6 +94,7 @@ import com.example.sample2.ui.EmotionHeatmapBlock
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
 import com.example.sample2.util.formatTime
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -491,13 +494,13 @@ fun PersonalityAnalyticsScreen(
 
                     item {
                         ActionFlagCountChartCard(
-                            labels = chartDates.map { it.toShortLabel() },
+                            labels = buildChartXAxisLabels(chartDates, selectedPeriod),
                             series = actionFlagSeries
                         )
                     }
                     item {
                         SleepAndStepsChartCard(
-                            labels = chartDates.map { it.toShortLabel() },
+                            labels = buildChartXAxisLabels(chartDates, selectedPeriod),
                             series = sleepAndStepsSeries
                         )
                     }
@@ -764,6 +767,7 @@ private fun OverallTrendChartCard(
 
             CombinedEmotionChart(
                 scores = scores,
+                currentPeriod = currentPeriod,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(250.dp)
@@ -820,9 +824,10 @@ private val StepsChartColor = Color(0xFF00897B)
 @Composable
 private fun CombinedEmotionChart(
     scores: List<DailyPersonalityScore>,
+    currentPeriod: AnalyticsPeriod,
     modifier: Modifier = Modifier
 ) {
-    val labels = scores.map { it.date.toShortLabel() }
+    val labels = buildChartXAxisLabels(scores.map { it.date }, currentPeriod)
     val series = listOf(
         LineSeries("安定度", StabilityChartColor, scores.map { it.stability.toFloat() }),
         LineSeries("不安", AnxietyChartColor, scores.map { (it.anxiety * 10.0).coerceIn(0.0, 100.0).toFloat() }),
@@ -835,6 +840,7 @@ private fun CombinedEmotionChart(
         minValue = 0f,
         maxValue = 100f,
         yAxisTicks = listOf(0f, 25f, 50f, 75f, 100f),
+        smoothLine = currentPeriod == AnalyticsPeriod.ALL,
         toggleableLegend = true,
         modifier = modifier
     )
@@ -847,6 +853,7 @@ private fun MultiLineChart(
     minValue: Float,
     maxValue: Float,
     yAxisTicks: List<Float>? = null,
+    smoothLine: Boolean = false,
     toggleableLegend: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -914,7 +921,9 @@ private fun MultiLineChart(
                 series = displayedSeries,
                 minValue = minValue,
                 maxValue = maxValue,
+                xAxisLabels = labels,
                 yAxisTicks = yAxisTicks,
+                smoothLine = smoothLine,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
@@ -932,7 +941,9 @@ private fun SimpleMultiLineChart(
     series: List<LineSeries>,
     minValue: Float,
     maxValue: Float,
+    xAxisLabels: List<String> = emptyList(),
     yAxisTicks: List<Float>? = null,
+    smoothLine: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val gridColor = MaterialTheme.colorScheme.outlineVariant
@@ -975,7 +986,7 @@ private fun SimpleMultiLineChart(
             val leftPad = 6.dp.toPx()
             val rightPad = 6.dp.toPx()
             val topPad = 10.dp.toPx()
-            val bottomPad = 10.dp.toPx()
+            val bottomPad = 24.dp.toPx()
             val chartWidth = size.width - leftPad - rightPad
             val chartHeight = size.height - topPad - bottomPad
             if (chartWidth <= 0f || chartHeight <= 0f) return@Canvas
@@ -1013,8 +1024,20 @@ private fun SimpleMultiLineChart(
                 if (points.size >= 2) {
                     val path = Path().apply {
                         moveTo(points.first().x, points.first().y)
-                        for (i in 1 until points.size) {
-                            lineTo(points[i].x, points[i].y)
+                        if (smoothLine && points.size >= 3) {
+                            for (i in 1 until points.size) {
+                                val previous = points[i - 1]
+                                val current = points[i]
+                                val midX = (previous.x + current.x) / 2f
+                                val midY = (previous.y + current.y) / 2f
+                                quadraticBezierTo(previous.x, previous.y, midX, midY)
+                            }
+                            val last = points.last()
+                            lineTo(last.x, last.y)
+                        } else {
+                            for (i in 1 until points.size) {
+                                lineTo(points[i].x, points[i].y)
+                            }
                         }
                     }
                     drawPath(
@@ -1033,6 +1056,23 @@ private fun SimpleMultiLineChart(
                         radius = 2.dp.toPx(),
                         center = point
                     )
+                }
+            }
+
+            if (xAxisLabels.isNotEmpty()) {
+                val labelDenominator = (xAxisLabels.lastIndex).coerceAtLeast(1).toFloat()
+                val textPaint = android.graphics.Paint().apply {
+                    isAntiAlias = true
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+                    textSize = 10.sp.toPx()
+                    textAlign = android.graphics.Paint.Align.CENTER
+                }
+                val labelY = size.height - 6.dp.toPx()
+                xAxisLabels.forEachIndexed { index, label ->
+                    if (label.isBlank()) return@forEachIndexed
+                    val xRatio = index / labelDenominator
+                    val x = leftPad + chartWidth * xRatio
+                    drawContext.canvas.nativeCanvas.drawText(label, x, labelY, textPaint)
                 }
             }
         }
@@ -2180,5 +2220,19 @@ private fun filterScoresByPeriod(
 }
 
 private fun LocalDate.toShortLabel(): String {
-    return format(DateTimeFormatter.ofPattern("M/d(E)", Locale.JAPAN))
+    return format(DateTimeFormatter.ofPattern("d(E)", Locale.JAPAN))
+}
+
+private fun buildChartXAxisLabels(
+    dates: List<LocalDate>,
+    period: AnalyticsPeriod
+): List<String> {
+    val formatter = DateTimeFormatter.ofPattern("d(E)", Locale.JAPAN)
+    return when (period) {
+        AnalyticsPeriod.DAYS_7 -> dates.map { formatter.format(it) }
+        AnalyticsPeriod.DAYS_14, AnalyticsPeriod.DAYS_30 -> dates.map { date ->
+            if (date.dayOfWeek == DayOfWeek.MONDAY) formatter.format(date) else ""
+        }
+        AnalyticsPeriod.ALL -> dates.map { "" }
+    }
 }
