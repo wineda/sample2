@@ -923,6 +923,8 @@ private fun SimpleMultiLineChart(
                 maxValue - ((maxValue - minValue) * (index / 3f))
             }
     }
+    val selectionLineColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+
     Row(modifier = modifier.background(MaterialTheme.colorScheme.surface)) {
         Column(
             modifier = Modifier
@@ -1130,7 +1132,7 @@ private fun SimpleMultiLineChart(
                     .coerceIn(0f, 1f)
                 val selectedX = leftPad + chartWidth * selectedXRatio
                 drawLine(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+                    color = selectionLineColor,
                     start = Offset(selectedX, topPad),
                     end = Offset(selectedX, size.height - bottomPad),
                     strokeWidth = 1.5.dp.toPx()
