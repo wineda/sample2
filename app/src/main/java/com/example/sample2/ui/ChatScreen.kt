@@ -32,10 +32,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.Splitscreen
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewStream
@@ -69,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import com.example.sample2.data.DefaultJournalRepository
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
+import com.example.sample2.data.MessageV2
 import com.example.sample2.ui.analytics.AnalyticsDisplayMode
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.util.formatDate
@@ -118,6 +124,7 @@ fun ChatRoute() {
     var reflectionsVersion by remember { mutableIntStateOf(0) }
     var filterState by remember { mutableStateOf(JournalFilterState()) }
     var showFilterSheet by remember { mutableStateOf(false) }
+    var workModeEnabled by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
@@ -202,8 +209,15 @@ fun ChatRoute() {
         derivedStateOf {
             state.messages
                 .filter { filterState.matches(it) }
+                .filter { message ->
+                    !workModeEnabled || message.hasWorkAction()
+                }
                 .sortedBy { it.timestamp }
         }
+    }
+
+    val workActionSummary = remember(displayMessages) {
+        WorkActionSummary.fromMessages(displayMessages)
     }
 
     val dateLabel = buildJournalDateLabel(
@@ -486,10 +500,14 @@ fun ChatRoute() {
                                     dateLabel = dateLabel,
                                     hasActiveFilter = hasActiveFilter,
                                     isSingleLineMode = state.isSingleLineMode,
+                                    isWorkMode = workModeEnabled,
                                     onMenuClick = {
                                         scope.launch { drawerState.open() }
                                     },
                                     onFilterClick = { showFilterSheet = true },
+                                    onToggleWorkMode = {
+                                        workModeEnabled = !workModeEnabled
+                                    },
                                     onToggleSingleLine = {
                                         state.isSingleLineMode = !state.isSingleLineMode
                                     },
@@ -528,10 +546,24 @@ fun ChatRoute() {
                                     )
                                 }
 
+                                AnimatedVisibility(
+                                    visible = workModeEnabled
+                                ) {
+                                    WorkActionSummaryRow(
+                                        summary = workActionSummary,
+                                        modifier = Modifier.padding(
+                                            start = 12.dp,
+                                            end = 12.dp,
+                                            top = 2.dp,
+                                            bottom = 6.dp
+                                        )
+                                    )
+                                }
+
                                 JournalMessageListPane(
                                     messages = displayMessages,
                                     listState = listState,
-                                    isSingleLineMode = state.isSingleLineMode,
+                                    isSingleLineMode = state.isSingleLineMode || workModeEnabled,
                                     timestampOf = { it.timestamp },
                                     modifier = Modifier
                                         .weight(1f)
@@ -626,7 +658,7 @@ private fun JournalBottomModeBar(
             icon = Icons.Default.EditNote,
             selected = currentMode == JournalScreenMode.Reflection,
             onClick = onOpenReflection
-        )
+        }
     }
 }
 
@@ -635,11 +667,15 @@ private fun JournalCompactMetaRow(
     dateLabel: String,
     hasActiveFilter: Boolean,
     isSingleLineMode: Boolean,
+    isWorkMode: Boolean,
     onMenuClick: () -> Unit,
     onFilterClick: () -> Unit,
+    onToggleWorkMode: () -> Unit,
     onToggleSingleLine: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val effectiveSingleLineMode = isSingleLineMode || isWorkMode
+
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -672,20 +708,131 @@ private fun JournalCompactMetaRow(
             )
 
             CompactHeaderIconButton(
-                selected = isSingleLineMode,
+                selected = isWorkMode,
+                onClick = onToggleWorkMode,
+                icon = Icons.Default.Work,
+                contentDescription = if (isWorkMode) "仕事表示をオフ" else "仕事表示をオン"
+            )
+
+            CompactHeaderIconButton(
+                selected = effectiveSingleLineMode,
                 onClick = onToggleSingleLine,
-                icon = if (isSingleLineMode) {
+                icon = if (effectiveSingleLineMode) {
                     Icons.Default.ViewAgenda
                 } else {
                     Icons.Default.ViewStream
                 },
-                contentDescription = if (isSingleLineMode) {
+                contentDescription = if (effectiveSingleLineMode) {
                     "通常表示に切り替え"
                 } else {
                     "1行表示に切り替え"
                 }
             )
         }
+    }
+}
+
+private data class WorkActionSummary(
+    val delegate: Int,
+    val challenge: Int,
+    val breakdown: Int,
+    val instruct: Int,
+    val quickAction: Int
+) {
+    companion object {
+        fun fromMessages(messages: List<MessageV2>): WorkActionSummary {
+            return WorkActionSummary(
+                delegate = messages.count { it.flags.delegate },
+                challenge = messages.count { it.flags.challenge },
+                breakdown = messages.count { it.flags.breakdown },
+                instruct = messages.count { it.flags.instruct },
+                quickAction = messages.count { it.flags.quickAction }
+            )
+        }
+    }
+}
+
+private fun MessageV2.hasWorkAction(): Boolean {
+    return flags.delegate ||
+            flags.challenge ||
+            flags.breakdown ||
+            flags.instruct ||
+            flags.quickAction
+}
+
+@Composable
+private fun WorkActionSummaryRow(
+    summary: WorkActionSummary,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        WorkActionSummaryItem(
+            icon = Icons.Default.Send,
+            label = "委譲",
+            count = summary.delegate
+        )
+        WorkActionSummaryItem(
+            icon = Icons.Default.Flag,
+            label = "チャレンジ",
+            count = summary.challenge
+        )
+        WorkActionSummaryItem(
+            icon = Icons.Default.Splitscreen,
+            label = "細分化",
+            count = summary.breakdown
+        )
+        WorkActionSummaryItem(
+            icon = Icons.Default.EditNote,
+            label = "指示",
+            count = summary.instruct
+        )
+        WorkActionSummaryItem(
+            icon = Icons.Default.PlayArrow,
+            label = "すぐやる",
+            count = summary.quickAction
+        )
+    }
+}
+
+@Composable
+private fun WorkActionSummaryItem(
+    icon: ImageVector,
+    label: String,
+    count: Int
+) {
+    val iconColor = if (count > 0) {
+        MaterialTheme.colorScheme.tertiary
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+
+    val valueColor = if (count > 0) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = "$label: $count",
+            tint = iconColor,
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            text = count.toString(),
+            color = valueColor,
+            style = MaterialTheme.typography.labelMedium
+        )
     }
 }
 
