@@ -473,12 +473,12 @@ fun PersonalityAnalyticsScreen(
                             }
                         )
                     }
+                    val chartXAxisLabels = buildChartXAxisLabels(
+                        dates = chartDates,
+                        period = selectedPeriod
+                    )
 
                     item {
-                        val chartXAxisLabels = buildChartXAxisLabels(
-                            dates = chartDates,
-                            period = selectedPeriod
-                        )
                         ActionFlagCountChartCard(
                             labels = chartXAxisLabels,
                             series = actionFlagSeries,
