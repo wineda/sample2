@@ -559,7 +559,6 @@ private fun ActionFlagCountChartCard(
     periodLabel: String,
     modifier: Modifier = Modifier
 ) {
-    val maxCount = series.flatMap { it.values }.maxOrNull() ?: 0f
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -585,7 +584,8 @@ private fun ActionFlagCountChartCard(
                 labels = labels,
                 series = series,
                 minValue = 0f,
-                maxValue = maxCount.coerceAtLeast(1f),
+                maxValue = 15f,
+                yAxisTicks = listOf(0f, 5f, 10f, 15f),
                 toggleableLegend = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -601,7 +601,6 @@ private fun SleepAndStepsChartCard(
     series: List<LineSeries>,
     modifier: Modifier = Modifier
 ) {
-    val maxValue = series.flatMap { it.values }.maxOrNull() ?: 0f
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -627,7 +626,8 @@ private fun SleepAndStepsChartCard(
                 labels = labels,
                 series = series,
                 minValue = 0f,
-                maxValue = maxValue.coerceAtLeast(1f),
+                maxValue = 10f,
+                yAxisTicks = listOf(0f, 2f, 4f, 6f, 8f, 10f),
                 toggleableLegend = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -840,6 +840,7 @@ private fun CombinedEmotionChart(
         series = series,
         minValue = 0f,
         maxValue = 100f,
+        yAxisTicks = listOf(0f, 25f, 50f, 75f, 100f),
         toggleableLegend = true,
         modifier = modifier
     )
@@ -851,6 +852,7 @@ private fun MultiLineChart(
     series: List<LineSeries>,
     minValue: Float,
     maxValue: Float,
+    yAxisTicks: List<Float>? = null,
     toggleableLegend: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -918,6 +920,7 @@ private fun MultiLineChart(
                 series = displayedSeries,
                 minValue = minValue,
                 maxValue = maxValue,
+                yAxisTicks = yAxisTicks,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
@@ -935,13 +938,18 @@ private fun SimpleMultiLineChart(
     series: List<LineSeries>,
     minValue: Float,
     maxValue: Float,
+    yAxisTicks: List<Float>? = null,
     modifier: Modifier = Modifier
 ) {
     val gridColor = MaterialTheme.colorScheme.outlineVariant
-    val guideValues = remember(minValue, maxValue) {
-        List(4) { index ->
-            maxValue - ((maxValue - minValue) * (index / 3f))
-        }
+    val guideValues = remember(minValue, maxValue, yAxisTicks) {
+        yAxisTicks
+            ?.takeIf { it.isNotEmpty() }
+            ?.distinct()
+            ?.sortedDescending()
+            ?: List(4) { index ->
+                maxValue - ((maxValue - minValue) * (index / 3f))
+            }
     }
     Row(modifier = modifier.background(MaterialTheme.colorScheme.surface)) {
         Column(
@@ -978,8 +986,9 @@ private fun SimpleMultiLineChart(
             val chartHeight = size.height - topPad - bottomPad
             if (chartWidth <= 0f || chartHeight <= 0f) return@Canvas
 
-            repeat(4) { i ->
-                val y = topPad + chartHeight * (i / 3f)
+            val guideDenominator = (guideValues.lastIndex).coerceAtLeast(1).toFloat()
+            repeat(guideValues.size) { i ->
+                val y = topPad + chartHeight * (i / guideDenominator)
                 drawLine(
                     color = gridColor,
                     start = Offset(leftPad, y),
