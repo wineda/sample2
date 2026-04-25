@@ -111,8 +111,37 @@ fun ReflectionTimelineScreen(
                 label = { Text("キーワード検索") }
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                ReflectionFieldFilter.entries.forEach { filter ->
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ReflectionFieldFilter.entries
+                        .filter { it != ReflectionFieldFilter.TOMORROW_FIRST_ACTION }
+                        .forEach { filter ->
+                            FilterChip(
+                                selected = filter == uiState.fieldFilter,
+                                onClick = {
+                                    uiState = uiState.copy(
+                                        fieldFilter = if (uiState.fieldFilter == filter) null else filter
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = filter.label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontSize = 11.sp
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = filter.icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            )
+                        }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val filter = ReflectionFieldFilter.TOMORROW_FIRST_ACTION
                     FilterChip(
                         selected = filter == uiState.fieldFilter,
                         onClick = {
