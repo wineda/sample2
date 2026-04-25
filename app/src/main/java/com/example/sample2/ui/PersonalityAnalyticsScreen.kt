@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
@@ -41,6 +42,8 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -49,10 +52,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +68,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -1363,12 +1369,15 @@ private fun SelectedDateSelectorRow(
     onSelectDate: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val listState = rememberLazyListState()
     val selectedIndex = remember(dates, selectedDate) {
         dates.indexOf(selectedDate).takeIf { it >= 0 } ?: 0
     }
     val swipeThresholdPx = with(LocalDensity.current) { 28.dp.toPx() }
     var accumulatedDrag by remember(dates, selectedDate) { mutableStateOf(0f) }
+    var showCalendarDialog by rememberSaveable(dates, selectedDate) { mutableStateOf(false) }
+    val selectableDateSet = remember(dates) { dates.toSet() }
 
     LaunchedEffect(selectedIndex, dates) {
         if (dates.isNotEmpty()) {
@@ -1416,6 +1425,89 @@ private fun SelectedDateSelectorRow(
                 colors = selectionChipColors()
             )
         }
+
+        item(key = "calendar_selector") {
+            AssistChip(
+                onClick = { showCalendarDialog = true },
+                label = { Text("カレンダー") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = null
+                    )
+                }
+            )
+        }
+    }
+
+    if (showCalendarDialog) {
+        AvailableDatePickerDialog(
+            availableDates = selectableDateSet,
+            initialDate = selectedDate,
+            onDismiss = { showCalendarDialog = false },
+            onConfirm = { pickedDate ->
+                if (pickedDate in selectableDateSet) {
+                    onSelectDate(pickedDate)
+                    showCalendarDialog = false
+                } else {
+                    android.widget.Toast.makeText(
+                        context,
+                        "データがある日のみ選択できます",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AvailableDatePickerDialog(
+    availableDates: Set<LocalDate>,
+    initialDate: LocalDate?,
+    onDismiss: () -> Unit,
+    onConfirm: (LocalDate) -> Unit
+) {
+    val zoneId = remember { ZoneId.systemDefault() }
+    val today = remember(zoneId) { LocalDate.now(zoneId) }
+    val selectableDates = remember(availableDates, today, zoneId) {
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val date = Instant.ofEpochMilli(utcTimeMillis).atZone(zoneId).toLocalDate()
+                return !date.isAfter(today) && date in availableDates
+            }
+        }
+    }
+    val initialSelectedDateMillis = remember(initialDate, zoneId) {
+        initialDate?.atStartOfDay(zoneId)?.toInstant()?.toEpochMilli()
+    }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialSelectedDateMillis,
+        selectableDates = selectableDates
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val selectedMillis = datePickerState.selectedDateMillis ?: return@TextButton
+                    val selectedDate = Instant.ofEpochMilli(selectedMillis).atZone(zoneId).toLocalDate()
+                    onConfirm(selectedDate)
+                },
+                enabled = datePickerState.selectedDateMillis != null
+            ) {
+                Text("選択")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("キャンセル")
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
     }
 }
 
