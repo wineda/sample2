@@ -766,7 +766,7 @@ private fun WorkActionSummaryRow(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         WorkActionSummaryItem(
@@ -798,6 +798,12 @@ private fun WorkActionSummaryItem(
     count: Int
 ) {
     val uiSpec = actionType.toUiSpec()
+    val active = count > 0
+    val containerColor = if (active) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+    }
     val iconColor = if (count > 0) {
         MaterialTheme.colorScheme.tertiary
     } else {
@@ -810,21 +816,29 @@ private fun WorkActionSummaryItem(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = containerColor,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
-        Icon(
-            painter = painterResource(id = uiSpec.iconRes),
-            contentDescription = "${actionType.label}: $count",
-            tint = iconColor,
-            modifier = Modifier.size(16.dp)
-        )
-        Text(
-            text = count.toString(),
-            color = valueColor,
-            style = MaterialTheme.typography.labelMedium
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = uiSpec.iconRes),
+                contentDescription = "${actionType.label}: $count",
+                tint = iconColor,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = count.toString(),
+                color = valueColor,
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
     }
 }
 
