@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.EditNote
@@ -68,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import com.example.sample2.data.DefaultJournalRepository
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
+import com.example.sample2.ui.analytics.AnalyticsDisplayMode
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.util.formatDate
 import kotlinx.coroutines.launch
@@ -80,6 +82,7 @@ import java.util.Locale
 private enum class JournalScreenMode {
     Journal,
     Analytics,
+    AnalyticsDetail,
     DailyRecord,
     Reflection
 }
@@ -109,6 +112,7 @@ fun ChatRoute() {
 
     var showDailyRecordScreen by remember { mutableStateOf(false) }
     var showPersonalityAnalytics by remember { mutableStateOf(false) }
+    var showPersonalityAnalyticsDetail by remember { mutableStateOf(false) }
     var showReflectionScreen by remember { mutableStateOf(false) }
     var reflectionEditorDate by remember { mutableStateOf<String?>(null) }
     var reflectionsVersion by remember { mutableIntStateOf(0) }
@@ -128,6 +132,7 @@ fun ChatRoute() {
     val currentMode = when {
         showReflectionScreen -> JournalScreenMode.Reflection
         showDailyRecordScreen -> JournalScreenMode.DailyRecord
+        showPersonalityAnalyticsDetail -> JournalScreenMode.AnalyticsDetail
         showPersonalityAnalytics -> JournalScreenMode.Analytics
         else -> JournalScreenMode.Journal
     }
@@ -139,6 +144,7 @@ fun ChatRoute() {
     fun switchToJournal() {
         showDailyRecordScreen = false
         showPersonalityAnalytics = false
+        showPersonalityAnalyticsDetail = false
         showReflectionScreen = false
         showFilterSheet = false
     }
@@ -147,12 +153,22 @@ fun ChatRoute() {
         showFilterSheet = false
         showDailyRecordScreen = false
         showReflectionScreen = false
+        showPersonalityAnalyticsDetail = false
         showPersonalityAnalytics = true
+    }
+
+    fun openAnalyticsDetail() {
+        showFilterSheet = false
+        showDailyRecordScreen = false
+        showReflectionScreen = false
+        showPersonalityAnalytics = false
+        showPersonalityAnalyticsDetail = true
     }
 
     fun openDailyRecord() {
         showFilterSheet = false
         showPersonalityAnalytics = false
+        showPersonalityAnalyticsDetail = false
         showReflectionScreen = false
         showDailyRecordScreen = true
     }
@@ -162,6 +178,7 @@ fun ChatRoute() {
     fun openReflectionTimeline() {
         showFilterSheet = false
         showPersonalityAnalytics = false
+        showPersonalityAnalyticsDetail = false
         showDailyRecordScreen = false
         reflectionEditorDate = null
         showReflectionScreen = true
@@ -170,6 +187,7 @@ fun ChatRoute() {
     fun openReflectionEditor(date: String = todayDateStringForRoute()) {
         showFilterSheet = false
         showPersonalityAnalytics = false
+        showPersonalityAnalyticsDetail = false
         showDailyRecordScreen = false
         reflectionInitialDate = date
         reflectionEditorDate = date
@@ -356,6 +374,7 @@ fun ChatRoute() {
                                 currentMode = currentMode,
                                 onOpenJournal = { switchToJournal() },
                                 onOpenAnalytics = { openAnalytics() },
+                                onOpenAnalyticsDetail = { openAnalyticsDetail() },
                                 onOpenDailyRecord = { openDailyRecord() },
                                 onOpenReflection = { openReflectionTimeline() }
                             )
@@ -430,6 +449,25 @@ fun ChatRoute() {
                             PersonalityAnalyticsScreen(
                                 messages = state.messages,
                                 dailyRecords = dailyRecords,
+                                initialDisplayMode = AnalyticsDisplayMode.CHARTS,
+                                displayModes = listOf(
+                                    AnalyticsDisplayMode.CHARTS,
+                                    AnalyticsDisplayMode.MAP
+                                ),
+                                onUpdateDailyRecord = { updated ->
+                                    state.upsertDailyRecord(updated)
+                                    dailyRecordsVersion++
+                                },
+                                modifier = Modifier.padding(padding)
+                            )
+                        }
+
+                        JournalScreenMode.AnalyticsDetail -> {
+                            PersonalityAnalyticsScreen(
+                                messages = state.messages,
+                                dailyRecords = dailyRecords,
+                                initialDisplayMode = AnalyticsDisplayMode.DETAIL,
+                                displayModes = listOf(AnalyticsDisplayMode.DETAIL),
                                 onUpdateDailyRecord = { updated ->
                                     state.upsertDailyRecord(updated)
                                     dailyRecordsVersion++
@@ -543,6 +581,7 @@ private fun JournalBottomModeBar(
     currentMode: JournalScreenMode,
     onOpenJournal: () -> Unit,
     onOpenAnalytics: () -> Unit,
+    onOpenAnalyticsDetail: () -> Unit,
     onOpenDailyRecord: () -> Unit,
     onOpenReflection: () -> Unit,
     modifier: Modifier = Modifier
@@ -569,7 +608,14 @@ private fun JournalBottomModeBar(
         )
 
         CompactActionChip(
-            text = "日次",
+            text = "詳細",
+            icon = Icons.Default.Psychology,
+            selected = currentMode == JournalScreenMode.AnalyticsDetail,
+            onClick = onOpenAnalyticsDetail
+        )
+
+        CompactActionChip(
+            text = "日時",
             icon = Icons.Default.Today,
             selected = currentMode == JournalScreenMode.DailyRecord,
             onClick = onOpenDailyRecord
