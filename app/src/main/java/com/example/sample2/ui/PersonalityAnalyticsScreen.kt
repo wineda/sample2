@@ -25,11 +25,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
@@ -82,6 +86,11 @@ import com.example.sample2.data.ActionType
 import com.example.sample2.data.DailyRecord
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.SleepData
+import com.example.sample2.data.EmotionType
+import com.example.sample2.ui.ActionHeatmapBlock
+import com.example.sample2.ui.EmotionHeatmapBlock
+import com.example.sample2.ui.filter.PeriodPreset
+import com.example.sample2.ui.formatDate
 import com.example.sample2.util.formatTime
 import java.time.Instant
 import java.time.LocalDate
@@ -93,7 +102,8 @@ import kotlin.math.roundToInt
 
 private enum class AnalyticsDisplayMode {
     DETAIL,
-    CHARTS
+    CHARTS,
+    MAP
 }
 
 private enum class AnalyticsInfoKind {
@@ -205,6 +215,17 @@ fun PersonalityAnalyticsScreen(
     var infoDialogName by rememberSaveable {
         mutableStateOf<String?>(null)
     }
+    val initialPreset = remember { PeriodPreset.values().first() }
+    val initialRange = remember { initialPreset.resolveRange() }
+    var heatmapPeriodName by rememberSaveable {
+        mutableStateOf(initialPreset.name)
+    }
+    var heatmapFromDate by rememberSaveable {
+        mutableStateOf(initialRange.first)
+    }
+    var heatmapToDate by rememberSaveable {
+        mutableStateOf(initialRange.second)
+    }
 
     val displayMode = remember(displayModeName) {
         AnalyticsDisplayMode.valueOf(displayModeName)
@@ -214,6 +235,9 @@ fun PersonalityAnalyticsScreen(
     }
     val detailCompareMode = remember(detailCompareModeName) {
         DetailCompareMode.valueOf(detailCompareModeName)
+    }
+    val heatmapPeriod = remember(heatmapPeriodName) {
+        PeriodPreset.valueOf(heatmapPeriodName)
     }
 
     val filteredRawScoresDesc = remember(allRawScores, selectedPeriod) {
@@ -350,7 +374,7 @@ fun PersonalityAnalyticsScreen(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         )
 
-        if (displayMode != AnalyticsDisplayMode.DETAIL) {
+        if (displayMode == AnalyticsDisplayMode.CHARTS) {
             AnalyticsPeriodSelector(
                 current = selectedPeriod,
                 onChange = { selectedPeriodName = it.name },
@@ -360,7 +384,7 @@ fun PersonalityAnalyticsScreen(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-        } else {
+        } else if (displayMode == AnalyticsDisplayMode.DETAIL) {
             Spacer(modifier = Modifier.height(4.dp))
         }
 
@@ -462,6 +486,64 @@ fun PersonalityAnalyticsScreen(
                             labels = chartDates.map { it.toShortLabel() },
                             series = sleepAndStepsSeries
                         )
+                    }
+                }
+            }
+            AnalyticsDisplayMode.MAP -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    PeriodPresetHeatmapSelector(
+                        selectedPeriod = heatmapPeriod,
+                        onSelectPreset = { preset ->
+                            heatmapPeriodName = preset.name
+                            val (from, to) = preset.resolveRange()
+                            heatmapFromDate = from
+                            heatmapToDate = to
+                        }
+                    )
+                    Text(
+                        text = "${formatDate(heatmapFromDate)} - ${formatDate(heatmapToDate)}",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(bottom = 12.dp)
+                    ) {
+                        items(EmotionType.values().toList()) { emotion ->
+                            Surface(
+                                tonalElevation = 2.dp,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                EmotionHeatmapBlock(
+                                    emotion = emotion,
+                                    messages = messages,
+                                    fromDate = heatmapFromDate,
+                                    toDate = heatmapToDate
+                                )
+                            }
+                        }
+                        items(ActionType.values().toList()) { action ->
+                            Surface(
+                                tonalElevation = 2.dp,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                ActionHeatmapBlock(
+                                    action = action,
+                                    messages = messages,
+                                    fromDate = heatmapFromDate,
+                                    toDate = heatmapToDate
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -856,10 +938,36 @@ private fun SimpleMultiLineChart(
     modifier: Modifier = Modifier
 ) {
     val gridColor = MaterialTheme.colorScheme.outlineVariant
-    Box(modifier = modifier.background(MaterialTheme.colorScheme.surface)) {
+    val guideValues = remember(minValue, maxValue) {
+        List(4) { index ->
+            maxValue - ((maxValue - minValue) * (index / 3f))
+        }
+    }
+    Row(modifier = modifier.background(MaterialTheme.colorScheme.surface)) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(top = 10.dp, bottom = 10.dp, end = 4.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.End
+        ) {
+            guideValues.forEach { value ->
+                Text(
+                    text = if (value % 1f == 0f) {
+                        value.toInt().toString()
+                    } else {
+                        String.format(Locale.JAPAN, "%.1f", value)
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         Canvas(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
+                .fillMaxHeight()
                 .background(MaterialTheme.colorScheme.surface)
         ) {
             val leftPad = 6.dp.toPx()
@@ -1036,6 +1144,34 @@ private fun AnalyticsDisplayModeToggle(
                 label = "グラフ",
                 icon = { Icon(Icons.Default.ShowChart, contentDescription = null) },
                 onClick = { onChange(AnalyticsDisplayMode.CHARTS) }
+            )
+            ToggleChipLikeButton(
+                modifier = Modifier.weight(1f),
+                selected = current == AnalyticsDisplayMode.MAP,
+                label = "マップ",
+                icon = { Icon(Icons.Default.GridView, contentDescription = null) },
+                onClick = { onChange(AnalyticsDisplayMode.MAP) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PeriodPresetHeatmapSelector(
+    selectedPeriod: PeriodPreset,
+    onSelectPreset: (PeriodPreset) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        PeriodPreset.values().forEach { preset ->
+            FilterChip(
+                selected = selectedPeriod == preset,
+                onClick = { onSelectPreset(preset) },
+                label = { Text(preset.label) },
+                colors = selectionChipColors()
             )
         }
     }

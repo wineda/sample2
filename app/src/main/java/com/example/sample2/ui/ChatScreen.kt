@@ -32,7 +32,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
@@ -70,7 +69,6 @@ import com.example.sample2.data.DefaultJournalRepository
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
-import com.example.sample2.ui.theme.ChatGptTheme
 import com.example.sample2.util.formatDate
 import kotlinx.coroutines.launch
 import java.io.File
@@ -82,7 +80,6 @@ import java.util.Locale
 private enum class JournalScreenMode {
     Journal,
     Analytics,
-    Heatmap,
     DailyRecord,
     Reflection
 }
@@ -110,7 +107,6 @@ fun ChatRoute() {
         }
     }
 
-    var showHeatmap by remember { mutableStateOf(false) }
     var showDailyRecordScreen by remember { mutableStateOf(false) }
     var showPersonalityAnalytics by remember { mutableStateOf(false) }
     var showReflectionScreen by remember { mutableStateOf(false) }
@@ -133,7 +129,6 @@ fun ChatRoute() {
         showReflectionScreen -> JournalScreenMode.Reflection
         showDailyRecordScreen -> JournalScreenMode.DailyRecord
         showPersonalityAnalytics -> JournalScreenMode.Analytics
-        showHeatmap -> JournalScreenMode.Heatmap
         else -> JournalScreenMode.Journal
     }
 
@@ -142,7 +137,6 @@ fun ChatRoute() {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
 
     fun switchToJournal() {
-        showHeatmap = false
         showDailyRecordScreen = false
         showPersonalityAnalytics = false
         showReflectionScreen = false
@@ -152,22 +146,12 @@ fun ChatRoute() {
     fun openAnalytics() {
         showFilterSheet = false
         showDailyRecordScreen = false
-        showHeatmap = false
         showReflectionScreen = false
         showPersonalityAnalytics = true
     }
 
-    fun openHeatmap() {
-        showFilterSheet = false
-        showDailyRecordScreen = false
-        showPersonalityAnalytics = false
-        showReflectionScreen = false
-        showHeatmap = true
-    }
-
     fun openDailyRecord() {
         showFilterSheet = false
-        showHeatmap = false
         showPersonalityAnalytics = false
         showReflectionScreen = false
         showDailyRecordScreen = true
@@ -177,7 +161,6 @@ fun ChatRoute() {
 
     fun openReflectionTimeline() {
         showFilterSheet = false
-        showHeatmap = false
         showPersonalityAnalytics = false
         showDailyRecordScreen = false
         reflectionEditorDate = null
@@ -186,7 +169,6 @@ fun ChatRoute() {
 
     fun openReflectionEditor(date: String = todayDateStringForRoute()) {
         showFilterSheet = false
-        showHeatmap = false
         showPersonalityAnalytics = false
         showDailyRecordScreen = false
         reflectionInitialDate = date
@@ -374,7 +356,6 @@ fun ChatRoute() {
                                 currentMode = currentMode,
                                 onOpenJournal = { switchToJournal() },
                                 onOpenAnalytics = { openAnalytics() },
-                                onOpenHeatmap = { openHeatmap() },
                                 onOpenDailyRecord = { openDailyRecord() },
                                 onOpenReflection = { openReflectionTimeline() }
                             )
@@ -455,16 +436,6 @@ fun ChatRoute() {
                                 },
                                 modifier = Modifier.padding(padding)
                             )
-                        }
-
-                        JournalScreenMode.Heatmap -> {
-                            ChatGptTheme {
-                                HeatmapScreen(
-                                    state = state,
-                                    onBack = { switchToJournal() },
-                                    modifier = Modifier.padding(padding)
-                                )
-                            }
                         }
 
                         JournalScreenMode.Journal -> {
@@ -572,7 +543,6 @@ private fun JournalBottomModeBar(
     currentMode: JournalScreenMode,
     onOpenJournal: () -> Unit,
     onOpenAnalytics: () -> Unit,
-    onOpenHeatmap: () -> Unit,
     onOpenDailyRecord: () -> Unit,
     onOpenReflection: () -> Unit,
     modifier: Modifier = Modifier
@@ -596,13 +566,6 @@ private fun JournalBottomModeBar(
             icon = Icons.Default.ShowChart,
             selected = currentMode == JournalScreenMode.Analytics,
             onClick = onOpenAnalytics
-        )
-
-        CompactActionChip(
-            text = "ヒートマップ",
-            icon = Icons.Default.GridView,
-            selected = currentMode == JournalScreenMode.Heatmap,
-            onClick = onOpenHeatmap
         )
 
         CompactActionChip(
