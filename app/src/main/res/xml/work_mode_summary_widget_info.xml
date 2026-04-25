@@ -8,4 +8,4 @@
     android:initialLayout="@layout/widget_work_mode_summary"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:description="仕事モードの今日の集計" />
+    android:description="@string/work_mode_summary_widget_description" />

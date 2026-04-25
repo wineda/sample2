@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">sample2</string>
+    <string name="work_mode_summary_widget_description">仕事モードの今日の集計</string>
 </resources>
