@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.SentimentDissatisfied
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.WbIncandescent
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,6 +51,7 @@ private enum class ReflectionFieldFilter(
     SUMMARY("ひとこと", Icons.Default.Chat),
     WINS("うまくいった", Icons.Default.ThumbUp),
     DIFFICULTIES("しんどかった", Icons.Default.SentimentDissatisfied),
+    INSIGHTS("気づき", Icons.Default.WbIncandescent),
     TOMORROW_FIRST_ACTION("明日まずやる", Icons.Default.TaskAlt)
 }
 
@@ -270,6 +272,14 @@ private fun ReflectionTimelineCard(
                     fullText = fullText
                 )
             }
+            if (fieldFilter == null || fieldFilter == ReflectionFieldFilter.INSIGHTS) {
+                TimelineSnippetLine(
+                    label = ReflectionFieldFilter.INSIGHTS.label,
+                    icon = ReflectionFieldFilter.INSIGHTS.icon,
+                    text = reflection.insights,
+                    fullText = fullText
+                )
+            }
             if (fieldFilter == null || fieldFilter == ReflectionFieldFilter.TOMORROW_FIRST_ACTION) {
                 TimelineSnippetLine(
                     label = ReflectionFieldFilter.TOMORROW_FIRST_ACTION.label,
@@ -337,6 +347,7 @@ private fun buildTimelineItems(
                 ReflectionFieldFilter.SUMMARY -> reflection.summary.isNotBlank()
                 ReflectionFieldFilter.WINS -> reflection.wins.isNotBlank()
                 ReflectionFieldFilter.DIFFICULTIES -> reflection.difficulties.isNotBlank()
+                ReflectionFieldFilter.INSIGHTS -> reflection.insights.isNotBlank()
                 ReflectionFieldFilter.TOMORROW_FIRST_ACTION -> reflection.tomorrowFirstAction.isNotBlank()
             }
         }
