@@ -954,7 +954,8 @@ private fun MultiLineChart(
             CompactChartTickLabelRow(
                 labels = labels,
                 startPadding = 34.dp + 4.dp + 6.dp,
-                endPadding = 6.dp
+                endPadding = 6.dp,
+                centerAllLabels = drawStyle == ChartDrawStyle.BAR
             )
         }
     }
@@ -2300,6 +2301,7 @@ private fun CompactChartTickLabelRow(
     labels: List<String>,
     startPadding: Dp = 0.dp,
     endPadding: Dp = 0.dp,
+    centerAllLabels: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     if (labels.isEmpty()) return
@@ -2315,10 +2317,14 @@ private fun CompactChartTickLabelRow(
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = when (index) {
-                    0 -> TextAlign.Start
-                    labels.lastIndex -> TextAlign.End
-                    else -> TextAlign.Center
+                textAlign = if (centerAllLabels) {
+                    TextAlign.Center
+                } else {
+                    when (index) {
+                        0 -> TextAlign.Start
+                        labels.lastIndex -> TextAlign.End
+                        else -> TextAlign.Center
+                    }
                 },
                 maxLines = 1
             )
