@@ -295,8 +295,11 @@ fun PersonalityAnalyticsScreen(
         )
     }
 
-    val chartDates = remember(filteredRawScoresAsc) {
-        filteredRawScoresAsc.map { it.date }
+    val chartDates = remember(allRawScoresDesc, selectedPeriod) {
+        buildChartDatesByPeriod(
+            allDatesDesc = allRawScoresDesc.map { it.date },
+            period = selectedPeriod
+        )
     }
 
     val dailyRecordByLocalDate = remember(dailyRecords) {
@@ -2499,6 +2502,22 @@ private fun filterScoresByPeriod(
     }
 
     return scores.filter { it.date >= from }
+}
+
+
+private fun buildChartDatesByPeriod(
+    allDatesDesc: List<LocalDate>,
+    period: AnalyticsPeriod
+): List<LocalDate> {
+    if (allDatesDesc.isEmpty()) return emptyList()
+
+    val latest = allDatesDesc.maxOrNull() ?: return emptyList()
+    return when (period) {
+        AnalyticsPeriod.DAYS_7 -> (0L..6L).map { latest.minusDays(6 - it) }
+        AnalyticsPeriod.DAYS_14 -> (0L..13L).map { latest.minusDays(13 - it) }
+        AnalyticsPeriod.DAYS_30 -> (0L..29L).map { latest.minusDays(29 - it) }
+        AnalyticsPeriod.ALL -> allDatesDesc.distinct().sorted()
+    }
 }
 
 private fun LocalDate.toDayWeekLabel(): String {
