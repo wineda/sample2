@@ -80,6 +80,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import com.example.sample2.analytics.DailyPersonalityScore
 import com.example.sample2.analytics.PersonalityScoreModel
 import com.example.sample2.analytics.PersonalityState
@@ -136,6 +137,12 @@ private data class TimedLineSeries(
     val color: Color,
     val values: List<Float>,
     val xValues: List<Float>
+)
+
+private data class GraphEntry(
+    val date: LocalDate,
+    val label: String,
+    val value: Float
 )
 
 private fun nextAnalyticsPeriod(period: AnalyticsPeriod): AnalyticsPeriod {
@@ -329,25 +336,49 @@ fun PersonalityAnalyticsScreen(
         }
     }
 
-    val sleepHoursSeries = remember(chartDates, dailyRecordByLocalDate) {
-        chartDates.map { date ->
-            val minutes = dailyRecordByLocalDate[date]?.sleep?.durationMinutes ?: 0
-            (minutes / 60f).coerceAtLeast(0f)
-        }
-    }
-
-    val stepsInThousandsSeries = remember(chartDates, dailyRecordByLocalDate) {
-        chartDates.map { date ->
-            val steps = dailyRecordByLocalDate[date]?.steps ?: 0
-            (steps / 1000f).coerceAtLeast(0f)
-        }
-    }
-
     val chartXAxisLabels = remember(chartDates, selectedPeriod) {
         buildChartXAxisLabels(
             dates = chartDates,
             period = selectedPeriod
         )
+    }
+
+    val stepsValueByDate = remember(dailyRecordByLocalDate) {
+        dailyRecordByLocalDate.mapValues { (_, record) ->
+            (record.steps / 1000f).coerceAtLeast(0f)
+        }
+    }
+
+    val sleepValueByDate = remember(dailyRecordByLocalDate) {
+        dailyRecordByLocalDate.mapValues { (_, record) ->
+            (record.sleep.durationMinutes / 60f).coerceAtLeast(0f)
+        }
+    }
+
+    val stepGraphEntries = remember(chartDates, chartXAxisLabels, stepsValueByDate) {
+        buildGraphEntries(
+            dates = chartDates,
+            labels = chartXAxisLabels,
+            valueByDate = stepsValueByDate
+        )
+    }
+
+    val sleepGraphEntries = remember(chartDates, chartXAxisLabels, sleepValueByDate) {
+        buildGraphEntries(
+            dates = chartDates,
+            labels = chartXAxisLabels,
+            valueByDate = sleepValueByDate
+        )
+    }
+
+    LaunchedEffect(chartDates, stepGraphEntries, sleepGraphEntries) {
+        Log.d(AnalyticsLogTag, "displayDates=${chartDates.joinToString()}")
+        stepGraphEntries.forEach { entry ->
+            Log.d(AnalyticsLogTag, "steps entry date=${entry.date} label=${entry.label} value=${entry.value}")
+        }
+        sleepGraphEntries.forEach { entry ->
+            Log.d(AnalyticsLogTag, "sleep entry date=${entry.date} label=${entry.label} value=${entry.value}")
+        }
     }
 
     val selectedDate = remember(allRawScoresDesc, selectedDateText) {
@@ -497,19 +528,17 @@ fun PersonalityAnalyticsScreen(
                     }
                     item {
                         MetricBarChartCard(
-                            labels = chartXAxisLabels,
+                            entries = stepGraphEntries,
                             title = "運動推移",
                             seriesLabel = "歩数(千歩)",
-                            values = stepsInThousandsSeries,
                             color = StepsChartColor
                         )
                     }
                     item {
                         MetricBarChartCard(
-                            labels = chartXAxisLabels,
+                            entries = sleepGraphEntries,
                             title = "睡眠推移",
                             seriesLabel = "睡眠時間(h)",
-                            values = sleepHoursSeries,
                             color = SleepChartColor
                         )
                     }
@@ -622,10 +651,9 @@ private fun ActionFlagCountChartCard(
 
 @Composable
 private fun MetricBarChartCard(
-    labels: List<String>,
+    entries: List<GraphEntry>,
     title: String,
     seriesLabel: String,
-    values: List<Float>,
     color: Color,
     startPadding: Dp = 0.dp,
     endPadding: Dp = 0.dp,
@@ -650,9 +678,8 @@ private fun MetricBarChartCard(
             )
 
             SimpleBarChart(
-                labels = labels,
+                entries = entries,
                 seriesLabel = seriesLabel,
-                values = values,
                 color = color,
                 minValue = 0f,
                 maxValue = 10f,
@@ -667,9 +694,8 @@ private fun MetricBarChartCard(
 
 @Composable
 private fun SimpleBarChart(
-    labels: List<String>,
+    entries: List<GraphEntry>,
     seriesLabel: String,
-    values: List<Float>,
     color: Color,
     minValue: Float,
     maxValue: Float,
@@ -677,8 +703,8 @@ private fun SimpleBarChart(
     modifier: Modifier = Modifier
 ) {
     MultiLineChart(
-        labels = labels,
-        series = listOf(LineSeries(seriesLabel, color, values)),
+        labels = entries.map { it.label },
+        series = listOf(LineSeries(seriesLabel, color, entries.map { it.value })),
         minValue = minValue,
         maxValue = maxValue,
         yAxisTicks = yAxisTicks,
@@ -2522,6 +2548,21 @@ private fun buildChartDatesByPeriod(
 
 private fun LocalDate.toDayWeekLabel(): String {
     return format(DateTimeFormatter.ofPattern("d(E)", Locale.JAPAN))
+}
+
+
+private fun buildGraphEntries(
+    dates: List<LocalDate>,
+    labels: List<String>,
+    valueByDate: Map<LocalDate, Float>
+): List<GraphEntry> {
+    return dates.mapIndexed { index, date ->
+        GraphEntry(
+            date = date,
+            label = labels.getOrElse(index) { "" },
+            value = valueByDate[date] ?: 0f
+        )
+    }
 }
 
 private fun buildSmoothLinePath(points: List<Offset>): Path {
