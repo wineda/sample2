@@ -103,6 +103,8 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+private const val AnalyticsLogTag = "PersonalityAnalytics"
+
 enum class AnalyticsDisplayMode {
     DETAIL,
     CHARTS,
