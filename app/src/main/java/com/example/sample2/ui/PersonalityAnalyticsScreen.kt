@@ -581,7 +581,9 @@ private fun ActionFlagCountChartCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = startPadding, end = endPadding),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -622,7 +624,9 @@ private fun MetricBarChartCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = startPadding, end = endPadding),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -687,7 +691,9 @@ private fun DetailQuickMetaRow(
     } ?: "未選択"
 
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = startPadding, end = endPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -709,7 +715,9 @@ private fun OverallTrendChartCard(
     val swipeThresholdPx = with(LocalDensity.current) { 36.dp.toPx() }
     var accumulatedDrag by remember(currentPeriod) { mutableStateOf(0f) }
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = startPadding, end = endPadding),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -935,7 +943,9 @@ private fun MultiLineChart(
                     .fillMaxWidth()
             )
             CompactChartTickLabelRow(
-                labels = labels
+                labels = labels,
+                startPadding = 34.dp + 4.dp + 6.dp,
+                endPadding = 6.dp
             )
         }
     }
@@ -974,6 +984,7 @@ private fun SimpleMultiLineChart(
         Column(
             modifier = Modifier
                 .fillMaxHeight()
+                .width(34.dp)
                 .padding(top = 10.dp, bottom = 10.dp, end = 4.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.End
@@ -1797,7 +1808,9 @@ private fun DailyMessagePseudoTrendCard(
     var accumulatedDrag by remember(date) { mutableStateOf(0f) }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = startPadding, end = endPadding),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -2274,11 +2287,15 @@ private fun SimpleLineChart(
 @Composable
 private fun CompactChartTickLabelRow(
     labels: List<String>,
+    startPadding: Dp = 0.dp,
+    endPadding: Dp = 0.dp,
     modifier: Modifier = Modifier
 ) {
     if (labels.isEmpty()) return
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = startPadding, end = endPadding),
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         labels.forEachIndexed { index, label ->
