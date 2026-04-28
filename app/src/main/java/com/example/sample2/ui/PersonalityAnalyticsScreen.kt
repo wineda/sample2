@@ -578,6 +578,8 @@ private fun ActionFlagCountChartCard(
     labels: List<String>,
     series: List<LineSeries>,
     smoothLine: Boolean,
+    startPadding: Dp = 0.dp,
+    endPadding: Dp = 0.dp,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -621,6 +623,8 @@ private fun MetricBarChartCard(
     seriesLabel: String,
     values: List<Float>,
     color: Color,
+    startPadding: Dp = 0.dp,
+    endPadding: Dp = 0.dp,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -684,6 +688,8 @@ private fun SimpleBarChart(
 @Composable
 private fun DetailQuickMetaRow(
     selectedDate: LocalDate?,
+    startPadding: Dp = 0.dp,
+    endPadding: Dp = 0.dp,
     modifier: Modifier = Modifier
 ) {
     val dateText = selectedDate?.let {
@@ -710,6 +716,8 @@ private fun OverallTrendChartCard(
     currentPeriod: AnalyticsPeriod,
     onSwipeToBroaderPeriod: () -> Unit,
     onSwipeToNarrowerPeriod: () -> Unit,
+    startPadding: Dp = 0.dp,
+    endPadding: Dp = 0.dp,
     modifier: Modifier = Modifier
 ) {
     val swipeThresholdPx = with(LocalDensity.current) { 36.dp.toPx() }
@@ -1683,6 +1691,8 @@ private fun DailyMessagePseudoTrendCard(
     comparisonDailyRecord: DailyRecord?,
     onSwipeToOlderDate: () -> Unit,
     onSwipeToNewerDate: () -> Unit,
+    startPadding: Dp = 0.dp,
+    endPadding: Dp = 0.dp,
     modifier: Modifier = Modifier
 ) {
     val points = remember(messages, dailyRecord) {
