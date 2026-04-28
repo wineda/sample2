@@ -325,19 +325,18 @@ fun PersonalityAnalyticsScreen(
         }
     }
 
-    val sleepAndStepsSeries = remember(chartDates, dailyRecordByLocalDate) {
-        val sleepHoursSeries = chartDates.map { date ->
+    val sleepHoursSeries = remember(chartDates, dailyRecordByLocalDate) {
+        chartDates.map { date ->
             val minutes = dailyRecordByLocalDate[date]?.sleep?.durationMinutes ?: 0
             (minutes / 60f).coerceAtLeast(0f)
         }
-        val stepsInThousandsSeries = chartDates.map { date ->
+    }
+
+    val stepsInThousandsSeries = remember(chartDates, dailyRecordByLocalDate) {
+        chartDates.map { date ->
             val steps = dailyRecordByLocalDate[date]?.steps ?: 0
             (steps / 1000f).coerceAtLeast(0f)
         }
-        listOf(
-            LineSeries(label = "睡眠時間(h)", color = SleepChartColor, values = sleepHoursSeries),
-            LineSeries(label = "歩数(千歩)", color = StepsChartColor, values = stepsInThousandsSeries)
-        )
     }
 
     val chartXAxisLabels = remember(chartDates, selectedPeriod) {
@@ -493,10 +492,21 @@ fun PersonalityAnalyticsScreen(
                         )
                     }
                     item {
-                        SleepAndStepsChartCard(
+                        MetricBarChartCard(
                             labels = chartXAxisLabels,
-                            series = sleepAndStepsSeries,
-                            smoothLine = selectedPeriod == AnalyticsPeriod.ALL
+                            title = "運動推移",
+                            seriesLabel = "歩数(千歩)",
+                            values = stepsInThousandsSeries,
+                            color = StepsChartColor
+                        )
+                    }
+                    item {
+                        MetricBarChartCard(
+                            labels = chartXAxisLabels,
+                            title = "睡眠推移",
+                            seriesLabel = "睡眠時間(h)",
+                            values = sleepHoursSeries,
+                            color = SleepChartColor
                         )
                     }
                 }
@@ -590,8 +600,8 @@ private fun ActionFlagCountChartCard(
                 labels = labels,
                 series = series,
                 minValue = 0f,
-                maxValue = 15f,
-                yAxisTicks = listOf(0f, 5f, 10f, 15f),
+                maxValue = 10f,
+                yAxisTicks = listOf(0f, 2f, 4f, 6f, 8f, 10f),
                 toggleableLegend = true,
                 smoothLine = smoothLine,
                 modifier = Modifier
@@ -603,10 +613,12 @@ private fun ActionFlagCountChartCard(
 }
 
 @Composable
-private fun SleepAndStepsChartCard(
+private fun MetricBarChartCard(
     labels: List<String>,
-    series: List<LineSeries>,
-    smoothLine: Boolean,
+    title: String,
+    seriesLabel: String,
+    values: List<Float>,
+    color: Color,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -620,25 +632,49 @@ private fun SleepAndStepsChartCard(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text = "運動・睡眠 推移",
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
-            MultiLineChart(
+            SimpleBarChart(
                 labels = labels,
-                series = series,
+                seriesLabel = seriesLabel,
+                values = values,
+                color = color,
                 minValue = 0f,
                 maxValue = 10f,
                 yAxisTicks = listOf(0f, 2f, 4f, 6f, 8f, 10f),
-                toggleableLegend = true,
-                smoothLine = smoothLine,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
             )
         }
     }
+}
+
+@Composable
+private fun SimpleBarChart(
+    labels: List<String>,
+    seriesLabel: String,
+    values: List<Float>,
+    color: Color,
+    minValue: Float,
+    maxValue: Float,
+    yAxisTicks: List<Float>,
+    modifier: Modifier = Modifier
+) {
+    MultiLineChart(
+        labels = labels,
+        series = listOf(LineSeries(seriesLabel, color, values)),
+        minValue = minValue,
+        maxValue = maxValue,
+        yAxisTicks = yAxisTicks,
+        toggleableLegend = false,
+        smoothLine = false,
+        drawStyle = ChartDrawStyle.BAR,
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -767,6 +803,7 @@ private val ActionChartColors = listOf(
 )
 private val SleepChartColor = Color(0xFF3949AB)
 private val StepsChartColor = Color(0xFF00897B)
+private enum class ChartDrawStyle { LINE, BAR }
 
 @Composable
 private fun CombinedEmotionChart(
@@ -814,6 +851,7 @@ private fun MultiLineChart(
     yAxisTicks: List<Float>? = null,
     toggleableLegend: Boolean = false,
     smoothLine: Boolean = false,
+    drawStyle: ChartDrawStyle = ChartDrawStyle.LINE,
     modifier: Modifier = Modifier
 ) {
     var hiddenSeriesLabels by remember(series) {
@@ -891,6 +929,7 @@ private fun MultiLineChart(
                 maxValue = maxValue,
                 yAxisTicks = yAxisTicks,
                 smoothLine = smoothLine,
+                drawStyle = drawStyle,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
@@ -916,6 +955,7 @@ private fun SimpleMultiLineChart(
     maxValue: Float,
     yAxisTicks: List<Float>? = null,
     smoothLine: Boolean = false,
+    drawStyle: ChartDrawStyle = ChartDrawStyle.LINE,
     modifier: Modifier = Modifier
 ) {
     val gridColor = MaterialTheme.colorScheme.outlineVariant
@@ -1102,7 +1142,16 @@ private fun SimpleMultiLineChart(
                 } else {
                     buildPoints(item.values)
                 }
-                if (points.size >= 2) {
+                if (drawStyle == ChartDrawStyle.BAR) {
+                    val barWidth = (chartWidth / (points.size.coerceAtLeast(1) * 1.6f)).coerceAtLeast(3.dp.toPx())
+                    points.forEach { point ->
+                        drawRect(
+                            color = item.color,
+                            topLeft = Offset(point.x - barWidth / 2f, point.y),
+                            size = androidx.compose.ui.geometry.Size(barWidth, size.height - bottomPad - point.y)
+                        )
+                    }
+                } else if (points.size >= 2) {
                     val path = if (smoothLine && points.size >= 3) {
                         buildSmoothLinePath(points)
                     } else {
@@ -1123,12 +1172,14 @@ private fun SimpleMultiLineChart(
                         )
                     )
                 }
-                points.forEach { point ->
-                    drawCircle(
-                        color = item.color,
-                        radius = 2.dp.toPx(),
-                        center = point
-                    )
+                if (drawStyle == ChartDrawStyle.LINE) {
+                    points.forEach { point ->
+                        drawCircle(
+                            color = item.color,
+                            radius = 2.dp.toPx(),
+                            center = point
+                        )
+                    }
                 }
             }
 
