@@ -108,6 +108,7 @@ private const val AnalyticsLogTag = "PersonalityAnalytics"
 
 private object AnalyticsColors {
     val Bg = Color(0xFFFFFFFF)
+    val BgVariant = Color(0xFFF7F7F8)
     val BgSoft = Color(0xFFF7F7F8)
     val Ink = Color(0xFF0A0A0B)
     val InkSoft = Color(0xFF4A4A4F)
