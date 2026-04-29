@@ -403,23 +403,25 @@ fun ChatRoute() {
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     floatingActionButton = {
-                        FloatingActionButton(
-                            onClick = {
-                                quickInputText = state.inputText
-                                showQuickInputDialog = true
-                            },
-                            containerColor = Color(0xFF1A1A1A),
-                            contentColor = Color.White,
-                            shape = CircleShape,
-                            modifier = Modifier
-                                .size(56.dp)
-                                .padding(end = 20.dp, bottom = 16.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "新しい記録",
-                                modifier = Modifier.size(28.dp)
-                            )
+                        if (currentMode == JournalScreenMode.DailyRecord) {
+                            FloatingActionButton(
+                                onClick = {
+                                    quickInputText = state.inputText
+                                    showQuickInputDialog = true
+                                },
+                                containerColor = Color(0xFF1A1A1A),
+                                contentColor = Color.White,
+                                shape = CircleShape,
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .padding(end = 20.dp, bottom = 16.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "新しい記録",
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
                         }
                     },
                     bottomBar = {
