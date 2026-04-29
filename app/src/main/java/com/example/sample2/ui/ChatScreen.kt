@@ -70,6 +70,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.sample2.data.DefaultJournalRepository
+import com.example.sample2.data.ActionType
 import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
