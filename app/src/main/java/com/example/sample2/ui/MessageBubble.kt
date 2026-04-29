@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.sample2.BubbleColor
 import com.example.sample2.TextColor
 import com.example.sample2.TimeColor
@@ -194,11 +195,7 @@ fun EmotionResponseChildBubble(
                 .padding(vertical = 6.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Text(
-                text = formatTime(message.timestamp),
-                style = MaterialTheme.typography.labelSmall,
-                color = TimeColor
-            )
+            // Keep the time column width for alignment, but hide child time text.
         }
 
         Spacer(modifier = Modifier.width(TimeToStatusSpacing))
@@ -221,14 +218,29 @@ fun EmotionResponseChildBubble(
                     onLongClick = { onLongClick(message) }
                 )
         ) {
-            Text(
-                text = message.text,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = TextColor,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+            Box(
+                modifier = Modifier.padding(
+                    start = 12.dp,
+                    top = 7.dp,
+                    end = 12.dp,
+                    bottom = 8.dp
+                )
+            ) {
+                Text(
+                    text = message.text,
+                    modifier = Modifier.padding(end = 40.dp, bottom = 12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextColor,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = formatTime(message.timestamp),
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+            }
         }
     }
 }
