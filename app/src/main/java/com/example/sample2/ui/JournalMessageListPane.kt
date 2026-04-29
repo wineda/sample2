@@ -35,7 +35,11 @@ fun <T> JournalMessageListPane(
     isSingleLineMode: Boolean,
     timestampOf: (T) -> Long,
     modifier: Modifier = Modifier,
-    itemContent: @Composable (T) -> Unit
+    itemContent: @Composable (
+        message: T,
+        isConnectedToPreviousInDay: Boolean,
+        isConnectedToNextInDay: Boolean
+    ) -> Unit
 ) {
     val scope = rememberCoroutineScope()
 
@@ -67,16 +71,26 @@ fun <T> JournalMessageListPane(
         ) {
             itemsIndexed(messages) { index, message ->
                 val previous = messages.getOrNull(index - 1)
+                val next = messages.getOrNull(index + 1)
                 val currentTimestamp = timestampOf(message)
+                val currentDateKey = getDateKey(currentTimestamp)
+                val isConnectedToPreviousInDay =
+                    previous != null && getDateKey(timestampOf(previous)) == currentDateKey
+                val isConnectedToNextInDay =
+                    next != null && getDateKey(timestampOf(next)) == currentDateKey
 
                 if (
                     previous == null ||
-                    getDateKey(timestampOf(previous)) != getDateKey(currentTimestamp)
+                    !isConnectedToPreviousInDay
                 ) {
                     DateLabel(currentTimestamp)
                 }
 
-                itemContent(message)
+                itemContent(
+                    message,
+                    isConnectedToPreviousInDay,
+                    isConnectedToNextInDay
+                )
             }
         }
 
