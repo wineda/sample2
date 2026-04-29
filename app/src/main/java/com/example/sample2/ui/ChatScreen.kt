@@ -596,7 +596,6 @@ fun ChatRoute() {
                                         MessageBubble(
                                             message = msg,
                                             state = state,
-                                            hasChildren = childEntries.isNotEmpty(),
                                             onDelete = { state.deleteMessage(msg) },
                                             onUpdate = { updated ->
                                                 state.updateMessage(updated)

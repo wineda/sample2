@@ -101,7 +101,6 @@ private val CategoryBarWidth = 4.dp
 fun MessageBubble(
     message: MessageV2,
     state: JournalViewModel,
-    hasChildren: Boolean,
     onDelete: () -> Unit,
     onUpdate: (MessageV2) -> Unit,
     onDoubleClick: (MessageV2) -> Unit = {}
@@ -151,14 +150,7 @@ fun MessageBubble(
             )
         }
 
-        Spacer(modifier = Modifier.width(TimeToStatusSpacing))
-
-        StatusIconBox(
-            message = message,
-            modifier = Modifier.width(StatusColumnWidth)
-        )
-
-        Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
+        Spacer(modifier = Modifier.width(TimeToStatusSpacing + StatusColumnWidth + StatusToBubbleSpacing))
 
         Row(
             modifier = Modifier
@@ -184,7 +176,7 @@ fun MessageBubble(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.Top
                 ) {
                     StatusIconBox(
@@ -196,55 +188,46 @@ fun MessageBubble(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(
-                            text = message.emotions.maxEmotionOrNull()?.label ?: "記録",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = categoryColorFor(message)
-                        )
+                        val emotionType = message.emotions.maxEmotionOrNull()
+                        val categoryLabel = emotionTypeToLabel(emotionType)
+                        if (categoryLabel != null) {
+                            Text(
+                                text = categoryLabel,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = categoryColorFor(message)
+                            )
+                        }
                         Text(
                             text = displayText,
                             style = MaterialTheme.typography.bodyLarge.copy(
-                                fontSize = 16.sp,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = (-0.16).sp
                             ),
                             color = TextColor,
-                            maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
-                            overflow = if (state.isSingleLineMode) TextOverflow.Ellipsis else TextOverflow.Clip
+                            maxLines = if (state.isSingleLineMode) 1 else 2,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        Text(
-                            text = formatTime(message.timestamp),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace
-                            ),
-                            color = Color(0xFF9CA3AF)
-                        )
-                    }
-                    if (!hasChildren) {
-                        Surface(
-                            color = Color(0xFFE5E7EB),
-                            shape = RoundedCornerShape(999.dp)
-                        ) {
-                            Text(
-                                text = "対処中",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = Color(0xFF6B7280)
-                            )
-                        }
                     }
                 }
             }
         }
     }
 }
+
+private fun emotionTypeToLabel(type: EmotionType?): String? =
+    when (type) {
+        EmotionType.ANXIETY -> "不安・焦り"
+        EmotionType.ANGER -> "怒り・不満"
+        EmotionType.TIREDNESS -> "疲れ"
+        EmotionType.JOY -> "喜び"
+        EmotionType.CALM -> "安心"
+        EmotionType.SADNESS -> "悲しみ"
+        null -> "メモ"
+    }
 
 @Composable
 fun EmotionResponseChildBubble(
