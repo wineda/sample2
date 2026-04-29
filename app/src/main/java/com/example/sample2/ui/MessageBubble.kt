@@ -5,6 +5,7 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.text.format.DateFormat
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -76,14 +77,13 @@ private val TimelineColumnWidth = 24.dp
 
 private val TimeToStatusSpacing = 2.dp
 private val StatusToBubbleSpacing = 10.dp
-private val BubbleRightPadding = 12.dp
-private val BubbleTextHorizontalPadding = 14.dp
+private val BubbleRightPadding = 8.dp
+private val BubbleTextHorizontalPadding = 18.dp
 
-private val BubbleTextVerticalPadding = 10.dp
+private val BubbleTextVerticalPadding = 14.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
 private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + TimeColumnWidth + TimeToStatusSpacing + TimelineColumnWidth + 18.dp
 private val ChildBubbleRightPadding = 20.dp
-private val CategoryBarWidth = 4.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -149,44 +149,34 @@ fun MessageBubble(
 
         Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
 
-        Row(
+        Surface(
+            color = BubbleColor,
+            shape = RoundedCornerShape(18.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)),
+            shadowElevation = 1.dp,
             modifier = Modifier
                 .weight(1f)
-                .padding(end = BubbleRightPadding),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(CategoryBarWidth)
-                    .background(color = categoryColorFor(message))
-            )
-            Surface(
-                color = BubbleColor,
-                shape = RoundedCornerShape(0.dp, 16.dp, 16.dp, 16.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .combinedClickable(
-                        onClick = {},
-                        onDoubleClick = { onDoubleClick(message) },
-                        onLongClick = { state.selectedMessage = message }
-                    )
-            ) {
-                Text(
-                    text = displayText,
-                    modifier = Modifier.padding(
-                        horizontal = BubbleTextHorizontalPadding,
-                        vertical = textVerticalPadding
-                    ),
-                    color = TextColor,
-                    maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
-                    overflow = if (state.isSingleLineMode) {
-                        TextOverflow.Ellipsis
-                    } else {
-                        TextOverflow.Clip
-                    }
+                .padding(end = BubbleRightPadding)
+                .combinedClickable(
+                    onClick = {},
+                    onDoubleClick = { onDoubleClick(message) },
+                    onLongClick = { state.selectedMessage = message }
                 )
-            }
+        ) {
+            Text(
+                text = displayText,
+                modifier = Modifier.padding(
+                    horizontal = BubbleTextHorizontalPadding,
+                    vertical = textVerticalPadding
+                ),
+                color = TextColor,
+                maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
+                overflow = if (state.isSingleLineMode) {
+                    TextOverflow.Ellipsis
+                } else {
+                    TextOverflow.Clip
+                }
+            )
         }
     }
 }
@@ -282,7 +272,7 @@ private fun ParentTimelineNode(
                 modifier = Modifier
                     .size(14.dp)
                     .clip(CircleShape)
-                    .background(Color.White)
+                    .background(categoryColorFor(message).copy(alpha = 0.16f))
                     .padding(2.dp),
                 contentAlignment = Alignment.Center
             ) {
