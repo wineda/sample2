@@ -402,22 +402,26 @@ fun MessageActionOverlay(
                     // 中身タップ時は閉じない
                 }
         ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = BubbleColor.copy(alpha = 0.96f),
-                tonalElevation = 2.dp,
-                shadowElevation = 6.dp
+                color = Color.White,
+                tonalElevation = 0.dp,
+                shadowElevation = 3.dp
             ) {
                 Text(
                     text = message.text,
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(vertical = 14.dp, horizontal = 16.dp),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = TextColor
+                    color = TextColor,
+                    fontSize = 14.sp,
+                    lineHeight = 21.sp
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             Surface(
                 shape = RoundedCornerShape(16.dp),
