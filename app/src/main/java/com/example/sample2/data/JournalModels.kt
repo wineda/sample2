@@ -6,6 +6,22 @@ data class MessageV2(
     val text: String,
     val emotions: EmotionMetrics = EmotionMetrics(),
     val flags: ActionFlags = ActionFlags(),
+    val parentId: String? = null,
+    val entryType: JournalEntryType = JournalEntryType.MEMO,
+    val response: EmotionResponse? = null,
+)
+
+enum class JournalEntryType {
+    MEMO,
+    EMOTION_RESPONSE
+}
+
+data class EmotionResponse(
+    val targetEmotionKey: String,
+    val actionKey: String,
+    val effectScore: Int = 0,
+    val note: String = "",
+    val createdAt: Long = 0L
 )
 
 data class EmotionMetrics(
