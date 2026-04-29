@@ -6,8 +6,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.sample2.data.DailyRecord
 import com.example.sample2.data.DailyReflection
+import com.example.sample2.data.EmotionResponse
 import com.example.sample2.data.JournalRepository
+import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
+import com.example.sample2.data.ActionType
 import com.example.sample2.model.JournalJsonStorage
 import java.util.UUID
 
@@ -41,8 +44,59 @@ class JournalViewModel(
         persistMessages()
     }
 
+    fun addEmotionResponse(
+        parent: MessageV2,
+        targetEmotionKey: String,
+        actionKey: String,
+        effectScore: Int,
+        note: String
+    ) {
+        val now = System.currentTimeMillis()
+        val trimmedNote = note.trim()
+        val actionLabel = ActionType.entries.firstOrNull { it.key == actionKey }?.label
+        val displayText = if (trimmedNote.isNotEmpty()) {
+            trimmedNote
+        } else {
+            actionLabel ?: actionKey
+        }
+
+        messages.add(
+            MessageV2(
+                id = UUID.randomUUID().toString(),
+                timestamp = now,
+                text = displayText,
+                parentId = parent.id,
+                entryType = JournalEntryType.EMOTION_RESPONSE,
+                response = EmotionResponse(
+                    targetEmotionKey = targetEmotionKey,
+                    actionKey = actionKey,
+                    effectScore = effectScore.coerceIn(0, 3),
+                    note = note,
+                    createdAt = now
+                )
+            )
+        )
+        persistMessages()
+    }
+
+    fun childrenOf(parent: MessageV2): List<MessageV2> {
+        return messages
+            .filter { it.parentId == parent.id }
+            .sortedBy { it.timestamp }
+    }
+
+    fun rootMessages(): List<MessageV2> {
+        return messages
+            .filter { it.parentId == null && it.entryType == JournalEntryType.MEMO }
+            .sortedBy { it.timestamp }
+    }
+
     fun deleteMessage(message: MessageV2) {
-        messages.removeAll { it.id == message.id }
+        if (message.parentId == null) {
+            messages.removeAll { it.id == message.id || it.parentId == message.id }
+        } else {
+            messages.removeAll { it.id == message.id }
+        }
         persistMessages()
     }
 
