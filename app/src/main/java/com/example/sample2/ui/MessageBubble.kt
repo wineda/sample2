@@ -84,7 +84,8 @@ fun MessageBubble(
     message: MessageV2,
     state: JournalViewModel,
     onDelete: () -> Unit,
-    onUpdate: (MessageV2) -> Unit
+    onUpdate: (MessageV2) -> Unit,
+    onDoubleClick: (MessageV2) -> Unit = {}
 ) {
     val textVerticalPadding =
         if (state.isSingleLineMode) BubbleTextVerticalPaddingCompact
@@ -149,6 +150,7 @@ fun MessageBubble(
                 .padding(end = BubbleRightPadding)
                 .combinedClickable(
                     onClick = {},
+                    onDoubleClick = { onDoubleClick(message) },
                     onLongClick = { state.selectedMessage = message }
                 )
         ) {
@@ -173,6 +175,7 @@ fun MessageBubble(
 @Composable
 fun EmotionResponseChildBubble(
     message: MessageV2,
+    onLongClick: (MessageV2) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (message.entryType != JournalEntryType.EMOTION_RESPONSE) return
@@ -195,6 +198,10 @@ fun EmotionResponseChildBubble(
         modifier = modifier
             .fillMaxWidth()
             .padding(start = ChildBubbleIndent, end = BubbleRightPadding)
+            .combinedClickable(
+                onClick = {},
+                onLongClick = { onLongClick(message) }
+            )
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
