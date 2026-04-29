@@ -207,40 +207,42 @@ fun EmotionResponseChildBubble(
 
         Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
 
-        Surface(
-            color = BubbleColor.copy(alpha = 0.75f),
-            shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
+        Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = ChildBubbleRightPadding)
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = { onLongClick(message) }
-                )
+                .padding(end = ChildBubbleRightPadding),
+            horizontalAlignment = Alignment.End
         ) {
-            Box(
-                modifier = Modifier.padding(
-                    start = 12.dp,
-                    top = 7.dp,
-                    end = 12.dp,
-                    bottom = 8.dp
-                )
+            Surface(
+                color = BubbleColor.copy(alpha = 0.75f),
+                shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = { onLongClick(message) }
+                    )
             ) {
                 Text(
                     text = message.text,
-                    modifier = Modifier.padding(end = 40.dp, bottom = 12.dp),
+                    modifier = Modifier.padding(
+                        start = 12.dp,
+                        top = 7.dp,
+                        end = 12.dp,
+                        bottom = 8.dp
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = TextColor,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = formatTime(message.timestamp),
-                    modifier = Modifier.align(Alignment.BottomEnd),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
             }
+            Text(
+                text = formatTime(message.timestamp),
+                modifier = Modifier.padding(top = 4.dp, end = 2.dp),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
         }
     }
 }
