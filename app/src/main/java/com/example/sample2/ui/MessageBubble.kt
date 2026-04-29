@@ -384,6 +384,7 @@ fun MessageActionOverlay(
     var editingTimestamp by remember(message.id) { mutableStateOf(message.timestamp) }
     var editingEmotions by remember(message.id) { mutableStateOf(message.emotions) }
     var editingFlags by remember(message.id) { mutableStateOf(message.flags) }
+    var selectedActionType by remember(message.id) { mutableStateOf(message.flags.firstEnabledActionOrNull()) }
     var isActionTypeExpanded by remember(message.id) { mutableStateOf(false) }
     var showActionMenu by remember(message.id) { mutableStateOf(false) }
     var showDeleteConfirm by remember(message.id) { mutableStateOf(false) }
@@ -553,15 +554,40 @@ fun MessageActionOverlay(
                 tonalElevation = 2.dp,
                 shadowElevation = 6.dp
             ) {
-                CollapsibleActionTypeEditor(
-                    flags = editingFlags,
-                    expanded = isActionTypeExpanded,
-                    onToggleExpanded = { isActionTypeExpanded = !isActionTypeExpanded },
-                    onSelected = { selected ->
-                        editingFlags = editingFlags.selectOnly(selected)
-                        isActionTypeExpanded = false
+                if (selectedActionType == null) {
+                    AddEmotionButton(
+                        text = "種類を追加",
+                        onClick = { isActionTypeExpanded = !isActionTypeExpanded }
+                    )
+                    if (isActionTypeExpanded) {
+                        Surface(color = Color.White) {
+                            ActionTypeGrid(
+                                selectedType = null,
+                                onSelected = { selected ->
+                                    selectedActionType = selected
+                                    editingFlags = ActionFlags().selectOnly(selected)
+                                    isActionTypeExpanded = false
+                                }
+                            )
+                        }
                     }
-                )
+                } else {
+                    CollapsibleActionTypeEditor(
+                        selectedType = selectedActionType,
+                        expanded = isActionTypeExpanded,
+                        onToggleExpanded = { isActionTypeExpanded = !isActionTypeExpanded },
+                        onSelected = { selected ->
+                            selectedActionType = selected
+                            editingFlags = ActionFlags().selectOnly(selected)
+                            isActionTypeExpanded = false
+                        },
+                        onClear = {
+                            selectedActionType = null
+                            editingFlags = ActionFlags()
+                            isActionTypeExpanded = false
+                        }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -874,13 +900,14 @@ private fun EmotionSegmentRow(
 
 @Composable
 private fun CollapsibleActionTypeEditor(
-    flags: ActionFlags,
+    selectedType: ActionType?,
     expanded: Boolean,
     onToggleExpanded: () -> Unit,
-    onSelected: (ActionType) -> Unit
+    onSelected: (ActionType) -> Unit,
+    onClear: () -> Unit
 ) {
-    val selectedType = flags.firstEnabledActionOrNull() ?: ActionType.CHALLENGE
-    val selectedSpec = selectedType.toUiSpec()
+    val currentType = selectedType ?: ActionType.CHALLENGE
+    val selectedSpec = currentType.toUiSpec()
     val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron_rotation")
 
     Column(
@@ -921,18 +948,23 @@ private fun CollapsibleActionTypeEditor(
                     letterSpacing = 1.2.sp
                 )
                 Text(
-                    text = selectedType.label,
+                    text = currentType.label,
                     fontSize = 14.sp,
                     color = Color(0xFF1A1A1A),
                     fontWeight = FontWeight.Bold
                 )
             }
-            Text(
-                text = "⌄",
-                color = Color(0xFFAAAAAA),
-                fontSize = 16.sp,
-                modifier = Modifier.rotate(chevronRotation)
-            )
+            if (!expanded) {
+                Text(
+                    text = "×",
+                    color = Color(0xFFCCCCCC),
+                    fontSize = 18.sp,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { onClear() },
+                    textAlign = TextAlign.Center
+                )
+            }
         }
 
         if (expanded) {
@@ -944,50 +976,58 @@ private fun CollapsibleActionTypeEditor(
                     .background(Color(0xFFF3F0E8))
             )
             Spacer(modifier = Modifier.height(14.dp))
-            ActionType.entries.chunked(4).forEach { rowTypes ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ActionTypeGrid(selectedType = currentType, onSelected = onSelected)
+        }
+    }
+}
+
+@Composable
+private fun ActionTypeGrid(
+    selectedType: ActionType?,
+    onSelected: (ActionType) -> Unit
+) {
+    ActionType.entries.chunked(4).forEach { rowTypes ->
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            rowTypes.forEach { type ->
+                val uiSpec = type.toUiSpec()
+                val isSelected = type == selectedType
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isSelected) uiSpec.color.copy(alpha = 0.18f) else Color(0xFFF5F2EA))
+                        .border(
+                            if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .clickable { onSelected(type) },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    rowTypes.forEach { type ->
-                        val uiSpec = type.toUiSpec()
-                        val isSelected = type == selectedType
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    if (isSelected) uiSpec.color.copy(alpha = 0.18f) else Color(0xFFF5F2EA)
-                                )
-                                .border(
-                                    if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
-                                    RoundedCornerShape(12.dp)
-                                )
-                                .clickable { onSelected(type) },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = uiSpec.iconRes),
-                                contentDescription = type.label,
-                                modifier = Modifier.size(18.dp),
-                                tint = if (isSelected) uiSpec.color else Color(0xFF6B6660)
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = type.label,
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF3D3A34),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
+                    Icon(
+                        painter = painterResource(id = uiSpec.iconRes),
+                        contentDescription = type.label,
+                        modifier = Modifier.size(18.dp),
+                        tint = if (isSelected) uiSpec.color else Color(0xFF6B6660)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = type.label,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF3D3A34),
+                        textAlign = TextAlign.Center
+                    )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
             }
         }
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
