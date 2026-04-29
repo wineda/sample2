@@ -415,20 +415,34 @@ fun MessageActionOverlay(
                 shadowElevation = 3.dp
             ) {
                 Column(modifier = Modifier.padding(vertical = 14.dp, horizontal = 16.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (mode == EditorMode.CREATE) "新しい記録" else "記録を編集", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text(if (mode == EditorMode.CREATE) "NEW" else "EDIT", fontSize = 9.sp, fontFamily = FontFamily.Monospace, letterSpacing = 0.15.sp, color = Color(0xFF888888))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (mode == EditorMode.CREATE) "新しい記録" else "記録を編集",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            text = if (mode == EditorMode.CREATE) "NEW" else "EDIT",
+                            fontSize = 9.sp,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 0.15.sp,
+                            color = Color(0xFF888888)
+                        )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                    text = message.text,
-                    modifier = Modifier,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = TextColor,
-                    fontSize = 14.sp,
-                    lineHeight = 21.sp
-                )
+                        text = message.text,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = TextColor,
+                        fontSize = 14.sp,
+                        lineHeight = 21.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(18.dp))
