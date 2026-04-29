@@ -1,29 +1,37 @@
 package com.example.sample2.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.SentimentDissatisfied
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.WbIncandescent
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,26 +41,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.sample2.data.DailyReflection
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Locale
 
 private enum class ReflectionFieldFilter(
     val label: String,
-    val icon: ImageVector
+    val icon: ImageVector,
+    val textColor: Color,
+    val bgColor: Color
 ) {
-    SUMMARY("ひとこと", Icons.Default.Chat),
-    WINS("うまくいった", Icons.Default.ThumbUp),
-    DIFFICULTIES("しんどかった", Icons.Default.SentimentDissatisfied),
-    INSIGHTS("気づき", Icons.Default.WbIncandescent),
-    TOMORROW_FIRST_ACTION("明日まずやる", Icons.Default.TaskAlt)
+    SUMMARY("ひとこと", Icons.Default.Chat, Color(0xFF6B6B6B), Color(0xFFEFEDEA)),
+    WINS("うまくいった", Icons.Default.ThumbUp, Color(0xFF4A7C4A), Color(0xFFEAF3E8)),
+    DIFFICULTIES("しんどかった", Icons.Default.SentimentDissatisfied, Color(0xFFB85C4A), Color(0xFFF7E9E4)),
+    INSIGHTS("気づき", Icons.Default.WbIncandescent, Color(0xFFC79410), Color(0xFFFAF0D8)),
+    TOMORROW_FIRST_ACTION("明日まずやる", Icons.Default.TaskAlt, Color(0xFF3A6EA5), Color(0xFFE6EEF7))
 }
 
 private data class ReflectionListUiState(
@@ -85,6 +96,7 @@ fun ReflectionTimelineScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Color(0xFFFAF8F4))
                 .padding(padding)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -94,12 +106,12 @@ fun ReflectionTimelineScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "振り返りタイムライン",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "振り返り",
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
                 TextButton(onClick = onCreateToday) {
-                    Text("今日を入力")
+                    Text("＋ 今日を入力")
                 }
             }
 
@@ -110,40 +122,20 @@ fun ReflectionTimelineScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                label = { Text("キーワード検索") }
+                label = { Text("キーワードで探す") }
             )
 
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    ReflectionFieldFilter.entries
-                        .filter { it != ReflectionFieldFilter.TOMORROW_FIRST_ACTION }
-                        .forEach { filter ->
-                            FilterChip(
-                                selected = filter == uiState.fieldFilter,
-                                onClick = {
-                                    uiState = uiState.copy(
-                                        fieldFilter = if (uiState.fieldFilter == filter) null else filter
-                                    )
-                                },
-                                label = {
-                                    Text(
-                                        text = filter.label,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontSize = 11.sp
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = filter.icon,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            )
-                        }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val filter = ReflectionFieldFilter.TOMORROW_FIRST_ACTION
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.fieldFilter == null,
+                    onClick = { uiState = uiState.copy(fieldFilter = null) },
+                    label = { Text("すべて", fontSize = 12.sp) }
+                )
+                ReflectionFieldFilter.entries.forEach { filter ->
                     FilterChip(
                         selected = filter == uiState.fieldFilter,
                         onClick = {
@@ -151,18 +143,17 @@ fun ReflectionTimelineScreen(
                                 fieldFilter = if (uiState.fieldFilter == filter) null else filter
                             )
                         },
-                        label = {
-                            Text(
-                                text = filter.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontSize = 11.sp
-                            )
-                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = filter.bgColor,
+                            selectedLabelColor = filter.textColor
+                        ),
+                        label = { Text(filter.label, fontSize = 12.sp) },
                         leadingIcon = {
                             Icon(
                                 imageVector = filter.icon,
                                 contentDescription = null,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(14.dp),
+                                tint = if (filter == uiState.fieldFilter) filter.textColor else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     )
@@ -170,11 +161,12 @@ fun ReflectionTimelineScreen(
             }
 
             if (timelineItems.isEmpty()) {
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color(0xFFE8E4DC), RoundedCornerShape(16.dp)),
+                    color = Color.White,
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
                         text = "まだ振り返りがありません",
@@ -186,30 +178,22 @@ fun ReflectionTimelineScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 12.dp)
                 ) {
-                    items(
-                        items = timelineItems,
-                        key = { item ->
-                            when (item) {
-                                is ReflectionTimelineItem.MonthHeader -> "header_${item.label}"
-                                is ReflectionTimelineItem.ReflectionCard -> "reflection_${item.reflection.date}"
-                            }
-                        }
-                    ) { item ->
+                    items(timelineItems) { item ->
                         when (item) {
                             is ReflectionTimelineItem.MonthHeader -> {
                                 Text(
                                     text = item.label,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(vertical = 4.dp)
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                                 )
                             }
 
                             is ReflectionTimelineItem.ReflectionCard -> {
-                                ReflectionTimelineCard(
+                                TimelineRow(
                                     reflection = item.reflection,
                                     fieldFilter = uiState.fieldFilter,
                                     onClick = { onOpenReflection(item.reflection.date) }
@@ -223,70 +207,76 @@ fun ReflectionTimelineScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimelineRow(
+    reflection: DailyReflection,
+    fieldFilter: ReflectionFieldFilter?,
+    onClick: () -> Unit
+) {
+    val date = reflection.date.toLocalDateOrNull()
+    val isToday = date == LocalDate.now()
+
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = date?.dayOfMonth?.toString() ?: "-", fontWeight = FontWeight.Bold, fontSize = 30.sp)
+            Text(text = date?.dayOfWeekLabel() ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+            Box(
+                modifier = Modifier
+                    .padding(top = 6.dp)
+                    .size(if (isToday) 8.dp else 6.dp)
+                    .clip(CircleShape)
+                    .background(if (isToday) Color(0xFFD05A46) else Color(0xFFD0CBC2))
+            )
+            Box(
+                modifier = Modifier
+                    .padding(top = 2.dp)
+                    .width(1.dp)
+                    .height(56.dp)
+                    .background(Color(0xFFE2DDD4))
+            )
+        }
+        ReflectionTimelineCard(reflection = reflection, fieldFilter = fieldFilter, onClick = onClick)
+    }
+}
+
 @Composable
 private fun ReflectionTimelineCard(
     reflection: DailyReflection,
     fieldFilter: ReflectionFieldFilter?,
     onClick: () -> Unit
 ) {
-    ElevatedCard(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .border(1.dp, Color(0xFFE8E4DC), RoundedCornerShape(16.dp)),
+        color = Color.White,
+        shape = RoundedCornerShape(16.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text = formatReflectionDate(reflection.date),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            val contentItems = listOf(
+                ReflectionFieldFilter.SUMMARY to reflection.summary,
+                ReflectionFieldFilter.WINS to reflection.wins,
+                ReflectionFieldFilter.DIFFICULTIES to reflection.difficulties,
+                ReflectionFieldFilter.INSIGHTS to reflection.insights
+            ).filter { (filter, text) ->
+                text.isNotBlank() && (fieldFilter == null || fieldFilter == filter)
+            }
 
-            val fullText = fieldFilter != null
-            if (fieldFilter == null || fieldFilter == ReflectionFieldFilter.SUMMARY) {
+            contentItems.forEachIndexed { index, (filter, text) ->
                 TimelineSnippetLine(
-                    label = ReflectionFieldFilter.SUMMARY.label,
-                    icon = ReflectionFieldFilter.SUMMARY.icon,
-                    text = reflection.summary,
-                    fullText = fullText
+                    icon = filter.icon,
+                    text = text,
+                    textColor = filter.textColor,
+                    bgColor = filter.bgColor,
+                    drawDivider = index < contentItems.lastIndex
                 )
             }
-            if (fieldFilter == null || fieldFilter == ReflectionFieldFilter.WINS) {
-                TimelineSnippetLine(
-                    label = ReflectionFieldFilter.WINS.label,
-                    icon = ReflectionFieldFilter.WINS.icon,
-                    text = reflection.wins,
-                    fullText = fullText
-                )
-            }
-            if (fieldFilter == null || fieldFilter == ReflectionFieldFilter.DIFFICULTIES) {
-                TimelineSnippetLine(
-                    label = ReflectionFieldFilter.DIFFICULTIES.label,
-                    icon = ReflectionFieldFilter.DIFFICULTIES.icon,
-                    text = reflection.difficulties,
-                    fullText = fullText
-                )
-            }
-            if (fieldFilter == null || fieldFilter == ReflectionFieldFilter.INSIGHTS) {
-                TimelineSnippetLine(
-                    label = ReflectionFieldFilter.INSIGHTS.label,
-                    icon = ReflectionFieldFilter.INSIGHTS.icon,
-                    text = reflection.insights,
-                    fullText = fullText
-                )
-            }
-            if (fieldFilter == null || fieldFilter == ReflectionFieldFilter.TOMORROW_FIRST_ACTION) {
-                TimelineSnippetLine(
-                    label = ReflectionFieldFilter.TOMORROW_FIRST_ACTION.label,
-                    icon = ReflectionFieldFilter.TOMORROW_FIRST_ACTION.icon,
-                    text = reflection.tomorrowFirstAction,
-                    fullText = fullText
-                )
+
+            if (reflection.tomorrowFirstAction.isNotBlank() &&
+                (fieldFilter == null || fieldFilter == ReflectionFieldFilter.TOMORROW_FIRST_ACTION)
+            ) {
+                TomorrowActionBlock(text = reflection.tomorrowFirstAction)
             }
         }
     }
@@ -294,32 +284,58 @@ private fun ReflectionTimelineCard(
 
 @Composable
 private fun TimelineSnippetLine(
-    label: String,
     icon: ImageVector,
     text: String,
-    fullText: Boolean
+    textColor: Color,
+    bgColor: Color,
+    drawDivider: Boolean
 ) {
-    val displayText = text.ifBlank { "-" }
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(bgColor)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = textColor, modifier = Modifier.size(16.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF1F1F1F),
+                maxLines = Int.MAX_VALUE,
+                overflow = TextOverflow.Clip
+            )
+        }
+        if (drawDivider) {
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF1EEE7)))
+        }
+    }
+}
+
+@Composable
+private fun TomorrowActionBlock(text: String) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFE6EEF7))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = icon,
+            imageVector = Icons.Default.TaskAlt,
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+            tint = Color(0xFF3A6EA5),
+            modifier = Modifier.size(16.dp)
         )
         Text(
-            text = "$label:",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = displayText,
+            text = text,
+            color = Color(0xFF3A6EA5),
             style = MaterialTheme.typography.bodyMedium,
-            maxLines = if (fullText) Int.MAX_VALUE else 1,
-            overflow = if (fullText) TextOverflow.Clip else TextOverflow.Ellipsis
+            maxLines = Int.MAX_VALUE,
+            overflow = TextOverflow.Clip
         )
     }
 }
@@ -370,10 +386,10 @@ private fun buildTimelineItems(
 
 private fun DailyReflection.hasAnyContent(): Boolean {
     return wins.isNotBlank() ||
-            difficulties.isNotBlank() ||
-            insights.isNotBlank() ||
-            tomorrowFirstAction.isNotBlank() ||
-            summary.isNotBlank()
+        difficulties.isNotBlank() ||
+        insights.isNotBlank() ||
+        tomorrowFirstAction.isNotBlank() ||
+        summary.isNotBlank()
 }
 
 private fun DailyReflection.searchableText(): String {
@@ -392,9 +408,16 @@ private fun monthHeaderLabel(dateText: String): String {
     return "${date.year}年${date.monthValue}月"
 }
 
-private fun formatReflectionDate(dateText: String): String {
-    val date = dateText.toLocalDateOrNull() ?: return dateText
-    return date.format(DateTimeFormatter.ofPattern("yyyy年M月d日(E)", Locale.JAPAN))
+private fun LocalDate.dayOfWeekLabel(): String {
+    return when (dayOfWeek.value) {
+        1 -> "月"
+        2 -> "火"
+        3 -> "水"
+        4 -> "木"
+        5 -> "金"
+        6 -> "土"
+        else -> "日"
+    }
 }
 
 private fun String.toLocalDateOrNull(): LocalDate? {
