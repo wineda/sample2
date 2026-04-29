@@ -7,6 +7,7 @@ import android.text.format.DateFormat
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,6 +48,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -68,20 +72,22 @@ import com.example.sample2.ui.theme.CategoryExerciseBody
 import com.example.sample2.ui.theme.CategoryMorningHabit
 import com.example.sample2.ui.theme.CategorySleep
 import com.example.sample2.ui.theme.CategoryWork
-import com.example.sample2.util.formatDate
+import com.example.sample2.ui.theme.emotionCategoryToColor
 import com.example.sample2.util.formatTime
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
-private val MessageRowHorizontalPadding = 12.dp
-private val TimeColumnWidth = 52.dp
-private val TimelineColumnWidth = 24.dp
+private val MessageRowHorizontalPadding = 16.dp
 
-private val TimeToStatusSpacing = 2.dp
-private val StatusToBubbleSpacing = 10.dp
-private val BubbleRightPadding = 8.dp
-private val BubbleTextHorizontalPadding = 18.dp
+private val BubbleRightPadding = 12.dp
+private val BubbleTextHorizontalPadding = 14.dp
+private val BubbleStartIndent =
+    MessageRowHorizontalPadding +
+            46.dp
 
-private val BubbleTextVerticalPadding = 14.dp
+private val BubbleTextVerticalPadding = 10.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
 private val MessageRowVerticalPadding = 4.dp
 private val MessageRowVerticalPaddingCompact = 1.5.dp
@@ -99,14 +105,6 @@ fun MessageBubble(
     onUpdate: (MessageV2) -> Unit,
     onDoubleClick: (MessageV2) -> Unit = {}
 ) {
-    val textVerticalPadding =
-        if (state.isSingleLineMode) BubbleTextVerticalPaddingCompact
-        else BubbleTextVerticalPadding
-
-    val rowVerticalPadding =
-        if (state.isSingleLineMode) MessageRowVerticalPaddingCompact
-        else MessageRowVerticalPadding
-
     val displayText = if (state.isSingleLineMode) {
         message.text
             .replace("\r\n", " ")
@@ -125,49 +123,7 @@ fun MessageBubble(
     ) {
         val context = LocalContext.current
 
-        Box(
-            modifier = Modifier
-                .width(TimeColumnWidth)
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = {
-                        showTimestampPicker(
-                            context = context,
-                            initialTimestamp = message.timestamp,
-                            onSelected = { newTimestamp ->
-                                onUpdate(message.copy(timestamp = newTimestamp))
-                            }
-                        )
-                    }
-                )
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = formatTime(message.timestamp),
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                color = TimeColor
-            )
-        }
-
-        Spacer(modifier = Modifier.width(TimeToStatusSpacing))
-
-        ParentTimelineNode(
-            modifier = Modifier
-                .width(TimelineColumnWidth)
-                .fillMaxHeight(),
-            message = message,
-            isConnectedToPreviousInDay = isConnectedToPreviousInDay,
-            isConnectedToNextInDay = isConnectedToNextInDay
-        )
-
-        Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
-
-        Surface(
-            color = BubbleColor,
-            shape = RoundedCornerShape(18.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)),
-            shadowElevation = 1.dp,
+        Row(
             modifier = Modifier
                 .weight(1f)
                 .padding(end = BubbleRightPadding)
@@ -177,20 +133,69 @@ fun MessageBubble(
                     onLongClick = { state.selectedMessage = message }
                 )
         ) {
-            Text(
-                text = displayText,
-                modifier = Modifier.padding(
-                    horizontal = BubbleTextHorizontalPadding,
-                    vertical = textVerticalPadding
+            Surface(
+                color = Color.White,
+                shape = RoundedCornerShape(18.dp),
+                border = androidx.compose.foundation.BorderStroke(
+                    width = 1.5.dp,
+                    color = emotionCategoryToColor(message.emotions.maxEmotionOrNull()).border
                 ),
-                color = TextColor,
-                maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
-                overflow = if (state.isSingleLineMode) {
-                    TextOverflow.Ellipsis
-                } else {
-                    TextOverflow.Clip
+                modifier = Modifier
+                    .weight(1f)
+                    .combinedClickable(
+                        onClick = {},
+                        onDoubleClick = { onDoubleClick(message) },
+                        onLongClick = { state.selectedMessage = message }
+                    )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    StatusIconBox(
+                        message = message,
+                        modifier = Modifier.size(44.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        val categoryLabel = message.flags.firstEnabledActionOrNull()?.label
+                            ?: message.emotions.maxEmotionOrNull()?.label
+                            ?: "メモ"
+                        Text(
+                            text = categoryLabel,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = categoryColorFor(message)
+                        )
+                        Text(
+                            text = displayText,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = (-0.16).sp
+                            ),
+                            color = TextColor,
+                            maxLines = if (state.isSingleLineMode) 1 else 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = formatTime(message.timestamp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace
+                            ),
+                            color = TimeColor
+                        )
+                    }
                 }
-            )
+            }
         }
     }
 }
@@ -205,133 +210,80 @@ fun EmotionResponseChildBubble(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = ChildBubbleIndent, end = BubbleRightPadding),
+            .padding(start = 36.dp, end = BubbleRightPadding),
         verticalAlignment = Alignment.Top
     ) {
+        Box(
+            modifier = Modifier
+                .width(18.dp)
+                .height(54.dp),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(2.dp)
+                    .background(Color(0xFFD1D5DB))
+            )
+            Box(
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .size(8.dp)
+                    .background(color = Color(0xFF9CA3AF), shape = CircleShape)
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = ChildBubbleRightPadding),
-            horizontalAlignment = Alignment.End
+                .padding(end = ChildBubbleRightPadding, top = 4.dp, bottom = 4.dp)
         ) {
-            Row(verticalAlignment = Alignment.Top) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 10.dp, end = 8.dp)
-                        .size(width = 12.dp, height = 1.dp)
-                        .background(TimeColor.copy(alpha = 0.4f))
-                )
-                Surface(
-                    color = BubbleColor.copy(alpha = 0.58f),
-                    shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .combinedClickable(
-                            onClick = {},
-                            onLongClick = { onLongClick(message) }
-                        )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(
-                            start = 12.dp,
-                            top = 7.dp,
-                            end = 12.dp,
-                            bottom = 6.dp
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        Text(
-                            text = message.text,
-                            modifier = Modifier.fillMaxWidth(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextColor
-                        )
-                        Text(
-                            text = formatTime(message.timestamp),
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                            color = TimeColor
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ParentTimelineNode(
-    modifier: Modifier = Modifier,
-    message: MessageV2,
-    isConnectedToPreviousInDay: Boolean,
-    isConnectedToNextInDay: Boolean
-) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
-        if (isConnectedToPreviousInDay) {
-            Box(
+            Row(
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .width(1.dp)
-                    .fillMaxHeight(0.5f)
-                    .background(TimeColor.copy(alpha = 0.35f))
-            )
-        }
-        if (isConnectedToNextInDay) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .width(1.dp)
-                    .fillMaxHeight(0.5f)
-                    .background(TimeColor.copy(alpha = 0.35f))
-            )
-        }
-        Box(
-            modifier = Modifier
-                .size(18.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(2.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(14.dp)
-                    .clip(CircleShape)
-                    .background(categoryColorFor(message).copy(alpha = 0.16f))
-                    .padding(2.dp),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .combinedClickable(onClick = {}, onLongClick = { onLongClick(message) }),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                StatusIconBox(message = message, modifier = Modifier.size(12.dp).offset(y = (-0.5f).dp))
+                Text(
+                    text = message.text,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    color = TextColor,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = formatTime(message.timestamp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace
+                    ),
+                    color = Color(0xFF9CA3AF)
+                )
             }
+            Spacer(modifier = Modifier.height(6.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0xFFE5E7EB))
+            )
         }
     }
 }
 
 
 private fun categoryColorFor(message: MessageV2): Color {
-    if (message.entryType == JournalEntryType.EMOTION_RESPONSE) {
-        return CategoryMorningHabit
-    }
-    if (message.emotions.happy > 0 || message.emotions.calm > 0) return CategoryEmotionPositive
-    if (message.emotions.anxiety > 0 || message.emotions.angry > 0 || message.emotions.sad > 0) return CategoryEmotionNegative
-    if (message.flags.exercised) return CategoryExerciseBody
-    if (message.flags.alcohol || message.flags.hangover) return CategorySleep
-
-    val isWorkLike =
-        message.flags.pendingTask || message.flags.meetingStress || message.flags.delegate ||
-            message.flags.instruct || message.flags.challenge || message.flags.breakdown ||
-            message.flags.quickAction || message.flags.smartphoneDrift || message.flags.socialized
-    if (isWorkLike) return CategoryWork
-
-    return CategoryMorningHabit
+    return emotionCategoryToColor(message.emotions.maxEmotionOrNull()).border
 }
 
 @Composable
 fun DateLabel(timestamp: Long) {
-    val dateText = formatDate(timestamp)
+    val dateText = SimpleDateFormat("M月d日 E", Locale.JAPANESE).format(Date(timestamp))
     val relative = getRelativeLabel(timestamp)
 
     Row(
@@ -340,21 +292,48 @@ fun DateLabel(timestamp: Long) {
             .padding(
                 start = MessageRowHorizontalPadding,
                 end = MessageRowHorizontalPadding,
-                top = 8.dp,
-                bottom = 8.dp
+                top = 12.dp,
+                bottom = 16.dp
             ),
-        horizontalArrangement = Arrangement.Center
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Text(
+            text = dateText,
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.01).sp
+            ),
+            color = Color(0xFF1A1A1A)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
         Surface(
-            color = Color(0xFFE0E0E0),
-            shape = RoundedCornerShape(12.dp)
+            color = Color(0xFF1A1A1A),
+            shape = RoundedCornerShape(4.dp)
         ) {
             Text(
-                text = "$dateText - $relative",
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.bodySmall
+                text = relative,
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 9.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.1.sp
+                ),
+                color = Color.White
             )
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(Color(0xFFE8E4D8))
+        )
     }
 }
 
@@ -363,11 +342,10 @@ fun getRelativeLabel(timestamp: Long): String {
     val diff = now - timestamp
     val days = diff / (1000L * 60 * 60 * 24)
 
-    return when {
-        days < 1 -> "今日"
-        days < 14 -> "${days}D"
-        days < 60 -> "${days / 7}W"
-        else -> "${days / 30}M"
+    return if (days < 1) {
+        "TODAY"
+    } else {
+        "-${days}D"
     }
 }
 

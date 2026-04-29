@@ -590,7 +590,9 @@ fun ChatRoute() {
                                         .fillMaxWidth()
                                 ) { msg, isConnectedToPreviousInDay, isConnectedToNextInDay ->
                                     val childEntries = childEntriesByParentId[msg.id].orEmpty()
-                                    Column {
+                                    Column(
+                                        modifier = Modifier.padding(bottom = 16.dp)
+                                    ) {
                                         MessageBubble(
                                             message = msg,
                                             state = state,
