@@ -151,7 +151,9 @@ fun MessageBubble(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        val categoryLabel = message.flags.firstEnabledActionOrNull()?.label ?: "メモ"
+                        val categoryLabel = message.flags.firstEnabledActionOrNull()?.label
+                            ?: message.emotions.maxEmotionOrNull()?.label
+                            ?: "メモ"
                         Text(
                             text = categoryLabel,
                             style = MaterialTheme.typography.labelSmall.copy(
