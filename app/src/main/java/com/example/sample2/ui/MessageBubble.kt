@@ -69,9 +69,11 @@ import com.example.sample2.ui.theme.CategoryMorningHabit
 import com.example.sample2.ui.theme.CategorySleep
 import com.example.sample2.ui.theme.CategoryWork
 import com.example.sample2.ui.theme.emotionCategoryToColor
-import com.example.sample2.util.formatDate
 import com.example.sample2.util.formatTime
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 private val MessageRowHorizontalPadding = 16.dp
 
@@ -271,7 +273,7 @@ private fun categoryColorFor(message: MessageV2): Color {
 
 @Composable
 fun DateLabel(timestamp: Long) {
-    val dateText = formatDate(timestamp)
+    val dateText = SimpleDateFormat("M月d日 E", Locale.JAPANESE).format(Date(timestamp))
     val relative = getRelativeLabel(timestamp)
 
     Row(
@@ -280,21 +282,48 @@ fun DateLabel(timestamp: Long) {
             .padding(
                 start = MessageRowHorizontalPadding,
                 end = MessageRowHorizontalPadding,
-                top = 8.dp,
-                bottom = 8.dp
+                top = 12.dp,
+                bottom = 16.dp
             ),
-        horizontalArrangement = Arrangement.Center
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Text(
+            text = dateText,
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.01).sp
+            ),
+            color = Color(0xFF1A1A1A)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
         Surface(
-            color = Color(0xFFE0E0E0),
-            shape = RoundedCornerShape(12.dp)
+            color = Color(0xFF1A1A1A),
+            shape = RoundedCornerShape(4.dp)
         ) {
             Text(
-                text = "$dateText - $relative",
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.bodySmall
+                text = relative,
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 9.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.1.sp
+                ),
+                color = Color.White
             )
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(Color(0xFFE8E4D8))
+        )
     }
 }
 
@@ -303,11 +332,10 @@ fun getRelativeLabel(timestamp: Long): String {
     val diff = now - timestamp
     val days = diff / (1000L * 60 * 60 * 24)
 
-    return when {
-        days < 1 -> "今日"
-        days < 14 -> "${days}D"
-        days < 60 -> "${days / 7}W"
-        else -> "${days / 30}M"
+    return if (days < 1) {
+        "TODAY"
+    } else {
+        "-${days}D"
     }
 }
 
