@@ -635,13 +635,13 @@ fun ChatRoute() {
             }
         }
 
-        state.selectedMessage?.let { msg ->
+        state.selectedMessage?.let { msg: MessageV2 ->
             MessageActionOverlay(
                 message = msg,
                 state = state,
                 onDismiss = { state.selectedMessage = null },
                 onDelete = { state.deleteMessage(msg) },
-                onUpdate = { updated -> state.updateMessage(updated) }
+                onUpdate = { updated: MessageV2 -> state.updateMessage(updated) }
             )
         }
 
