@@ -188,21 +188,6 @@ fun EmotionResponseChildBubble(
             .padding(start = ChildBubbleIndent, end = BubbleRightPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .width(ChildTimeColumnWidth)
-                .padding(vertical = 6.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = formatTime(message.timestamp),
-                style = MaterialTheme.typography.labelSmall,
-                color = TimeColor
-            )
-        }
-
-        Spacer(modifier = Modifier.width(TimeToStatusSpacing))
-
         ChildStatusIconBox(
             message = message,
             modifier = Modifier.width(ChildStatusColumnWidth)
@@ -210,25 +195,41 @@ fun EmotionResponseChildBubble(
 
         Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
 
-        Surface(
-            color = BubbleColor.copy(alpha = 0.75f),
-            shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
+        Box(
             modifier = Modifier
                 .weight(1f)
                 .padding(end = ChildBubbleRightPadding)
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = { onLongClick(message) }
-                )
         ) {
-            Text(
-                text = message.text,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = TextColor,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.End
+            ) {
+                Surface(
+                    color = BubbleColor.copy(alpha = 0.75f),
+                    shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
+                    modifier = Modifier
+                        .combinedClickable(
+                            onClick = {},
+                            onLongClick = { onLongClick(message) }
+                        )
+                ) {
+                    Text(
+                        text = message.text,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextColor,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Text(
+                    text = formatTime(message.timestamp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TimeColor,
+                    modifier = Modifier.padding(top = 3.dp, end = 2.dp)
+                )
+            }
         }
     }
 }
