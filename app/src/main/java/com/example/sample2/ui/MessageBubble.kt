@@ -52,7 +52,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sample2.BubbleColor
@@ -91,7 +90,6 @@ private val BubbleTextVerticalPadding = 10.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
 private val MessageRowVerticalPadding = 4.dp
 private val MessageRowVerticalPaddingCompact = 1.5.dp
-private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + TimeColumnWidth + TimeToStatusSpacing + TimelineColumnWidth + 18.dp
 private val ChildBubbleRightPadding = 20.dp
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -105,6 +103,9 @@ fun MessageBubble(
     onUpdate: (MessageV2) -> Unit,
     onDoubleClick: (MessageV2) -> Unit = {}
 ) {
+    val rowVerticalPadding =
+        if (state.isSingleLineMode) MessageRowVerticalPaddingCompact else MessageRowVerticalPadding
+
     val displayText = if (state.isSingleLineMode) {
         message.text
             .replace("\r\n", " ")
