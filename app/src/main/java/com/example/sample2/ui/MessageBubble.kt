@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,13 +37,15 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
@@ -360,6 +363,7 @@ fun MessageActionOverlay(
 ) {
     var editingEmotions by remember(message.id) { mutableStateOf(message.emotions) }
     var editingFlags by remember(message.id) { mutableStateOf(message.flags) }
+    var isActionTypeExpanded by remember(message.id) { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
     val blockClicks = remember { MutableInteractionSource() }
@@ -411,37 +415,15 @@ fun MessageActionOverlay(
                 tonalElevation = 2.dp,
                 shadowElevation = 6.dp
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    ActionType.entries.chunked(4).forEach { rowTypes ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            rowTypes.forEach { type ->
-                                val uiSpec = type.toUiSpec()
-                                ActionFlagIconButton(
-                                    modifier = Modifier.weight(1f),
-                                    iconRes = uiSpec.iconRes,
-                                    label = type.label,
-                                    checked = type.matches(editingFlags),
-                                    activeColor = uiSpec.color,
-                                    onClick = {
-                                        editingFlags = editingFlags.toggle(type)
-                                    }
-                                )
-                            }
-
-                            repeat(4 - rowTypes.size) {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                        }
+                CollapsibleActionTypeEditor(
+                    flags = editingFlags,
+                    expanded = isActionTypeExpanded,
+                    onToggleExpanded = { isActionTypeExpanded = !isActionTypeExpanded },
+                    onSelected = { selected ->
+                        editingFlags = editingFlags.selectOnly(selected)
+                        isActionTypeExpanded = false
                     }
-                }
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -514,6 +496,125 @@ fun MessageActionOverlay(
                         Text("閉じる")
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CollapsibleActionTypeEditor(
+    flags: ActionFlags,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
+    onSelected: (ActionType) -> Unit
+) {
+    val selectedType = flags.firstEnabledActionOrNull() ?: ActionType.CHALLENGE
+    val selectedSpec = selectedType.toUiSpec()
+    val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron_rotation")
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 14.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onToggleExpanded() },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(selectedSpec.color.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(selectedSpec.iconRes),
+                    contentDescription = selectedType.label,
+                    tint = selectedSpec.color,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp)
+            ) {
+                Text(
+                    text = "種類",
+                    fontSize = 9.sp,
+                    color = Color(0xFF999999),
+                    letterSpacing = 1.2.sp
+                )
+                Text(
+                    text = selectedType.label,
+                    fontSize = 14.sp,
+                    color = Color(0xFF1A1A1A),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                text = "⌄",
+                color = Color(0xFFAAAAAA),
+                fontSize = 16.sp,
+                modifier = Modifier.rotate(chevronRotation)
+            )
+        }
+
+        if (expanded) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0xFFF3F0E8))
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            ActionType.entries.chunked(4).forEach { rowTypes ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowTypes.forEach { type ->
+                        val uiSpec = type.toUiSpec()
+                        val isSelected = type == selectedType
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    if (isSelected) uiSpec.color.copy(alpha = 0.18f) else Color(0xFFF5F2EA)
+                                )
+                                .border(
+                                    if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .clickable { onSelected(type) },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = uiSpec.iconRes),
+                                contentDescription = type.label,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (isSelected) uiSpec.color else Color(0xFF6B6660)
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = type.label,
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF3D3A34),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
@@ -738,6 +839,10 @@ private fun ActionFlags.toggle(type: ActionType): ActionFlags {
         ActionType.ALCOHOL -> copy(alcohol = !alcohol)
         ActionType.HANGOVER -> copy(hangover = !hangover)
     }
+}
+
+private fun ActionFlags.selectOnly(type: ActionType): ActionFlags {
+    return ActionFlags().toggle(type)
 }
 
 private fun showTimestampPicker(
