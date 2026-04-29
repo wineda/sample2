@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -112,6 +113,7 @@ fun MessageBubble(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .padding(horizontal = MessageRowHorizontalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -145,7 +147,9 @@ fun MessageBubble(
         Spacer(modifier = Modifier.width(TimeToStatusSpacing))
 
         ParentTimelineNode(
-            modifier = Modifier.width(TimelineColumnWidth),
+            modifier = Modifier
+                .width(TimelineColumnWidth)
+                .fillMaxHeight(),
             message = message,
             isConnectedToPreviousInDay = isConnectedToPreviousInDay,
             isConnectedToNextInDay = isConnectedToNextInDay
