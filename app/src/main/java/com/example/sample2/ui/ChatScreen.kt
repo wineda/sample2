@@ -589,6 +589,7 @@ fun ChatRoute() {
                                         .weight(1f)
                                         .fillMaxWidth()
                                 ) { msg ->
+                                    val childEntries = childEntriesByParentId[msg.id].orEmpty()
                                     Column {
                                         MessageBubble(
                                             message = msg,
@@ -602,14 +603,18 @@ fun ChatRoute() {
                                             }
                                         )
 
-                                        childEntriesByParentId[msg.id]
-                                            .orEmpty()
-                                            .forEach { child ->
+                                        if (childEntries.isNotEmpty()) {
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                        }
+
+                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            childEntries.forEach { child ->
                                                 EmotionResponseChildBubble(
                                                     message = child,
                                                     onLongClick = { state.selectedMessage = it }
                                                 )
                                             }
+                                        }
                                     }
                                 }
                             }

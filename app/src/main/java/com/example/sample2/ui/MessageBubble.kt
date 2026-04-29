@@ -76,7 +76,7 @@ private val BubbleStartIndent =
 
 private val BubbleTextVerticalPadding = 10.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
-private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + 16.dp
+private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + 20.dp
 private val ChildTimeColumnWidth = 44.dp
 private val ChildStatusColumnWidth = 28.dp
 private val ChildBubbleRightPadding = 20.dp
