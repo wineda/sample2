@@ -136,8 +136,7 @@ fun ChatRoute() {
     var workModeEnabled by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
     var addChildTarget by remember { mutableStateOf<MessageV2?>(null) }
-    var showQuickInputDialog by remember { mutableStateOf(false) }
-    var quickInputText by remember { mutableStateOf("") }
+    var createEditorMessage by remember { mutableStateOf<MessageV2?>(null) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
@@ -411,8 +410,11 @@ fun ChatRoute() {
                         if (currentMode == JournalScreenMode.Journal) {
                             FloatingActionButton(
                                 onClick = {
-                                    quickInputText = state.inputText
-                                    showQuickInputDialog = true
+                                    createEditorMessage = MessageV2(
+                                        id = "__new__",
+                                        timestamp = System.currentTimeMillis(),
+                                        text = ""
+                                    )
                                 },
                                 containerColor = Color(0xFF1A1A1A),
                                 contentColor = Color.White,
@@ -642,53 +644,10 @@ fun ChatRoute() {
             }
         }
 
-        if (showQuickInputDialog) {
-            AlertDialog(
-                onDismissRequest = { showQuickInputDialog = false },
-                title = {
-                    Text(
-                        text = "新しい記録",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    TextField(
-                        value = quickInputText,
-                        onValueChange = { quickInputText = it },
-                        placeholder = { Text("思ったことをひとこと") },
-                        minLines = 3,
-                        maxLines = 4,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                },
-                dismissButton = {
-                    TextButton(onClick = { showQuickInputDialog = false }) {
-                        Text("キャンセル", color = Color.Gray)
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            state.inputText = quickInputText
-                            state.addMessage()
-                            quickInputText = ""
-                            showQuickInputDialog = false
-                        },
-                        enabled = quickInputText.isNotBlank(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF1A1A1A)
-                        )
-                    ) {
-                        Text("保存", color = Color.White)
-                    }
-                }
-            )
-        }
-
         state.selectedMessage?.let { msg: MessageV2 ->
             MessageActionOverlay(
                 message = msg,
+                mode = EditorMode.EDIT,
                 state = state,
                 onDismiss = { state.selectedMessage = null },
                 onDelete = { state.deleteMessage(msg) },
@@ -696,6 +655,27 @@ fun ChatRoute() {
             )
         }
 
+
+
+        createEditorMessage?.let { draft ->
+            MessageActionOverlay(
+                message = draft,
+                mode = EditorMode.CREATE,
+                state = state,
+                onDismiss = { createEditorMessage = null },
+                onDelete = {},
+                onUpdate = {},
+                onCreate = { created ->
+                    state.inputText = created.text
+                    val beforeIds = state.messages.map { it.id }.toSet()
+                    state.addMessage()
+                    state.messages.firstOrNull { it.id !in beforeIds }?.let { inserted ->
+                        state.updateMessage(inserted.copy(emotions = created.emotions, flags = created.flags))
+                    }
+                    createEditorMessage = null
+                }
+            )
+        }
         addChildTarget?.let { parent ->
             AddChildMessageDialog(
                 parent = parent,

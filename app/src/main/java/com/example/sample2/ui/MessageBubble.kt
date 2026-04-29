@@ -361,13 +361,17 @@ fun getRelativeLabel(timestamp: Long): String {
     }
 }
 
+enum class EditorMode { CREATE, EDIT }
+
 @Composable
 fun MessageActionOverlay(
     message: MessageV2,
+    mode: EditorMode,
     state: JournalViewModel,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
-    onUpdate: (MessageV2) -> Unit
+    onUpdate: (MessageV2) -> Unit,
+    onCreate: (MessageV2) -> Unit = {}
 ) {
     var editingEmotions by remember(message.id) { mutableStateOf(message.emotions) }
     var editingFlags by remember(message.id) { mutableStateOf(message.flags) }
@@ -410,9 +414,15 @@ fun MessageActionOverlay(
                 tonalElevation = 0.dp,
                 shadowElevation = 3.dp
             ) {
-                Text(
+                Column(modifier = Modifier.padding(vertical = 14.dp, horizontal = 16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(if (mode == EditorMode.CREATE) "新しい記録" else "記録を編集", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(if (mode == EditorMode.CREATE) "NEW" else "EDIT", fontSize = 9.sp, fontFamily = FontFamily.Monospace, letterSpacing = 0.15.sp, color = Color(0xFF888888))
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
                     text = message.text,
-                    modifier = Modifier.padding(vertical = 14.dp, horizontal = 16.dp),
+                    modifier = Modifier,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = TextColor,
@@ -483,19 +493,15 @@ fun MessageActionOverlay(
                         modifier = Modifier.weight(1.6f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A1A)),
                         onClick = {
-                            onUpdate(
-                                message.copy(
-                                    emotions = editingEmotions,
-                                    flags = editingFlags
-                                )
-                            )
+                            val payload = message.copy(emotions = editingEmotions, flags = editingFlags)
+                            if (mode == EditorMode.CREATE) onCreate(payload) else onUpdate(payload)
                             onDismiss()
                         }
                     ) {
                         Text("保存", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    Box {
+                    if (mode == EditorMode.EDIT) Box {
                         IconButton(
                             onClick = { showActionMenu = true },
                             modifier = Modifier
