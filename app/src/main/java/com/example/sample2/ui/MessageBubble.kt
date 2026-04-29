@@ -161,7 +161,7 @@ fun MessageBubble(
             modifier = Modifier
                 .weight(1f)
                 .padding(end = BubbleRightPadding),
-            verticalAlignment = Alignment.Stretch
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
