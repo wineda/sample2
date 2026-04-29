@@ -930,7 +930,7 @@ private fun CollapsibleActionTypeEditor(
             ) {
                 Icon(
                     painter = painterResource(selectedSpec.iconRes),
-                    contentDescription = selectedType.label,
+                    contentDescription = currentType.label,
                     tint = selectedSpec.color,
                     modifier = Modifier.size(18.dp)
                 )
