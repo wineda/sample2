@@ -151,18 +151,15 @@ fun MessageBubble(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        val emotionType = message.emotions.maxEmotionOrNull()
-                        val categoryLabel = emotionTypeToLabel(emotionType)
-                        if (categoryLabel != null) {
-                            Text(
-                                text = categoryLabel,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = categoryColorFor(message)
-                            )
-                        }
+                        val categoryLabel = message.flags.firstEnabledActionOrNull()?.label ?: "メモ"
+                        Text(
+                            text = categoryLabel,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = categoryColorFor(message)
+                        )
                         Text(
                             text = displayText,
                             style = MaterialTheme.typography.bodyLarge.copy(
@@ -188,16 +185,6 @@ fun MessageBubble(
         }
     }
 }
-
-private fun emotionTypeToLabel(type: EmotionType?): String? =
-    when (type) {
-        EmotionType.ANXIETY -> "不安・焦り"
-        EmotionType.ANGRY -> "怒り・不満"
-        EmotionType.SAD -> "悲しみ"
-        EmotionType.HAPPY -> "喜び"
-        EmotionType.CALM -> "安心"
-        null -> null
-    }
 
 @Composable
 fun EmotionResponseChildBubble(
