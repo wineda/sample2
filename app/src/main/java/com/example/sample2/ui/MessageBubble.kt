@@ -27,11 +27,13 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -55,6 +57,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sample2.BubbleColor
@@ -434,23 +437,10 @@ fun MessageActionOverlay(
                 tonalElevation = 2.dp,
                 shadowElevation = 6.dp
             ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    EmotionType.entries.forEach { type ->
-                        val uiSpec = type.toUiSpec()
-                        EmotionSliderRow(
-                            iconRes = uiSpec.iconRes,
-                            value = type.scoreOf(editingEmotions).toFloat(),
-                            label = type.label,
-                            onChange = { newValue ->
-                                editingEmotions =
-                                    editingEmotions.withScore(type, newValue.toInt())
-                            }
-                        )
-                    }
-                }
+                AdditiveEmotionEditor(
+                    emotions = editingEmotions,
+                    onEmotionsChanged = { editingEmotions = it }
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -496,6 +486,188 @@ fun MessageActionOverlay(
                         Text("閉じる")
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdditiveEmotionEditor(
+    emotions: EmotionMetrics,
+    onEmotionsChanged: (EmotionMetrics) -> Unit
+) {
+    var showPalette by remember { mutableStateOf(false) }
+    val selectedEmotions = EmotionType.entries.filter { it.scoreOf(emotions) > 0 }
+    val remainingEmotions = EmotionType.entries.filterNot { it in selectedEmotions }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (selectedEmotions.isEmpty()) {
+            AddEmotionButton(
+                text = "感情を追加",
+                onClick = { showPalette = !showPalette }
+            )
+        } else {
+            selectedEmotions.forEach { emotion ->
+                EmotionSegmentRow(
+                    emotion = emotion,
+                    value = emotion.scoreOf(emotions),
+                    onValueChanged = { score ->
+                        onEmotionsChanged(emotions.withScore(emotion, score))
+                    },
+                    onRemove = {
+                        onEmotionsChanged(emotions.withScore(emotion, 0))
+                    }
+                )
+            }
+
+            if (remainingEmotions.isNotEmpty()) {
+                AddEmotionButton(
+                    text = "もう1つ追加",
+                    onClick = { showPalette = !showPalette }
+                )
+            }
+        }
+
+        if (showPalette && remainingEmotions.isNotEmpty()) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "どの感情がありましたか?",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        EmotionType.entries.forEach { emotion ->
+                            val isAdded = emotion in selectedEmotions
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFF5F2EA))
+                                    .clickable(enabled = !isAdded) {
+                                        onEmotionsChanged(emotions.withScore(emotion, 1))
+                                        showPalette = false
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = emotionEmoji(emotion),
+                                    fontSize = 22.sp,
+                                    color = Color.Black.copy(alpha = if (isAdded) 0.4f else 1f)
+                                )
+                                Text(
+                                    text = emotion.label,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF3D3A34).copy(alpha = if (isAdded) 0.4f else 1f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddEmotionButton(text: String, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(14.dp),
+        color = Color.White,
+        border = BorderStroke(1.5.dp, Color(0xFFC8C2B0))
+    ) {
+        Row(
+            modifier = Modifier.padding(vertical = 14.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = "＋ ", fontWeight = FontWeight.Bold, color = Color(0xFF888888))
+            Text(text = text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF888888))
+        }
+    }
+}
+
+@Composable
+private fun EmotionSegmentRow(
+    emotion: EmotionType,
+    value: Int,
+    onValueChanged: (Int) -> Unit,
+    onRemove: () -> Unit
+) {
+    val theme = emotionTheme(emotion)
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = Color.White
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(theme.light),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(emotionEmoji(emotion), fontSize = 18.sp)
+            }
+            Text(
+                text = emotion.label,
+                modifier = Modifier
+                    .width(36.dp)
+                    .padding(start = 8.dp),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                (0..3).forEach { score ->
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onValueChanged(score) },
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (score == value) theme.main else Color(0xFFF5F2EA)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = score.toString(),
+                                color = if (score == value) Color.White else Color(0xFF6B6660),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+            IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
+                Text("×", color = Color(0xFFCCCCCC), fontSize = 18.sp)
             }
         }
     }
@@ -843,6 +1015,24 @@ private fun ActionFlags.toggle(type: ActionType): ActionFlags {
 
 private fun ActionFlags.selectOnly(type: ActionType): ActionFlags {
     return ActionFlags().toggle(type)
+}
+
+private data class EmotionTheme(val main: Color, val light: Color)
+
+private fun emotionTheme(type: EmotionType): EmotionTheme = when (type) {
+    EmotionType.ANXIETY -> EmotionTheme(Color(0xFF9333EA), Color(0xFFF3E8FF))
+    EmotionType.ANGRY -> EmotionTheme(Color(0xFFDC2626), Color(0xFFFEE2E2))
+    EmotionType.SAD -> EmotionTheme(Color(0xFF6366F1), Color(0xFFE0E7FF))
+    EmotionType.HAPPY -> EmotionTheme(Color(0xFFB45309), Color(0xFFFEF3C7))
+    EmotionType.CALM -> EmotionTheme(Color(0xFF3B82F6), Color(0xFFDBEAFE))
+}
+
+private fun emotionEmoji(type: EmotionType): String = when (type) {
+    EmotionType.ANXIETY -> "😰"
+    EmotionType.ANGRY -> "😠"
+    EmotionType.SAD -> "😢"
+    EmotionType.HAPPY -> "😊"
+    EmotionType.CALM -> "😌"
 }
 
 private fun showTimestampPicker(
