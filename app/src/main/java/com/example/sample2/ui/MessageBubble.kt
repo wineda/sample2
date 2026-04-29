@@ -11,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
@@ -46,19 +47,26 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -361,27 +369,42 @@ fun getRelativeLabel(timestamp: Long): String {
     }
 }
 
+enum class EditorMode { CREATE, EDIT }
+
 @Composable
 fun MessageActionOverlay(
     message: MessageV2,
+    mode: EditorMode,
     state: JournalViewModel,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
-    onUpdate: (MessageV2) -> Unit
+    onUpdate: (MessageV2) -> Unit,
+    onCreate: (MessageV2) -> Unit = {}
 ) {
+    var editingText by remember(message.id) { mutableStateOf(TextFieldValue(message.text)) }
+    var editingTimestamp by remember(message.id) { mutableStateOf(message.timestamp) }
     var editingEmotions by remember(message.id) { mutableStateOf(message.emotions) }
     var editingFlags by remember(message.id) { mutableStateOf(message.flags) }
+    var selectedActionType by remember(message.id) { mutableStateOf(message.flags.firstEnabledActionOrNull()) }
     var isActionTypeExpanded by remember(message.id) { mutableStateOf(false) }
     var showActionMenu by remember(message.id) { mutableStateOf(false) }
     var showDeleteConfirm by remember(message.id) { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
     val blockClicks = remember { MutableInteractionSource() }
+    val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val textFocusRequester = remember { FocusRequester() }
+    var isTextFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(message.id, mode) {
+        if (mode == EditorMode.CREATE) textFocusRequester.requestFocus()
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.14f))
+            .background(Color.Black.copy(alpha = 0.32f))
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
@@ -407,18 +430,112 @@ fun MessageActionOverlay(
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
+                border = BorderStroke(1.5.dp, if (isTextFocused) Color(0xFF1A1A1A) else Color(0xFFEFECE4)),
                 tonalElevation = 0.dp,
                 shadowElevation = 3.dp
             ) {
-                Text(
-                    text = message.text,
-                    modifier = Modifier.padding(vertical = 14.dp, horizontal = 16.dp),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = TextColor,
-                    fontSize = 14.sp,
-                    lineHeight = 21.sp
-                )
+                Column(modifier = Modifier.padding(vertical = 14.dp, horizontal = 16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (mode == EditorMode.CREATE) "新しい記録" else "記録を編集",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Text(
+                            text = if (mode == EditorMode.CREATE) "NEW" else "EDIT",
+                            fontSize = 9.sp,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 0.15.sp,
+                            color = Color(0xFF888888)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "本文",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = 0.12.sp,
+                        color = Color(0xFF999999)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    BasicTextField(
+                        value = editingText,
+                        onValueChange = { editingText = it },
+                        textStyle = TextStyle(
+                            fontSize = 14.sp,
+                            lineHeight = 21.sp,
+                            color = TextColor
+                        ),
+                        maxLines = 5,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(textFocusRequester)
+                            .onFocusChanged { isTextFocused = it.isFocused },
+                        decorationBox = { innerTextField ->
+                            if (editingText.text.isBlank()) {
+                                Text(
+                                    text = "思ったことをひとこと…",
+                                    color = Color(0xFFB8B3A8),
+                                    fontSize = 14.sp
+                                )
+                            }
+                            innerTextField()
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        showTimestampPicker(
+                            context = context,
+                            initialTimestamp = editingTimestamp,
+                            onSelected = { editingTimestamp = it }
+                        )
+                    },
+                shape = RoundedCornerShape(14.dp),
+                color = Color.White
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFF5F2EA)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("🕒", color = Color(0xFF9CA3AF), fontSize = 12.sp)
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "時刻",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = Color(0xFF999999),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = formatEditorTime(editingTimestamp),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = (-0.02).sp,
+                        color = Color(0xFF1A1A1A)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("⌄", color = Color(0xFFCCCCCC), fontSize = 14.sp)
+                }
             }
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -429,15 +546,49 @@ fun MessageActionOverlay(
                 tonalElevation = 2.dp,
                 shadowElevation = 6.dp
             ) {
-                CollapsibleActionTypeEditor(
-                    flags = editingFlags,
-                    expanded = isActionTypeExpanded,
-                    onToggleExpanded = { isActionTypeExpanded = !isActionTypeExpanded },
-                    onSelected = { selected ->
-                        editingFlags = editingFlags.selectOnly(selected)
-                        isActionTypeExpanded = false
+                if (selectedActionType == null) {
+                    Column {
+                        AddEmotionButton(
+                            text = "種類を追加",
+                            onClick = {
+                                focusManager.clearFocus(force = true)
+                                isActionTypeExpanded = !isActionTypeExpanded
+                            }
+                        )
+                        if (isActionTypeExpanded) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Surface(color = Color.White) {
+                                ActionTypeGrid(
+                                    selectedType = null,
+                                    onSelected = { selected ->
+                                        selectedActionType = selected
+                                        editingFlags = ActionFlags().selectOnly(selected)
+                                        isActionTypeExpanded = false
+                                    }
+                                )
+                            }
+                        }
                     }
-                )
+                } else {
+                    CollapsibleActionTypeEditor(
+                        selectedType = selectedActionType,
+                        expanded = isActionTypeExpanded,
+                        onToggleExpanded = {
+                            focusManager.clearFocus(force = true)
+                            isActionTypeExpanded = !isActionTypeExpanded
+                        },
+                        onSelected = { selected ->
+                            selectedActionType = selected
+                            editingFlags = ActionFlags().selectOnly(selected)
+                            isActionTypeExpanded = false
+                        },
+                        onClear = {
+                            selectedActionType = null
+                            editingFlags = ActionFlags()
+                            isActionTypeExpanded = false
+                        }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -483,19 +634,20 @@ fun MessageActionOverlay(
                         modifier = Modifier.weight(1.6f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A1A)),
                         onClick = {
-                            onUpdate(
-                                message.copy(
-                                    emotions = editingEmotions,
-                                    flags = editingFlags
-                                )
+                            val payload = message.copy(
+                                text = editingText.text,
+                                timestamp = editingTimestamp,
+                                emotions = editingEmotions,
+                                flags = editingFlags
                             )
+                            if (mode == EditorMode.CREATE) onCreate(payload) else onUpdate(payload)
                             onDismiss()
                         }
                     ) {
                         Text("保存", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    Box {
+                    if (mode == EditorMode.EDIT) Box {
                         IconButton(
                             onClick = { showActionMenu = true },
                             modifier = Modifier
@@ -548,6 +700,20 @@ fun MessageActionOverlay(
                 }
             }
         )
+    }
+}
+
+private fun formatEditorTime(timestamp: Long): String {
+    val selected = Calendar.getInstance().apply { timeInMillis = timestamp }
+    val now = Calendar.getInstance()
+    val isToday = selected.get(Calendar.YEAR) == now.get(Calendar.YEAR) &&
+            selected.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR)
+    val hhmm = SimpleDateFormat("HH:mm", Locale.JAPANESE).format(Date(timestamp))
+    return if (isToday) {
+        "今日 $hhmm"
+    } else {
+        val md = SimpleDateFormat("M/d", Locale.JAPANESE).format(Date(timestamp))
+        "$md $hhmm"
     }
 }
 
@@ -626,16 +792,16 @@ private fun AdditiveEmotionEditor(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Text(
-                                    text = emotionEmoji(emotion),
-                                    fontSize = 22.sp,
-                                    color = Color.Black.copy(alpha = if (isAdded) 0.4f else 1f)
+                                EmotionCircleBadge(
+                                    emotion = emotion,
+                                    size = 28.dp,
+                                    alpha = if (isAdded) 0.4f else 1f
                                 )
                                 Text(
                                     text = emotion.label,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF3D3A34).copy(alpha = if (isAdded) 0.4f else 1f)
+                                    color = Color(0xFF666666).copy(alpha = if (isAdded) 0.4f else 1f)
                                 )
                             }
                         }
@@ -686,11 +852,10 @@ private fun EmotionSegmentRow(
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .clip(CircleShape)
-                    .background(theme.light),
+                    .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(emotionEmoji(emotion), fontSize = 18.sp)
+                EmotionCircleBadge(emotion = emotion, size = 32.dp)
             }
             Text(
                 text = emotion.label,
@@ -735,13 +900,14 @@ private fun EmotionSegmentRow(
 
 @Composable
 private fun CollapsibleActionTypeEditor(
-    flags: ActionFlags,
+    selectedType: ActionType?,
     expanded: Boolean,
     onToggleExpanded: () -> Unit,
-    onSelected: (ActionType) -> Unit
+    onSelected: (ActionType) -> Unit,
+    onClear: () -> Unit
 ) {
-    val selectedType = flags.firstEnabledActionOrNull() ?: ActionType.CHALLENGE
-    val selectedSpec = selectedType.toUiSpec()
+    val currentType = selectedType ?: ActionType.CHALLENGE
+    val selectedSpec = currentType.toUiSpec()
     val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron_rotation")
 
     Column(
@@ -764,7 +930,7 @@ private fun CollapsibleActionTypeEditor(
             ) {
                 Icon(
                     painter = painterResource(selectedSpec.iconRes),
-                    contentDescription = selectedType.label,
+                    contentDescription = currentType.label,
                     tint = selectedSpec.color,
                     modifier = Modifier.size(18.dp)
                 )
@@ -782,18 +948,23 @@ private fun CollapsibleActionTypeEditor(
                     letterSpacing = 1.2.sp
                 )
                 Text(
-                    text = selectedType.label,
+                    text = currentType.label,
                     fontSize = 14.sp,
                     color = Color(0xFF1A1A1A),
                     fontWeight = FontWeight.Bold
                 )
             }
-            Text(
-                text = "⌄",
-                color = Color(0xFFAAAAAA),
-                fontSize = 16.sp,
-                modifier = Modifier.rotate(chevronRotation)
-            )
+            if (!expanded) {
+                Text(
+                    text = "×",
+                    color = Color(0xFFCCCCCC),
+                    fontSize = 18.sp,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { onClear() },
+                    textAlign = TextAlign.Center
+                )
+            }
         }
 
         if (expanded) {
@@ -805,50 +976,72 @@ private fun CollapsibleActionTypeEditor(
                     .background(Color(0xFFF3F0E8))
             )
             Spacer(modifier = Modifier.height(14.dp))
-            ActionType.entries.chunked(4).forEach { rowTypes ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ActionTypeGrid(selectedType = currentType, onSelected = onSelected)
+        }
+    }
+}
+
+@Composable
+private fun ActionTypeGrid(
+    selectedType: ActionType?,
+    onSelected: (ActionType) -> Unit
+) {
+    val allActionTypes = listOf(
+        ActionType.EXERCISED,
+        ActionType.SOCIALIZED,
+        ActionType.DELEGATE,
+        ActionType.CHALLENGE,
+        ActionType.BREAKDOWN,
+        ActionType.INSTRUCT,
+        ActionType.QUICK_ACTION,
+        ActionType.PENDING_TASK,
+        ActionType.MEETING_STRESS,
+        ActionType.SMARTPHONE_DRIFT,
+        ActionType.ALCOHOL,
+        ActionType.HANGOVER
+    )
+    allActionTypes.chunked(4).forEach { rowTypes ->
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            rowTypes.forEach { type ->
+                val uiSpec = type.toUiSpec()
+                val isSelected = type == selectedType
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isSelected) uiSpec.color.copy(alpha = 0.18f) else Color(0xFFF5F2EA))
+                        .border(
+                            if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .clickable { onSelected(type) },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    rowTypes.forEach { type ->
-                        val uiSpec = type.toUiSpec()
-                        val isSelected = type == selectedType
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    if (isSelected) uiSpec.color.copy(alpha = 0.18f) else Color(0xFFF5F2EA)
-                                )
-                                .border(
-                                    if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
-                                    RoundedCornerShape(12.dp)
-                                )
-                                .clickable { onSelected(type) },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = uiSpec.iconRes),
-                                contentDescription = type.label,
-                                modifier = Modifier.size(18.dp),
-                                tint = if (isSelected) uiSpec.color else Color(0xFF6B6660)
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = type.label,
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF3D3A34),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
+                    Icon(
+                        painter = painterResource(id = uiSpec.iconRes),
+                        contentDescription = type.label,
+                        modifier = Modifier.size(18.dp),
+                        tint = if (isSelected) uiSpec.color else Color(0xFF6B6660)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = type.label,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF3D3A34),
+                        textAlign = TextAlign.Center
+                    )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
             }
         }
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
@@ -1087,12 +1280,27 @@ private fun emotionTheme(type: EmotionType): EmotionTheme = when (type) {
     EmotionType.CALM -> EmotionTheme(Color(0xFF3B82F6), Color(0xFFDBEAFE))
 }
 
-private fun emotionEmoji(type: EmotionType): String = when (type) {
-    EmotionType.ANXIETY -> "😰"
-    EmotionType.ANGRY -> "😠"
-    EmotionType.SAD -> "😢"
-    EmotionType.HAPPY -> "😊"
-    EmotionType.CALM -> "😌"
+@Composable
+private fun EmotionCircleBadge(
+    emotion: EmotionType,
+    size: androidx.compose.ui.unit.Dp,
+    alpha: Float = 1f
+) {
+    val ui = emotion.toUiSpec()
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(RoundedCornerShape(10.dp))
+            .background(ui.color.copy(alpha = 0.16f * alpha)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(id = ui.iconRes),
+            contentDescription = emotion.label,
+            tint = ui.color.copy(alpha = alpha),
+            modifier = Modifier.size((size.value * 0.56f).dp)
+        )
+    }
 }
 
 private fun showTimestampPicker(
