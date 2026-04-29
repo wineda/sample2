@@ -257,7 +257,7 @@ fun EmotionResponseChildBubble(
             message = message,
             modifier = Modifier
                 .padding(top = 2.dp)
-                .size(24.dp)
+                .size(20.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
 
