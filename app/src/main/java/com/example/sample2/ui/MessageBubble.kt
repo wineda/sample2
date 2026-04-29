@@ -5,6 +5,7 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.text.format.DateFormat
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +21,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -85,17 +89,18 @@ private val BubbleStartIndent =
 
 private val BubbleTextVerticalPadding = 10.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
-private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + 20.dp
-private val ChildTimeColumnWidth = 44.dp
-private val ChildStatusColumnWidth = 28.dp
+private val MessageRowVerticalPadding = 4.dp
+private val MessageRowVerticalPaddingCompact = 1.5.dp
+private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + TimeColumnWidth + TimeToStatusSpacing + TimelineColumnWidth + 18.dp
 private val ChildBubbleRightPadding = 20.dp
-private val CategoryBarWidth = 4.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MessageBubble(
     message: MessageV2,
     state: JournalViewModel,
+    isConnectedToPreviousInDay: Boolean,
+    isConnectedToNextInDay: Boolean,
     onDelete: () -> Unit,
     onUpdate: (MessageV2) -> Unit,
     onDoubleClick: (MessageV2) -> Unit = {}
@@ -112,7 +117,8 @@ fun MessageBubble(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = MessageRowHorizontalPadding),
+            .height(IntrinsicSize.Min)
+            .padding(horizontal = MessageRowHorizontalPadding, vertical = rowVerticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val context = LocalContext.current
@@ -120,8 +126,12 @@ fun MessageBubble(
         Row(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = BubbleRightPadding),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(end = BubbleRightPadding)
+                .combinedClickable(
+                    onClick = {},
+                    onDoubleClick = { onDoubleClick(message) },
+                    onLongClick = { state.selectedMessage = message }
+                )
         ) {
             Surface(
                 color = Color.White,

@@ -588,7 +588,7 @@ fun ChatRoute() {
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxWidth()
-                                ) { msg ->
+                                ) { msg, isConnectedToPreviousInDay, isConnectedToNextInDay ->
                                     val childEntries = childEntriesByParentId[msg.id].orEmpty()
                                     Column(
                                         modifier = Modifier.padding(bottom = 16.dp)
@@ -596,6 +596,8 @@ fun ChatRoute() {
                                         MessageBubble(
                                             message = msg,
                                             state = state,
+                                            isConnectedToPreviousInDay = isConnectedToPreviousInDay,
+                                            isConnectedToNextInDay = isConnectedToNextInDay,
                                             onDelete = { state.deleteMessage(msg) },
                                             onUpdate = { updated ->
                                                 state.updateMessage(updated)
@@ -637,13 +639,13 @@ fun ChatRoute() {
             }
         }
 
-        state.selectedMessage?.let { msg ->
+        state.selectedMessage?.let { msg: MessageV2 ->
             MessageActionOverlay(
                 message = msg,
                 state = state,
                 onDismiss = { state.selectedMessage = null },
                 onDelete = { state.deleteMessage(msg) },
-                onUpdate = { updated -> state.updateMessage(updated) }
+                onUpdate = { updated: MessageV2 -> state.updateMessage(updated) }
             )
         }
 
