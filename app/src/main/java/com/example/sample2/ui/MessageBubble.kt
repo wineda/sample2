@@ -11,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
@@ -46,10 +47,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -57,8 +63,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -373,6 +381,7 @@ fun MessageActionOverlay(
     onUpdate: (MessageV2) -> Unit,
     onCreate: (MessageV2) -> Unit = {}
 ) {
+    var editingText by remember(message.id) { mutableStateOf(TextFieldValue(message.text)) }
     var editingEmotions by remember(message.id) { mutableStateOf(message.emotions) }
     var editingFlags by remember(message.id) { mutableStateOf(message.flags) }
     var isActionTypeExpanded by remember(message.id) { mutableStateOf(false) }
@@ -381,6 +390,12 @@ fun MessageActionOverlay(
 
     val scrollState = rememberScrollState()
     val blockClicks = remember { MutableInteractionSource() }
+    val textFocusRequester = remember { FocusRequester() }
+    var isTextFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(message.id, mode) {
+        if (mode == EditorMode.CREATE) textFocusRequester.requestFocus()
+    }
 
     Box(
         modifier = Modifier
@@ -411,6 +426,7 @@ fun MessageActionOverlay(
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
+                border = BorderStroke(1.5.dp, if (isTextFocused) Color(0xFF1A1A1A) else Color(0xFFEFECE4)),
                 tonalElevation = 0.dp,
                 shadowElevation = 3.dp
             ) {
@@ -435,12 +451,36 @@ fun MessageActionOverlay(
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = message.text,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = TextColor,
-                        fontSize = 14.sp,
-                        lineHeight = 21.sp
+                        text = "本文",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = 0.12.sp,
+                        color = Color(0xFF999999)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    BasicTextField(
+                        value = editingText,
+                        onValueChange = { editingText = it },
+                        textStyle = TextStyle(
+                            fontSize = 14.sp,
+                            lineHeight = 21.sp,
+                            color = TextColor
+                        ),
+                        maxLines = 5,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(textFocusRequester)
+                            .onFocusChanged { isTextFocused = it.isFocused },
+                        decorationBox = { innerTextField ->
+                            if (editingText.text.isBlank()) {
+                                Text(
+                                    text = "思ったことをひとこと…",
+                                    color = Color(0xFFB8B3A8),
+                                    fontSize = 14.sp
+                                )
+                            }
+                            innerTextField()
+                        }
                     )
                 }
             }
@@ -507,7 +547,11 @@ fun MessageActionOverlay(
                         modifier = Modifier.weight(1.6f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A1A)),
                         onClick = {
-                            val payload = message.copy(emotions = editingEmotions, flags = editingFlags)
+                            val payload = message.copy(
+                                text = editingText.text,
+                                emotions = editingEmotions,
+                                flags = editingFlags
+                            )
                             if (mode == EditorMode.CREATE) onCreate(payload) else onUpdate(payload)
                             onDismiss()
                         }
