@@ -869,9 +869,9 @@ private fun JournalCompactMetaRow(
                 selected = effectiveSingleLineMode,
                 onClick = onToggleSingleLine,
                 icon = if (effectiveSingleLineMode) {
-                    Icons.Default.ViewAgenda
+                    Icons.Default.Today
                 } else {
-                    Icons.Default.ViewStream
+                    Icons.Default.EditNote
                 },
                 contentDescription = if (effectiveSingleLineMode) {
                     "通常表示に切り替え"
