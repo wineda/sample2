@@ -74,6 +74,7 @@ import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
 import com.example.sample2.data.MessageV2
+import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.analytics.AnalyticsDisplayMode
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.util.formatDate
