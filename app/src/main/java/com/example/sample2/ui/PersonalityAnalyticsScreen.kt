@@ -105,6 +105,18 @@ import kotlin.math.roundToInt
 
 private const val AnalyticsLogTag = "PersonalityAnalytics"
 
+
+private object AnalyticsColors {
+    val Bg = Color(0xFFFFFFFF)
+    val BgSoft = Color(0xFFF7F7F8)
+    val Ink = Color(0xFF0A0A0B)
+    val InkSoft = Color(0xFF4A4A4F)
+    val InkMute = Color(0xFF8E8E94)
+    val Line = Color(0xFFECECEE)
+    val LineSoft = Color(0xFFF2F2F4)
+    val TodayTint = Color(0x0D2563EB)
+}
+
 enum class AnalyticsDisplayMode {
     DETAIL,
     CHARTS,
@@ -124,8 +136,8 @@ private enum class DetailCompareMode(
     val label: String
 ) {
     NONE("比較なし"),
-    PREVIOUS_DAY("前日と比較"),
-    PREVIOUS_WEEK("先週と比較")
+    PREVIOUS_DAY("前日"),
+    PREVIOUS_WEEK("先週")
 }
 
 private data class LineSeries(
@@ -420,7 +432,7 @@ fun PersonalityAnalyticsScreen(
         comparisonDate?.let { dailyRecordMap[it.toString()] }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().background(AnalyticsColors.Bg)) {
         if (availableDisplayModes.size > 1) {
             AnalyticsDisplayModeToggle(
                 current = displayMode,
@@ -510,6 +522,17 @@ fun PersonalityAnalyticsScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("分析", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = AnalyticsColors.Ink)
+                            Surface(shape = RoundedCornerShape(999.dp), color = AnalyticsColors.BgSoft) {
+                                Text(text = chartXAxisLabels.firstOrNull().orEmpty() + " — " + chartXAxisLabels.lastOrNull().orEmpty(), modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 11.sp, color = AnalyticsColors.InkMute)
+                            }
+                        }
+                    }
+                    item {
+                        SectionHeader("日次スコア", "${filteredRawScoresAsc.size} days")
+                    }
+                    item {
                         OverallTrendChartCard(
                             scores = filteredRawScoresAsc,
                             currentPeriod = selectedPeriod,
@@ -520,6 +543,9 @@ fun PersonalityAnalyticsScreen(
                                 selectedPeriodName = previousAnalyticsPeriod(selectedPeriod).name
                             }
                         )
+                    }
+                    item {
+                        SectionHeader("仕事推移", "${chartDates.size} days")
                     }
                     item {
                         ActionFlagCountChartCard(
@@ -622,11 +648,11 @@ private fun ActionFlagCountChartCard(
             .fillMaxWidth()
             .padding(start = startPadding, end = endPadding),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = AnalyticsColors.Bg
         )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
@@ -666,11 +692,11 @@ private fun MetricBarChartCard(
             .fillMaxWidth()
             .padding(start = startPadding, end = endPadding),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = AnalyticsColors.Bg
         )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
@@ -759,7 +785,7 @@ private fun OverallTrendChartCard(
             .fillMaxWidth()
             .padding(start = startPadding, end = endPadding),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = AnalyticsColors.Bg
         )
     ) {
         Column(
@@ -814,14 +840,14 @@ private fun StateBadge(
     modifier: Modifier = Modifier
 ) {
     val containerColor = when (state) {
-        PersonalityState.STABLE -> MaterialTheme.colorScheme.primaryContainer
+        PersonalityState.STABLE -> Color.White
         PersonalityState.RECOVERING -> MaterialTheme.colorScheme.secondaryContainer
         PersonalityState.TENSE -> MaterialTheme.colorScheme.tertiaryContainer
         PersonalityState.EXHAUSTED -> MaterialTheme.colorScheme.errorContainer
     }
 
     val contentColor = when (state) {
-        PersonalityState.STABLE -> MaterialTheme.colorScheme.onPrimaryContainer
+        PersonalityState.STABLE -> AnalyticsColors.Ink
         PersonalityState.RECOVERING -> MaterialTheme.colorScheme.onSecondaryContainer
         PersonalityState.TENSE -> MaterialTheme.colorScheme.onTertiaryContainer
         PersonalityState.EXHAUSTED -> MaterialTheme.colorScheme.onErrorContainer
@@ -911,7 +937,7 @@ private fun MultiLineChart(
 
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = AnalyticsColors.Bg)
     ) {
         Column(
             modifier = Modifier
@@ -954,7 +980,7 @@ private fun MultiLineChart(
                             style = MaterialTheme.typography.labelSmall,
                             fontSize = 10.sp,
                             color = if (item.label in hiddenSeriesLabels) {
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                                AnalyticsColors.InkMute
                             } else {
                                 MaterialTheme.colorScheme.onSurface
                             }
@@ -1039,7 +1065,7 @@ private fun SimpleMultiLineChart(
                     },
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = AnalyticsColors.InkMute
                 )
             }
         }
@@ -1275,7 +1301,7 @@ private fun CompactMetricChartCard(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = AnalyticsColors.Bg
         )
     ) {
         Column(
@@ -1331,6 +1357,14 @@ private fun CompactMetricChartCard(
 }
 
 @Composable
+private fun SectionHeader(title: String, meta: String) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Text(text = title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = AnalyticsColors.Ink)
+        Text(text = meta, fontSize = 11.sp, color = AnalyticsColors.InkMute)
+    }
+}
+
+@Composable
 private fun AnalyticsDisplayModeToggle(
     current: AnalyticsDisplayMode,
     modes: List<AnalyticsDisplayMode>,
@@ -1339,8 +1373,8 @@ private fun AnalyticsDisplayModeToggle(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant
+        shape = RoundedCornerShape(12.dp),
+        color = AnalyticsColors.BgSoft
     ) {
         Row(
             modifier = Modifier
@@ -1435,16 +1469,16 @@ private fun ToggleChipLikeButton(
     Surface(
         modifier = modifier,
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(12.dp),
         color = if (selected) {
-            MaterialTheme.colorScheme.primaryContainer
+            Color.White
         } else {
             MaterialTheme.colorScheme.surface
         },
         contentColor = if (selected) {
-            MaterialTheme.colorScheme.onPrimaryContainer
+            AnalyticsColors.Ink
         } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
+            AnalyticsColors.InkMute
         }
     ) {
         Row(
@@ -1591,12 +1625,12 @@ fun DailyPersonalityScoreCard(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Surface(
                 color = if (selected) {
-                    MaterialTheme.colorScheme.primaryContainer
+                    Color.White
                 } else {
                     MaterialTheme.colorScheme.surfaceVariant
                 },
                 contentColor = if (selected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
+                    AnalyticsColors.Ink
                 } else {
                     MaterialTheme.colorScheme.onSurface
                 },
@@ -1855,7 +1889,7 @@ private fun DailyMessagePseudoTrendCard(
             .fillMaxWidth()
             .padding(start = startPadding, end = endPadding),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = AnalyticsColors.Bg
         )
     ) {
         Column(
@@ -1885,7 +1919,7 @@ private fun DailyMessagePseudoTrendCard(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = AnalyticsColors.InkMute
                 )
             }
 
@@ -1893,7 +1927,7 @@ private fun DailyMessagePseudoTrendCard(
                 Text(
                     text = "この日にメッセージがありません",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = AnalyticsColors.InkMute
                 )
                 return@Column
             }
@@ -1902,7 +1936,7 @@ private fun DailyMessagePseudoTrendCard(
                 Text(
                     text = "07:00〜22:00 の範囲に表示できるメッセージがありません",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = AnalyticsColors.InkMute
                 )
                 return@Column
             }
@@ -1999,7 +2033,7 @@ private fun SelectedMessagesAtTimeCard(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = AnalyticsColors.BgVariant
         )
     ) {
         Column(
@@ -2024,7 +2058,7 @@ private fun SelectedMessagesAtTimeCard(
                     Text(
                         text = formatTime(message.timestamp),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = AnalyticsColors.InkMute
                     )
 
                     Text(
@@ -2038,14 +2072,14 @@ private fun SelectedMessagesAtTimeCard(
                         Text(
                             text = "フラグ: ${enabledFlags.joinToString(" / ")}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = AnalyticsColors.InkMute
                         )
                     }
                     if (emotionDetails.isNotEmpty()) {
                         Text(
                             text = "感情: ${emotionDetails.joinToString(" / ")}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = AnalyticsColors.InkMute
                         )
                     }
                 }
@@ -2313,7 +2347,7 @@ private fun SimpleLineChart(
                         .align(Alignment.TopEnd)
                         .padding(6.dp),
                     shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
+                    color = AnalyticsColors.BgSoft
                 ) {
                     Text(
                         text = labels.getOrElse(index) { "" },
@@ -2347,7 +2381,7 @@ private fun CompactChartTickLabelRow(
                 text = label,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = AnalyticsColors.InkMute,
                 textAlign = if (centerAllLabels) {
                     TextAlign.Center
                 } else {
@@ -2365,11 +2399,11 @@ private fun CompactChartTickLabelRow(
 
 @Composable
 private fun selectionChipColors() = FilterChipDefaults.filterChipColors(
-    containerColor = MaterialTheme.colorScheme.surface,
-    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+    containerColor = AnalyticsColors.Bg,
+    labelColor = AnalyticsColors.InkMute,
+    selectedContainerColor = Color.White,
+    selectedLabelColor = AnalyticsColors.Ink,
+    selectedLeadingIconColor = AnalyticsColors.Ink
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -2480,7 +2514,7 @@ private fun EmptyAnalyticsState(
         Text(
             text = "表示できる分析データがありません",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = AnalyticsColors.InkMute
         )
     }
 }
