@@ -46,9 +46,11 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
@@ -70,6 +72,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.DefaultJournalRepository
+import com.example.sample2.data.EmotionType
 import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
@@ -125,6 +128,7 @@ fun ChatRoute() {
     var showFilterSheet by remember { mutableStateOf(false) }
     var workModeEnabled by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
+    var addChildTarget by remember { mutableStateOf<MessageV2?>(null) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
@@ -593,13 +597,19 @@ fun ChatRoute() {
                                             onDelete = { state.deleteMessage(msg) },
                                             onUpdate = { updated ->
                                                 state.updateMessage(updated)
+                                            },
+                                            onDoubleClick = { parent ->
+                                                addChildTarget = parent
                                             }
                                         )
 
                                         childEntriesByParentId[msg.id]
                                             .orEmpty()
                                             .forEach { child ->
-                                                EmotionResponseChildBubble(message = child)
+                                                EmotionResponseChildBubble(
+                                                    message = child,
+                                                    onLongClick = { state.selectedMessage = it }
+                                                )
                                             }
                                     }
                                 }
@@ -629,6 +639,120 @@ fun ChatRoute() {
                 onDelete = { state.deleteMessage(msg) },
                 onUpdate = { updated -> state.updateMessage(updated) }
             )
+        }
+
+        addChildTarget?.let { parent ->
+            AddChildMessageDialog(
+                parent = parent,
+                onDismiss = { addChildTarget = null },
+                onAdd = { targetEmotionKey, actionKey, effectScore, note ->
+                    state.addEmotionResponse(
+                        parent = parent,
+                        targetEmotionKey = targetEmotionKey,
+                        actionKey = actionKey,
+                        effectScore = effectScore,
+                        note = note
+                    )
+                    addChildTarget = null
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun AddChildMessageDialog(
+    parent: MessageV2,
+    onDismiss: () -> Unit,
+    onAdd: (targetEmotionKey: String, actionKey: String, effectScore: Int, note: String) -> Unit
+) {
+    var selectedEmotionKey by remember(parent.id) { mutableStateOf(EmotionType.entries.first().key) }
+    var selectedActionKey by remember(parent.id) { mutableStateOf(ActionType.entries.first().key) }
+    var effectScore by remember(parent.id) { mutableStateOf(1f) }
+    var note by remember(parent.id) { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("子メッセージを追加") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("親: ${parent.text.take(40)}")
+
+                Text("感情")
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    EmotionType.entries.forEach { type ->
+                        val selected = selectedEmotionKey == type.key
+                        FilterChipLikeButton(
+                            label = type.label,
+                            selected = selected,
+                            onClick = { selectedEmotionKey = type.key }
+                        )
+                    }
+                }
+
+                Text("行動")
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ActionType.entries.forEach { type ->
+                        val selected = selectedActionKey == type.key
+                        FilterChipLikeButton(
+                            label = type.label,
+                            selected = selected,
+                            onClick = { selectedActionKey = type.key }
+                        )
+                    }
+                }
+
+                Text("効果: ${effectScore.toInt()}")
+                Slider(
+                    value = effectScore,
+                    onValueChange = { effectScore = it },
+                    valueRange = 0f..3f,
+                    steps = 2
+                )
+
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("メモ（任意）") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onAdd(
+                        selectedEmotionKey,
+                        selectedActionKey,
+                        effectScore.toInt(),
+                        note
+                    )
+                }
+            ) {
+                Text("追加")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("キャンセル")
+            }
+        }
+    )
+}
+
+@Composable
+private fun FilterChipLikeButton(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.clip(RoundedCornerShape(999.dp))
+    ) {
+        TextButton(onClick = onClick) {
+            Text(label)
         }
     }
 }
