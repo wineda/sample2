@@ -408,7 +408,7 @@ fun ChatRoute() {
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     floatingActionButton = {
-                        if (currentMode == JournalScreenMode.DailyRecord) {
+                        if (currentMode == JournalScreenMode.Journal) {
                             FloatingActionButton(
                                 onClick = {
                                     quickInputText = state.inputText
