@@ -31,6 +31,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.QueryStats
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.HistoryEdu
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Work
@@ -413,7 +418,7 @@ fun ChatRoute() {
                             shape = CircleShape,
                             modifier = Modifier
                                 .size(56.dp)
-                                .padding(end = 20.dp, bottom = 16.dp)
+                                .clip(CircleShape)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
@@ -773,30 +778,35 @@ private fun JournalBottomModeBar(
         ) {
             JournalBottomTab(
                 text = "記録",
+                icon = Icons.Default.Article,
                 selected = currentMode == JournalScreenMode.Journal,
                 onClick = onOpenJournal
             )
 
             JournalBottomTab(
                 text = "分析",
+                icon = Icons.Default.QueryStats,
                 selected = currentMode == JournalScreenMode.Analytics,
                 onClick = onOpenAnalytics
             )
 
             JournalBottomTab(
                 text = "詳細",
+                icon = Icons.Default.Analytics,
                 selected = currentMode == JournalScreenMode.AnalyticsDetail,
                 onClick = onOpenAnalyticsDetail
             )
 
             JournalBottomTab(
                 text = "日時",
+                icon = Icons.Default.CalendarToday,
                 selected = currentMode == JournalScreenMode.DailyRecord,
                 onClick = onOpenDailyRecord
             )
 
             JournalBottomTab(
                 text = "振り返り",
+                icon = Icons.Default.HistoryEdu,
                 selected = currentMode == JournalScreenMode.Reflection,
                 onClick = onOpenReflection
             )
@@ -807,17 +817,26 @@ private fun JournalBottomModeBar(
 @Composable
 private fun JournalBottomTab(
     text: String,
+    icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         TextButton(onClick = onClick) {
-            Text(
-                text = text,
-                fontSize = 11.sp,
-                color = if (selected) Color(0xFF1A1A1A) else Color(0xFF999999),
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = text,
+                    tint = if (selected) Color(0xFF1A1A1A) else Color(0xFF999999),
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = text,
+                    fontSize = 11.sp,
+                    color = if (selected) Color(0xFF1A1A1A) else Color(0xFF999999),
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                )
+            }
         }
         Box(
             modifier = Modifier
