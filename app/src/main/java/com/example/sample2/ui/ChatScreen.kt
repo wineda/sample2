@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,26 +31,27 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.ShowChart
-import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewStream
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -66,9 +66,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import com.example.sample2.data.DefaultJournalRepository
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.JournalEntryType
@@ -128,6 +131,8 @@ fun ChatRoute() {
     var workModeEnabled by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
     var addChildTarget by remember { mutableStateOf<MessageV2?>(null) }
+    var showQuickInputDialog by remember { mutableStateOf(false) }
+    var quickInputText by remember { mutableStateOf("") }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
@@ -397,6 +402,26 @@ fun ChatRoute() {
             ) {
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
+                    floatingActionButton = {
+                        FloatingActionButton(
+                            onClick = {
+                                quickInputText = state.inputText
+                                showQuickInputDialog = true
+                            },
+                            containerColor = Color(0xFF1A1A1A),
+                            contentColor = Color.White,
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(56.dp)
+                                .padding(end = 20.dp, bottom = 16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "新しい記録",
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    },
                     bottomBar = {
                         Column(
                             modifier = Modifier
@@ -412,35 +437,6 @@ fun ChatRoute() {
                                 onOpenDailyRecord = { openDailyRecord() },
                                 onOpenReflection = { openReflectionTimeline() }
                             )
-
-                            if (currentMode == JournalScreenMode.Journal) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .imePadding()
-                                ) {
-                                    SmartInputBar(
-                                        inputText = state.inputText,
-                                        onInputChange = { state.inputText = it },
-                                        onMicClick = {
-                                            val intent = Intent(
-                                                RecognizerIntent.ACTION_RECOGNIZE_SPEECH
-                                            ).apply {
-                                                putExtra(
-                                                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                                                )
-                                                putExtra(
-                                                    RecognizerIntent.EXTRA_LANGUAGE,
-                                                    "ja-JP"
-                                                )
-                                            }
-                                            speechLauncher.launch(intent)
-                                        },
-                                        onSendClick = { state.addMessage() }
-                                    )
-                                }
-                            }
                         }
                     }
                 ) { padding ->
@@ -639,6 +635,50 @@ fun ChatRoute() {
             }
         }
 
+        if (showQuickInputDialog) {
+            AlertDialog(
+                onDismissRequest = { showQuickInputDialog = false },
+                title = {
+                    Text(
+                        text = "新しい記録",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    TextField(
+                        value = quickInputText,
+                        onValueChange = { quickInputText = it },
+                        placeholder = { Text("思ったことをひとこと") },
+                        minLines = 3,
+                        maxLines = 4,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                dismissButton = {
+                    TextButton(onClick = { showQuickInputDialog = false }) {
+                        Text("キャンセル", color = Color.Gray)
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            state.inputText = quickInputText
+                            state.addMessage()
+                            quickInputText = ""
+                            showQuickInputDialog = false
+                        },
+                        enabled = quickInputText.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1A1A1A)
+                        )
+                    ) {
+                        Text("保存", color = Color.White)
+                    }
+                }
+            )
+        }
+
         state.selectedMessage?.let { msg: MessageV2 ->
             MessageActionOverlay(
                 message = msg,
@@ -718,46 +758,73 @@ private fun JournalBottomModeBar(
     onOpenReflection: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+            .background(Color.White)
     ) {
-        CompactActionChip(
-            text = "記録",
-            icon = Icons.Default.ViewAgenda,
-            selected = currentMode == JournalScreenMode.Journal,
-            onClick = onOpenJournal
-        )
+        HorizontalDivider(thickness = 1.dp, color = Color(0xFFEFECE4))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp, bottom = 18.dp)
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            JournalBottomTab(
+                text = "記録",
+                selected = currentMode == JournalScreenMode.Journal,
+                onClick = onOpenJournal
+            )
 
-        CompactActionChip(
-            text = "分析",
-            icon = Icons.Default.ShowChart,
-            selected = currentMode == JournalScreenMode.Analytics,
-            onClick = onOpenAnalytics
-        )
+            JournalBottomTab(
+                text = "分析",
+                selected = currentMode == JournalScreenMode.Analytics,
+                onClick = onOpenAnalytics
+            )
 
-        CompactActionChip(
-            text = "詳細",
-            icon = Icons.Default.Psychology,
-            selected = currentMode == JournalScreenMode.AnalyticsDetail,
-            onClick = onOpenAnalyticsDetail
-        )
+            JournalBottomTab(
+                text = "詳細",
+                selected = currentMode == JournalScreenMode.AnalyticsDetail,
+                onClick = onOpenAnalyticsDetail
+            )
 
-        CompactActionChip(
-            text = "日時",
-            icon = Icons.Default.Today,
-            selected = currentMode == JournalScreenMode.DailyRecord,
-            onClick = onOpenDailyRecord
-        )
+            JournalBottomTab(
+                text = "日時",
+                selected = currentMode == JournalScreenMode.DailyRecord,
+                onClick = onOpenDailyRecord
+            )
 
-        CompactActionChip(
-            text = "振り返り",
-            icon = Icons.Default.EditNote,
-            selected = currentMode == JournalScreenMode.Reflection,
-            onClick = onOpenReflection
+            JournalBottomTab(
+                text = "振り返り",
+                selected = currentMode == JournalScreenMode.Reflection,
+                onClick = onOpenReflection
+            )
+        }
+    }
+}
+
+@Composable
+private fun JournalBottomTab(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        TextButton(onClick = onClick) {
+            Text(
+                text = text,
+                fontSize = 11.sp,
+                color = if (selected) Color(0xFF1A1A1A) else Color(0xFF999999),
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            )
+        }
+        Box(
+            modifier = Modifier
+                .height(2.dp)
+                .size(width = 14.dp, height = 2.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(if (selected) Color(0xFFC44536) else Color.Transparent)
         )
     }
 }
