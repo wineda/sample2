@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,18 +32,26 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
@@ -54,6 +63,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import com.example.sample2.BubbleColor
 import com.example.sample2.TextColor
 import com.example.sample2.TimeColor
@@ -360,6 +371,9 @@ fun MessageActionOverlay(
 ) {
     var editingEmotions by remember(message.id) { mutableStateOf(message.emotions) }
     var editingFlags by remember(message.id) { mutableStateOf(message.flags) }
+    var isActionTypeExpanded by remember(message.id) { mutableStateOf(false) }
+    var showActionMenu by remember(message.id) { mutableStateOf(false) }
+    var showDeleteConfirm by remember(message.id) { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
     val blockClicks = remember { MutableInteractionSource() }
@@ -388,18 +402,41 @@ fun MessageActionOverlay(
                     // 中身タップ時は閉じない
                 }
         ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = BubbleColor.copy(alpha = 0.96f),
-                tonalElevation = 2.dp,
-                shadowElevation = 6.dp
+                color = Color.White,
+                tonalElevation = 0.dp,
+                shadowElevation = 3.dp
             ) {
                 Text(
                     text = message.text,
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(vertical = 14.dp, horizontal = 16.dp),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = TextColor
+                    color = TextColor,
+                    fontSize = 14.sp,
+                    lineHeight = 21.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                tonalElevation = 2.dp,
+                shadowElevation = 6.dp
+            ) {
+                CollapsibleActionTypeEditor(
+                    flags = editingFlags,
+                    expanded = isActionTypeExpanded,
+                    onToggleExpanded = { isActionTypeExpanded = !isActionTypeExpanded },
+                    onSelected = { selected ->
+                        editingFlags = editingFlags.selectOnly(selected)
+                        isActionTypeExpanded = false
+                    }
                 )
             }
 
@@ -411,64 +448,10 @@ fun MessageActionOverlay(
                 tonalElevation = 2.dp,
                 shadowElevation = 6.dp
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    ActionType.entries.chunked(4).forEach { rowTypes ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            rowTypes.forEach { type ->
-                                val uiSpec = type.toUiSpec()
-                                ActionFlagIconButton(
-                                    modifier = Modifier.weight(1f),
-                                    iconRes = uiSpec.iconRes,
-                                    label = type.label,
-                                    checked = type.matches(editingFlags),
-                                    activeColor = uiSpec.color,
-                                    onClick = {
-                                        editingFlags = editingFlags.toggle(type)
-                                    }
-                                )
-                            }
-
-                            repeat(4 - rowTypes.size) {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                tonalElevation = 2.dp,
-                shadowElevation = 6.dp
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    EmotionType.entries.forEach { type ->
-                        val uiSpec = type.toUiSpec()
-                        EmotionSliderRow(
-                            iconRes = uiSpec.iconRes,
-                            value = type.scoreOf(editingEmotions).toFloat(),
-                            label = type.label,
-                            onChange = { newValue ->
-                                editingEmotions =
-                                    editingEmotions.withScore(type, newValue.toInt())
-                            }
-                        )
-                    }
-                }
+                AdditiveEmotionEditor(
+                    emotions = editingEmotions,
+                    onEmotionsChanged = { editingEmotions = it }
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -483,9 +466,22 @@ fun MessageActionOverlay(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF6B6660)),
+                        onClick = {
+                            onDismiss()
+                        }
+                    ) {
+                        Text("閉じる", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        modifier = Modifier.weight(1.6f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A1A)),
                         onClick = {
                             onUpdate(
                                 message.copy(
@@ -496,24 +492,361 @@ fun MessageActionOverlay(
                             onDismiss()
                         }
                     ) {
-                        Text("保存")
+                        Text("保存", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    TextButton(
-                        onClick = {
-                            onDelete()
-                            onDismiss()
+                    Box {
+                        IconButton(
+                            onClick = { showActionMenu = true },
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "more",
+                                tint = Color(0xFF888888)
+                            )
                         }
-                    ) {
-                        Text("削除", color = Color.Red)
-                    }
-
-                    TextButton(
-                        onClick = { onDismiss() }
-                    ) {
-                        Text("閉じる")
+                        DropdownMenu(
+                            expanded = showActionMenu,
+                            onDismissRequest = { showActionMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("削除", color = Color.Red) },
+                                onClick = {
+                                    showActionMenu = false
+                                    showDeleteConfirm = true
+                                }
+                            )
+                        }
                     }
                 }
+            }
+        }
+    }
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("削除の確認") },
+            text = { Text("このメッセージを削除しますか？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete()
+                        onDismiss()
+                    }
+                ) {
+                    Text("削除", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun AdditiveEmotionEditor(
+    emotions: EmotionMetrics,
+    onEmotionsChanged: (EmotionMetrics) -> Unit
+) {
+    var showPalette by remember { mutableStateOf(false) }
+    val selectedEmotions = EmotionType.entries.filter { it.scoreOf(emotions) > 0 }
+    val remainingEmotions = EmotionType.entries.filterNot { it in selectedEmotions }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (selectedEmotions.isEmpty()) {
+            AddEmotionButton(
+                text = "感情を追加",
+                onClick = { showPalette = !showPalette }
+            )
+        } else {
+            selectedEmotions.forEach { emotion ->
+                EmotionSegmentRow(
+                    emotion = emotion,
+                    value = emotion.scoreOf(emotions),
+                    onValueChanged = { score ->
+                        onEmotionsChanged(emotions.withScore(emotion, score))
+                    },
+                    onRemove = {
+                        onEmotionsChanged(emotions.withScore(emotion, 0))
+                    }
+                )
+            }
+
+            if (remainingEmotions.isNotEmpty()) {
+                AddEmotionButton(
+                    text = "もう1つ追加",
+                    onClick = { showPalette = !showPalette }
+                )
+            }
+        }
+
+        if (showPalette && remainingEmotions.isNotEmpty()) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "どの感情がありましたか?",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        EmotionType.entries.forEach { emotion ->
+                            val isAdded = emotion in selectedEmotions
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFF5F2EA))
+                                    .clickable(enabled = !isAdded) {
+                                        onEmotionsChanged(emotions.withScore(emotion, 1))
+                                        showPalette = false
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = emotionEmoji(emotion),
+                                    fontSize = 22.sp,
+                                    color = Color.Black.copy(alpha = if (isAdded) 0.4f else 1f)
+                                )
+                                Text(
+                                    text = emotion.label,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF3D3A34).copy(alpha = if (isAdded) 0.4f else 1f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddEmotionButton(text: String, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(14.dp),
+        color = Color.White,
+        border = BorderStroke(1.5.dp, Color(0xFFC8C2B0))
+    ) {
+        Row(
+            modifier = Modifier.padding(vertical = 14.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = "＋ ", fontWeight = FontWeight.Bold, color = Color(0xFF888888))
+            Text(text = text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF888888))
+        }
+    }
+}
+
+@Composable
+private fun EmotionSegmentRow(
+    emotion: EmotionType,
+    value: Int,
+    onValueChanged: (Int) -> Unit,
+    onRemove: () -> Unit
+) {
+    val theme = emotionTheme(emotion)
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = Color.White
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(theme.light),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(emotionEmoji(emotion), fontSize = 18.sp)
+            }
+            Text(
+                text = emotion.label,
+                modifier = Modifier
+                    .width(36.dp)
+                    .padding(start = 8.dp),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                (0..3).forEach { score ->
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onValueChanged(score) },
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (score == value) theme.main else Color(0xFFF5F2EA)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = score.toString(),
+                                color = if (score == value) Color.White else Color(0xFF6B6660),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+            IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
+                Text("×", color = Color(0xFFCCCCCC), fontSize = 18.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CollapsibleActionTypeEditor(
+    flags: ActionFlags,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
+    onSelected: (ActionType) -> Unit
+) {
+    val selectedType = flags.firstEnabledActionOrNull() ?: ActionType.CHALLENGE
+    val selectedSpec = selectedType.toUiSpec()
+    val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron_rotation")
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 14.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onToggleExpanded() },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(selectedSpec.color.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(selectedSpec.iconRes),
+                    contentDescription = selectedType.label,
+                    tint = selectedSpec.color,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp)
+            ) {
+                Text(
+                    text = "種類",
+                    fontSize = 9.sp,
+                    color = Color(0xFF999999),
+                    letterSpacing = 1.2.sp
+                )
+                Text(
+                    text = selectedType.label,
+                    fontSize = 14.sp,
+                    color = Color(0xFF1A1A1A),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                text = "⌄",
+                color = Color(0xFFAAAAAA),
+                fontSize = 16.sp,
+                modifier = Modifier.rotate(chevronRotation)
+            )
+        }
+
+        if (expanded) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0xFFF3F0E8))
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            ActionType.entries.chunked(4).forEach { rowTypes ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowTypes.forEach { type ->
+                        val uiSpec = type.toUiSpec()
+                        val isSelected = type == selectedType
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    if (isSelected) uiSpec.color.copy(alpha = 0.18f) else Color(0xFFF5F2EA)
+                                )
+                                .border(
+                                    if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .clickable { onSelected(type) },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = uiSpec.iconRes),
+                                contentDescription = type.label,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (isSelected) uiSpec.color else Color(0xFF6B6660)
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = type.label,
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF3D3A34),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
@@ -738,6 +1071,28 @@ private fun ActionFlags.toggle(type: ActionType): ActionFlags {
         ActionType.ALCOHOL -> copy(alcohol = !alcohol)
         ActionType.HANGOVER -> copy(hangover = !hangover)
     }
+}
+
+private fun ActionFlags.selectOnly(type: ActionType): ActionFlags {
+    return ActionFlags().toggle(type)
+}
+
+private data class EmotionTheme(val main: Color, val light: Color)
+
+private fun emotionTheme(type: EmotionType): EmotionTheme = when (type) {
+    EmotionType.ANXIETY -> EmotionTheme(Color(0xFF9333EA), Color(0xFFF3E8FF))
+    EmotionType.ANGRY -> EmotionTheme(Color(0xFFDC2626), Color(0xFFFEE2E2))
+    EmotionType.SAD -> EmotionTheme(Color(0xFF6366F1), Color(0xFFE0E7FF))
+    EmotionType.HAPPY -> EmotionTheme(Color(0xFFB45309), Color(0xFFFEF3C7))
+    EmotionType.CALM -> EmotionTheme(Color(0xFF3B82F6), Color(0xFFDBEAFE))
+}
+
+private fun emotionEmoji(type: EmotionType): String = when (type) {
+    EmotionType.ANXIETY -> "😰"
+    EmotionType.ANGRY -> "😠"
+    EmotionType.SAD -> "😢"
+    EmotionType.HAPPY -> "😊"
+    EmotionType.CALM -> "😌"
 }
 
 private fun showTimestampPicker(
