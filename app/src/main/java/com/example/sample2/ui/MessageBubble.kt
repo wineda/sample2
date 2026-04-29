@@ -791,16 +791,17 @@ private fun AdditiveEmotionEditor(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Text(
-                                    text = emotionEmoji(emotion),
-                                    fontSize = 22.sp,
-                                    color = Color.Black.copy(alpha = if (isAdded) 0.4f else 1f)
+                                EmotionCircleBadge(
+                                    emotion = emotion,
+                                    size = 28.dp,
+                                    fontSize = 12.sp,
+                                    alpha = if (isAdded) 0.4f else 1f
                                 )
                                 Text(
                                     text = emotion.label,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF3D3A34).copy(alpha = if (isAdded) 0.4f else 1f)
+                                    color = Color(0xFF666666).copy(alpha = if (isAdded) 0.4f else 1f)
                                 )
                             }
                         }
@@ -851,11 +852,10 @@ private fun EmotionSegmentRow(
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .clip(CircleShape)
-                    .background(theme.light),
+                    .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(emotionEmoji(emotion), fontSize = 18.sp)
+                EmotionCircleBadge(emotion = emotion, size = 32.dp, fontSize = 13.sp)
             }
             Text(
                 text = emotion.label,
@@ -1266,12 +1266,36 @@ private fun emotionTheme(type: EmotionType): EmotionTheme = when (type) {
     EmotionType.CALM -> EmotionTheme(Color(0xFF3B82F6), Color(0xFFDBEAFE))
 }
 
-private fun emotionEmoji(type: EmotionType): String = when (type) {
-    EmotionType.ANXIETY -> "😰"
-    EmotionType.ANGRY -> "😠"
-    EmotionType.SAD -> "😢"
-    EmotionType.HAPPY -> "😊"
-    EmotionType.CALM -> "😌"
+private fun emotionShortLabel(type: EmotionType): String = when (type) {
+    EmotionType.ANXIETY -> "不"
+    EmotionType.ANGRY -> "怒"
+    EmotionType.SAD -> "悲"
+    EmotionType.HAPPY -> "喜"
+    EmotionType.CALM -> "安"
+}
+
+@Composable
+private fun EmotionCircleBadge(
+    emotion: EmotionType,
+    size: androidx.compose.ui.unit.Dp,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    alpha: Float = 1f
+) {
+    val theme = emotionTheme(emotion)
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(theme.main.copy(alpha = alpha)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = emotionShortLabel(emotion),
+            color = Color.White.copy(alpha = alpha),
+            fontWeight = FontWeight.Bold,
+            fontSize = fontSize
+        )
+    }
 }
 
 private fun showTimestampPicker(
