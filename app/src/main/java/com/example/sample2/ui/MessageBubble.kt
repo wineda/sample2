@@ -545,20 +545,23 @@ fun MessageActionOverlay(
                 shadowElevation = 6.dp
             ) {
                 if (selectedActionType == null) {
-                    AddEmotionButton(
-                        text = "種類を追加",
-                        onClick = { isActionTypeExpanded = !isActionTypeExpanded }
-                    )
-                    if (isActionTypeExpanded) {
-                        Surface(color = Color.White) {
-                            ActionTypeGrid(
-                                selectedType = null,
-                                onSelected = { selected ->
-                                    selectedActionType = selected
-                                    editingFlags = ActionFlags().selectOnly(selected)
-                                    isActionTypeExpanded = false
-                                }
-                            )
+                    Column {
+                        AddEmotionButton(
+                            text = "種類を追加",
+                            onClick = { isActionTypeExpanded = !isActionTypeExpanded }
+                        )
+                        if (isActionTypeExpanded) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Surface(color = Color.White) {
+                                ActionTypeGrid(
+                                    selectedType = null,
+                                    onSelected = { selected ->
+                                        selectedActionType = selected
+                                        editingFlags = ActionFlags().selectOnly(selected)
+                                        isActionTypeExpanded = false
+                                    }
+                                )
+                            }
                         }
                     }
                 } else {
