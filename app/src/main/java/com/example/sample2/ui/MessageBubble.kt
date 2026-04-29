@@ -253,6 +253,13 @@ fun EmotionResponseChildBubble(
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
+        StatusIconBox(
+            message = message,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
 
         Column(
             modifier = Modifier
