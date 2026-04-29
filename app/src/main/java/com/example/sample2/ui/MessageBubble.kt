@@ -6,6 +6,7 @@ import android.content.Context
 import android.text.format.DateFormat
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +44,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -63,6 +68,7 @@ import com.example.sample2.ui.theme.CategoryExerciseBody
 import com.example.sample2.ui.theme.CategoryMorningHabit
 import com.example.sample2.ui.theme.CategorySleep
 import com.example.sample2.ui.theme.CategoryWork
+import com.example.sample2.ui.theme.emotionCategoryToColor
 import com.example.sample2.util.formatDate
 import com.example.sample2.util.formatTime
 import java.util.Calendar
@@ -95,14 +101,11 @@ private val CategoryBarWidth = 4.dp
 fun MessageBubble(
     message: MessageV2,
     state: JournalViewModel,
+    hasChildren: Boolean,
     onDelete: () -> Unit,
     onUpdate: (MessageV2) -> Unit,
     onDoubleClick: (MessageV2) -> Unit = {}
 ) {
-    val textVerticalPadding =
-        if (state.isSingleLineMode) BubbleTextVerticalPaddingCompact
-        else BubbleTextVerticalPadding
-
     val displayText = if (state.isSingleLineMode) {
         message.text
             .replace("\r\n", " ")
@@ -163,15 +166,13 @@ fun MessageBubble(
                 .padding(end = BubbleRightPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(CategoryBarWidth)
-                    .background(color = categoryColorFor(message))
-            )
             Surface(
-                color = BubbleColor,
-                shape = RoundedCornerShape(0.dp, 16.dp, 16.dp, 16.dp),
+                color = Color.White,
+                shape = RoundedCornerShape(18.dp),
+                border = androidx.compose.foundation.BorderStroke(
+                    width = 1.5.dp,
+                    color = emotionCategoryToColor(message.emotions.maxEmotionOrNull()).border
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .combinedClickable(
@@ -180,20 +181,66 @@ fun MessageBubble(
                         onLongClick = { state.selectedMessage = message }
                     )
             ) {
-                Text(
-                    text = displayText,
-                    modifier = Modifier.padding(
-                        horizontal = BubbleTextHorizontalPadding,
-                        vertical = textVerticalPadding
-                    ),
-                    color = TextColor,
-                    maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
-                    overflow = if (state.isSingleLineMode) {
-                        TextOverflow.Ellipsis
-                    } else {
-                        TextOverflow.Clip
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    StatusIconBox(
+                        message = message,
+                        modifier = Modifier.size(44.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = message.emotions.maxEmotionOrNull()?.label ?: "記録",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = categoryColorFor(message)
+                        )
+                        Text(
+                            text = displayText,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = (-0.16).sp
+                            ),
+                            color = TextColor,
+                            maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
+                            overflow = if (state.isSingleLineMode) TextOverflow.Ellipsis else TextOverflow.Clip
+                        )
+                        Text(
+                            text = formatTime(message.timestamp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace
+                            ),
+                            color = Color(0xFF9CA3AF)
+                        )
                     }
-                )
+                    if (!hasChildren) {
+                        Surface(
+                            color = Color(0xFFE5E7EB),
+                            shape = RoundedCornerShape(999.dp)
+                        ) {
+                            Text(
+                                text = "対処中",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = Color(0xFF6B7280)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -209,78 +256,75 @@ fun EmotionResponseChildBubble(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = ChildBubbleIndent, end = BubbleRightPadding),
+            .padding(start = 36.dp, end = BubbleRightPadding),
         verticalAlignment = Alignment.Top
     ) {
         Box(
             modifier = Modifier
-                .width(ChildTimeColumnWidth)
-                .padding(vertical = 6.dp),
-            contentAlignment = Alignment.CenterStart
+                .width(18.dp)
+                .height(54.dp),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Keep the time column width for alignment, but hide child time text.
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(2.dp)
+                    .background(Color(0xFFD1D5DB))
+            )
+            Box(
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .size(8.dp)
+                    .background(color = Color(0xFF9CA3AF), shape = CircleShape)
+            )
         }
-
-        Spacer(modifier = Modifier.width(TimeToStatusSpacing))
-
-        ChildStatusIconBox(
-            message = message,
-            modifier = Modifier.width(ChildStatusColumnWidth)
-        )
-
-        Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = ChildBubbleRightPadding),
-            horizontalAlignment = Alignment.End
+                .padding(end = ChildBubbleRightPadding, top = 4.dp, bottom = 4.dp)
         ) {
-            Surface(
-                color = BubbleColor.copy(alpha = 0.75f),
-                shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .combinedClickable(
-                        onClick = {},
-                        onLongClick = { onLongClick(message) }
-                    )
+                    .combinedClickable(onClick = {}, onLongClick = { onLongClick(message) }),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
                 Text(
                     text = message.text,
-                    modifier = Modifier.padding(
-                        start = 12.dp,
-                        top = 7.dp,
-                        end = 12.dp,
-                        bottom = 8.dp
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
                     ),
-                    style = MaterialTheme.typography.bodySmall,
                     color = TextColor,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = formatTime(message.timestamp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace
+                    ),
+                    color = Color(0xFF9CA3AF)
                 )
             }
+            Spacer(modifier = Modifier.height(6.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0xFFE5E7EB))
+            )
         }
     }
 }
 
 
 private fun categoryColorFor(message: MessageV2): Color {
-    if (message.entryType == JournalEntryType.EMOTION_RESPONSE) {
-        return CategoryMorningHabit
-    }
-    if (message.emotions.happy > 0 || message.emotions.calm > 0) return CategoryEmotionPositive
-    if (message.emotions.anxiety > 0 || message.emotions.angry > 0 || message.emotions.sad > 0) return CategoryEmotionNegative
-    if (message.flags.exercised) return CategoryExerciseBody
-    if (message.flags.alcohol || message.flags.hangover) return CategorySleep
-
-    val isWorkLike =
-        message.flags.pendingTask || message.flags.meetingStress || message.flags.delegate ||
-            message.flags.instruct || message.flags.challenge || message.flags.breakdown ||
-            message.flags.quickAction || message.flags.smartphoneDrift || message.flags.socialized
-    if (isWorkLike) return CategoryWork
-
-    return CategoryMorningHabit
+    return emotionCategoryToColor(message.emotions.maxEmotionOrNull()).border
 }
 
 @Composable

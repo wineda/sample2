@@ -590,10 +590,13 @@ fun ChatRoute() {
                                         .fillMaxWidth()
                                 ) { msg ->
                                     val childEntries = childEntriesByParentId[msg.id].orEmpty()
-                                    Column {
+                                    Column(
+                                        modifier = Modifier.padding(bottom = 16.dp)
+                                    ) {
                                         MessageBubble(
                                             message = msg,
                                             state = state,
+                                            hasChildren = childEntries.isNotEmpty(),
                                             onDelete = { state.deleteMessage(msg) },
                                             onUpdate = { updated ->
                                                 state.updateMessage(updated)
