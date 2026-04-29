@@ -77,6 +77,9 @@ private val BubbleStartIndent =
 private val BubbleTextVerticalPadding = 10.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
 private val ChildBubbleIndent: Dp = BubbleStartIndent + 10.dp
+private val ChildTimeColumnWidth = 44.dp
+private val ChildStatusColumnWidth = 28.dp
+private val ChildBubbleRightPadding = 20.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -179,45 +182,50 @@ fun EmotionResponseChildBubble(
     modifier: Modifier = Modifier
 ) {
     if (message.entryType != JournalEntryType.EMOTION_RESPONSE) return
-
-    val response = message.response
-    val emotionLabel = EmotionType.entries
-        .firstOrNull { it.key == response?.targetEmotionKey }
-        ?.label
-        ?: "感情未設定"
-    val actionLabel = ActionType.entries
-        .firstOrNull { it.key == response?.actionKey }
-        ?.label
-        ?: "行動未設定"
-    val effectScore = response?.effectScore ?: 0
-    val detailText = response?.note?.takeIf { it.isNotBlank() } ?: message.text
-
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        shape = RoundedCornerShape(12.dp),
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = ChildBubbleIndent, end = BubbleRightPadding)
-            .combinedClickable(
-                onClick = {},
-                onLongClick = { onLongClick(message) }
-            )
+            .padding(start = ChildBubbleIndent, end = BubbleRightPadding),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+        Box(
+            modifier = Modifier
+                .width(ChildTimeColumnWidth)
+                .padding(vertical = 6.dp),
+            contentAlignment = Alignment.CenterStart
         ) {
             Text(
-                text = "└ ${formatTime(message.timestamp)} $emotionLabel → $actionLabel / 効果$effectScore",
+                text = formatTime(message.timestamp),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                color = TimeColor
             )
-            Spacer(modifier = Modifier.height(2.dp))
+        }
+
+        Spacer(modifier = Modifier.width(TimeToStatusSpacing))
+
+        ChildStatusIconBox(
+            message = message,
+            modifier = Modifier.width(ChildStatusColumnWidth)
+        )
+
+        Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
+
+        Surface(
+            color = BubbleColor.copy(alpha = 0.75f),
+            shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = ChildBubbleRightPadding)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { onLongClick(message) }
+                )
+        ) {
             Text(
-                text = detailText,
+                text = message.text,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = TextColor,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -565,6 +573,39 @@ private fun StatusIconBox(
                         contentDescription = display.label,
                         tint = display.color,
                         modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChildStatusIconBox(
+    message: MessageV2,
+    modifier: Modifier = Modifier
+) {
+    val display = message.flags.firstEnabledActionOrNull()?.toStatusUi()
+        ?: message.emotions.maxEmotionOrNull()?.toStatusUi()
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        if (display != null) {
+            Surface(
+                color = display.color.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier.size(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = display.iconRes),
+                        contentDescription = display.label,
+                        tint = display.color,
+                        modifier = Modifier.size(14.dp)
                     )
                 }
             }
