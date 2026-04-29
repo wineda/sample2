@@ -187,7 +187,7 @@ fun EmotionResponseChildBubble(
         modifier = modifier
             .fillMaxWidth()
             .padding(start = ChildBubbleIndent, end = BubbleRightPadding),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Top
     ) {
         Box(
             modifier = Modifier
