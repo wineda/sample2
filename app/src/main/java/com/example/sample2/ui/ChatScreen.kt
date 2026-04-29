@@ -46,6 +46,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -68,11 +69,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.sample2.data.ActionType
 import com.example.sample2.data.DefaultJournalRepository
+import com.example.sample2.data.ActionType
+import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
 import com.example.sample2.data.MessageV2
+import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.analytics.AnalyticsDisplayMode
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.util.formatDate
@@ -124,6 +127,7 @@ fun ChatRoute() {
     var showFilterSheet by remember { mutableStateOf(false) }
     var workModeEnabled by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
+    var addChildTarget by remember { mutableStateOf<MessageV2?>(null) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
@@ -203,11 +207,30 @@ fun ChatRoute() {
         switchToJournal()
     }
 
-    val displayMessages by remember {
+    val parentEntries by remember {
         derivedStateOf {
             state.messages
-                .filter { filterState.matches(it) }
+                .filter {
+                    it.parentId == null &&
+                            it.entryType == JournalEntryType.MEMO &&
+                            filterState.matches(it)
+                }
                 .sortedBy { it.timestamp }
+        }
+    }
+
+    val childEntriesByParentId by remember {
+        derivedStateOf {
+            state.messages
+                .asSequence()
+                .filter {
+                    it.parentId != null &&
+                            it.entryType == JournalEntryType.EMOTION_RESPONSE
+                }
+                .groupBy { it.parentId!! }
+                .mapValues { (_, children) ->
+                    children.sortedBy { it.timestamp }
+                }
         }
     }
 
@@ -218,15 +241,15 @@ fun ChatRoute() {
     }
 
     val dateLabel = buildJournalDateLabel(
-        timestamp = displayMessages.lastOrNull()?.timestamp ?: System.currentTimeMillis()
+        timestamp = parentEntries.lastOrNull()?.timestamp ?: System.currentTimeMillis()
     )
 
-    LaunchedEffect(displayMessages.size, currentMode) {
+    LaunchedEffect(parentEntries.size, currentMode) {
         if (
             currentMode == JournalScreenMode.Journal &&
-            displayMessages.isNotEmpty()
+            parentEntries.isNotEmpty()
         ) {
-            listState.scrollToItem(displayMessages.lastIndex)
+            listState.scrollToItem(parentEntries.lastIndex)
         }
     }
 
@@ -521,7 +544,7 @@ fun ChatRoute() {
                                 ) {
                                     JournalFilterHeader(
                                         filterState = filterState,
-                                        resultCount = displayMessages.size,
+                                        resultCount = parentEntries.size,
                                         onOpenSheet = { showFilterSheet = true },
                                         onClearWeekday = {
                                             filterState = filterState.copy(
@@ -558,7 +581,7 @@ fun ChatRoute() {
                                 }
 
                                 JournalMessageListPane(
-                                    messages = displayMessages,
+                                    messages = parentEntries,
                                     listState = listState,
                                     isSingleLineMode = state.isSingleLineMode,
                                     timestampOf = { it.timestamp },
@@ -566,14 +589,33 @@ fun ChatRoute() {
                                         .weight(1f)
                                         .fillMaxWidth()
                                 ) { msg ->
-                                    MessageBubble(
-                                        message = msg,
-                                        state = state,
-                                        onDelete = { state.deleteMessage(msg) },
-                                        onUpdate = { updated ->
-                                            state.updateMessage(updated)
+                                    val childEntries = childEntriesByParentId[msg.id].orEmpty()
+                                    Column {
+                                        MessageBubble(
+                                            message = msg,
+                                            state = state,
+                                            onDelete = { state.deleteMessage(msg) },
+                                            onUpdate = { updated ->
+                                                state.updateMessage(updated)
+                                            },
+                                            onDoubleClick = { parent ->
+                                                addChildTarget = parent
+                                            }
+                                        )
+
+                                        if (childEntries.isNotEmpty()) {
+                                            Spacer(modifier = Modifier.height(6.dp))
                                         }
-                                    )
+
+                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            childEntries.forEach { child ->
+                                                EmotionResponseChildBubble(
+                                                    message = child,
+                                                    onLongClick = { state.selectedMessage = it }
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
@@ -602,7 +644,64 @@ fun ChatRoute() {
                 onUpdate = { updated -> state.updateMessage(updated) }
             )
         }
+
+        addChildTarget?.let { parent ->
+            AddChildMessageDialog(
+                parent = parent,
+                onDismiss = { addChildTarget = null },
+                onAdd = { note ->
+                    state.addEmotionResponse(
+                        parent = parent,
+                        targetEmotionKey = parent.emotions.maxEmotionOrNull()?.key ?: "",
+                        actionKey = "",
+                        effectScore = 0,
+                        note = note
+                    )
+                    addChildTarget = null
+                }
+            )
+        }
     }
+}
+
+@Composable
+private fun AddChildMessageDialog(
+    parent: MessageV2,
+    onDismiss: () -> Unit,
+    onAdd: (note: String) -> Unit
+) {
+    var note by remember(parent.id) { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("子メッセージを追加") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("親: ${parent.text.take(40)}")
+
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("テキスト") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onAdd(note)
+                }
+            ) {
+                Text("追加")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("キャンセル")
+            }
+        }
+    )
 }
 
 @Composable

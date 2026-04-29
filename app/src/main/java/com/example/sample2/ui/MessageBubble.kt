@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.sample2.BubbleColor
 import com.example.sample2.TextColor
@@ -50,6 +51,7 @@ import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.EmotionMetrics
 import com.example.sample2.data.EmotionType
+import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.firstEnabledActionOrNull
 import com.example.sample2.data.maxEmotionOrNull
@@ -74,6 +76,10 @@ private val BubbleStartIndent =
 
 private val BubbleTextVerticalPadding = 10.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
+private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + 20.dp
+private val ChildTimeColumnWidth = 44.dp
+private val ChildStatusColumnWidth = 28.dp
+private val ChildBubbleRightPadding = 20.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -81,7 +87,8 @@ fun MessageBubble(
     message: MessageV2,
     state: JournalViewModel,
     onDelete: () -> Unit,
-    onUpdate: (MessageV2) -> Unit
+    onUpdate: (MessageV2) -> Unit,
+    onDoubleClick: (MessageV2) -> Unit = {}
 ) {
     val textVerticalPadding =
         if (state.isSingleLineMode) BubbleTextVerticalPaddingCompact
@@ -146,6 +153,7 @@ fun MessageBubble(
                 .padding(end = BubbleRightPadding)
                 .combinedClickable(
                     onClick = {},
+                    onDoubleClick = { onDoubleClick(message) },
                     onLongClick = { state.selectedMessage = message }
                 )
         ) {
@@ -162,6 +170,64 @@ fun MessageBubble(
                 } else {
                     TextOverflow.Clip
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun EmotionResponseChildBubble(
+    message: MessageV2,
+    onLongClick: (MessageV2) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (message.entryType != JournalEntryType.EMOTION_RESPONSE) return
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = ChildBubbleIndent, end = BubbleRightPadding),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .width(ChildTimeColumnWidth)
+                .padding(vertical = 6.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = formatTime(message.timestamp),
+                style = MaterialTheme.typography.labelSmall,
+                color = TimeColor
+            )
+        }
+
+        Spacer(modifier = Modifier.width(TimeToStatusSpacing))
+
+        ChildStatusIconBox(
+            message = message,
+            modifier = Modifier.width(ChildStatusColumnWidth)
+        )
+
+        Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
+
+        Surface(
+            color = BubbleColor.copy(alpha = 0.75f),
+            shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = ChildBubbleRightPadding)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { onLongClick(message) }
+                )
+        ) {
+            Text(
+                text = message.text,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = TextColor,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -507,6 +573,39 @@ private fun StatusIconBox(
                         contentDescription = display.label,
                         tint = display.color,
                         modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChildStatusIconBox(
+    message: MessageV2,
+    modifier: Modifier = Modifier
+) {
+    val display = message.flags.firstEnabledActionOrNull()?.toStatusUi()
+        ?: message.emotions.maxEmotionOrNull()?.toStatusUi()
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        if (display != null) {
+            Surface(
+                color = display.color.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier.size(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = display.iconRes),
+                        contentDescription = display.label,
+                        tint = display.color,
+                        modifier = Modifier.size(14.dp)
                     )
                 }
             }

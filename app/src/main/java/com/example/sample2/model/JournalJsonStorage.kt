@@ -5,7 +5,9 @@ import android.net.Uri
 import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.DailyRecord
 import com.example.sample2.data.DailyReflection
+import com.example.sample2.data.EmotionResponse
 import com.example.sample2.data.EmotionMetrics
+import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.SleepData
 import org.json.JSONArray
@@ -22,7 +24,7 @@ object JournalJsonStorage {
     private const val DAILY_REFLECTIONS_FILE_NAME = "daily_reflections.json"
 
     // daily_reflections を追加
-    private const val BACKUP_VERSION = 4
+    private const val BACKUP_VERSION = 5
 
     private val DATE_REGEX = Regex("""\d{4}-\d{2}-\d{2}""")
 
@@ -240,12 +242,38 @@ object JournalJsonStorage {
     }
 
     private fun parseMessage(obj: JSONObject): MessageV2 {
+        val rawParentId = obj.optString("parentId", "")
+        val normalizedParentId = rawParentId.ifBlank { null }
+        val entryType = parseEntryType(obj.optString("entryType", ""))
+        val response = obj.optJSONObject("response")?.let(::parseEmotionResponse)
+
         return MessageV2(
             id = obj.optString("id").ifBlank { UUID.randomUUID().toString() },
             timestamp = obj.optLong("timestamp", 0L),
             text = obj.optString("text", ""),
             emotions = obj.optJSONObject("emotions")?.let(::parseEmotionMetrics) ?: EmotionMetrics(),
-            flags = obj.optJSONObject("flags")?.let(::parseActionFlags) ?: ActionFlags()
+            flags = obj.optJSONObject("flags")?.let(::parseActionFlags) ?: ActionFlags(),
+            parentId = normalizedParentId,
+            entryType = entryType,
+            response = response
+        )
+    }
+
+    private fun parseEntryType(raw: String): JournalEntryType {
+        return try {
+            JournalEntryType.valueOf(raw)
+        } catch (_: IllegalArgumentException) {
+            JournalEntryType.MEMO
+        }
+    }
+
+    private fun parseEmotionResponse(obj: JSONObject): EmotionResponse {
+        return EmotionResponse(
+            targetEmotionKey = obj.optString("targetEmotionKey", ""),
+            actionKey = obj.optString("actionKey", ""),
+            effectScore = obj.optInt("effectScore", 0).coerceIn(0, 3),
+            note = obj.optString("note", ""),
+            createdAt = obj.optLong("createdAt", 0L)
         )
     }
 
@@ -314,6 +342,19 @@ object JournalJsonStorage {
             put("text", text)
             put("emotions", emotions.toJson())
             put("flags", flags.toJson())
+            put("parentId", parentId)
+            put("entryType", entryType.name)
+            put("response", response?.toJson())
+        }
+    }
+
+    private fun EmotionResponse.toJson(): JSONObject {
+        return JSONObject().apply {
+            put("targetEmotionKey", targetEmotionKey)
+            put("actionKey", actionKey)
+            put("effectScore", effectScore.coerceIn(0, 3))
+            put("note", note)
+            put("createdAt", createdAt)
         }
     }
 
@@ -381,7 +422,9 @@ object JournalJsonStorage {
                 message.copy(
                     id = message.id.ifBlank { UUID.randomUUID().toString() },
                     emotions = normalizeEmotionMetrics(message.emotions),
-                    flags = normalizeActionFlags(message.flags)
+                    flags = normalizeActionFlags(message.flags),
+                    parentId = message.parentId?.ifBlank { null },
+                    response = message.response?.let(::normalizeEmotionResponse)
                 )
             }
             .sortedWith(compareBy<MessageV2> { it.timestamp }.thenBy { it.id })
@@ -403,6 +446,10 @@ object JournalJsonStorage {
      */
     private fun normalizeActionFlags(flags: ActionFlags): ActionFlags {
         return flags.copy()
+    }
+
+    private fun normalizeEmotionResponse(response: EmotionResponse): EmotionResponse {
+        return response.copy(effectScore = response.effectScore.coerceIn(0, 3))
     }
 
     private fun normalizeDailyRecords(records: List<DailyRecord>): List<DailyRecord> {
