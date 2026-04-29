@@ -27,13 +27,17 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -57,9 +61,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import com.example.sample2.BubbleColor
 import com.example.sample2.TextColor
 import com.example.sample2.TimeColor
@@ -367,6 +372,8 @@ fun MessageActionOverlay(
     var editingEmotions by remember(message.id) { mutableStateOf(message.emotions) }
     var editingFlags by remember(message.id) { mutableStateOf(message.flags) }
     var isActionTypeExpanded by remember(message.id) { mutableStateOf(false) }
+    var showActionMenu by remember(message.id) { mutableStateOf(false) }
+    var showDeleteConfirm by remember(message.id) { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
     val blockClicks = remember { MutableInteractionSource() }
@@ -455,9 +462,22 @@ fun MessageActionOverlay(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF6B6660)),
+                        onClick = {
+                            onDismiss()
+                        }
+                    ) {
+                        Text("閉じる", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        modifier = Modifier.weight(1.6f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A1A)),
                         onClick = {
                             onUpdate(
                                 message.copy(
@@ -468,26 +488,62 @@ fun MessageActionOverlay(
                             onDismiss()
                         }
                     ) {
-                        Text("保存")
+                        Text("保存", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    TextButton(
-                        onClick = {
-                            onDelete()
-                            onDismiss()
+                    Box {
+                        IconButton(
+                            onClick = { showActionMenu = true },
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "more",
+                                tint = Color(0xFF888888)
+                            )
                         }
-                    ) {
-                        Text("削除", color = Color.Red)
-                    }
-
-                    TextButton(
-                        onClick = { onDismiss() }
-                    ) {
-                        Text("閉じる")
+                        DropdownMenu(
+                            expanded = showActionMenu,
+                            onDismissRequest = { showActionMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("削除", color = Color.Red) },
+                                onClick = {
+                                    showActionMenu = false
+                                    showDeleteConfirm = true
+                                }
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("削除の確認") },
+            text = { Text("このメッセージを削除しますか？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete()
+                        onDismiss()
+                    }
+                ) {
+                    Text("削除", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
     }
 }
 
