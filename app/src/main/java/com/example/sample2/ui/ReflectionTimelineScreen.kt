@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,17 +15,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.SentimentDissatisfied
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.WbIncandescent
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -38,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.sample2.data.DailyReflection
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
@@ -125,40 +129,15 @@ fun ReflectionTimelineScreen(
                 label = { Text("キーワードで探す") }
             )
 
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                FilterChip(
-                    selected = uiState.fieldFilter == null,
-                    onClick = { uiState = uiState.copy(fieldFilter = null) },
-                    label = { Text("すべて", fontSize = 12.sp) }
-                )
-                ReflectionFieldFilter.entries.forEach { filter ->
-                    FilterChip(
-                        selected = filter == uiState.fieldFilter,
-                        onClick = {
-                            uiState = uiState.copy(
-                                fieldFilter = if (uiState.fieldFilter == filter) null else filter
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = filter.bgColor,
-                            selectedLabelColor = filter.textColor
-                        ),
-                        label = { Text(filter.label, fontSize = 12.sp) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = filter.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = if (filter == uiState.fieldFilter) filter.textColor else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+            ReflectionFilterChips(
+                selectedFilter = uiState.fieldFilter,
+                onSelectAll = { uiState = uiState.copy(fieldFilter = null) },
+                onSelectFilter = { filter ->
+                    uiState = uiState.copy(
+                        fieldFilter = if (uiState.fieldFilter == filter) null else filter
                     )
                 }
-            }
+            )
 
             if (timelineItems.isEmpty()) {
                 Surface(
@@ -203,6 +182,101 @@ fun ReflectionTimelineScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ReflectionFilterChips(
+    selectedFilter: ReflectionFieldFilter?,
+    onSelectAll: () -> Unit,
+    onSelectFilter: (ReflectionFieldFilter) -> Unit
+) {
+    val scrollState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        state = scrollState,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp)
+    ) {
+        item {
+            ReflectionFilterChip(
+                icon = Icons.Default.Add,
+                label = "すべて",
+                color = Color.White,
+                isSelected = selectedFilter == null,
+                alwaysExpanded = true,
+                onClick = onSelectAll
+            )
+        }
+        items(ReflectionFieldFilter.entries) { filter ->
+            ReflectionFilterChip(
+                icon = filter.icon,
+                label = filter.label,
+                color = filter.textColor,
+                isSelected = selectedFilter == filter,
+                onClick = { onSelectFilter(filter) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReflectionFilterChip(
+    icon: ImageVector,
+    label: String,
+    color: Color,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    alwaysExpanded: Boolean = false
+) {
+    val expanded = alwaysExpanded || isSelected
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(
+            modifier = Modifier
+                .height(36.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (expanded) Color(0xFF1A1A1A) else Color.White)
+                .border(
+                    width = if (expanded) 0.dp else 1.dp,
+                    color = Color(0xFFE8E4DC),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .clickable(onClick = onClick)
+                .animateContentSize(animationSpec = tween(durationMillis = 200))
+                .padding(
+                    start = if (expanded) 10.dp else 0.dp,
+                    end = if (expanded) 12.dp else 0.dp
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (expanded) Color.White else Color(0xFF1A1A1A),
+                modifier = Modifier
+                    .padding(start = if (expanded) 0.dp else 10.dp, end = if (expanded) 0.dp else 10.dp)
+                    .size(16.dp)
+            )
+            if (expanded) {
+                Text(
+                    text = label,
+                    color = Color.White,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 6.dp)
+                )
+            }
+        }
+        if (!expanded && !alwaysExpanded) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 2.dp)
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
         }
     }
 }
@@ -425,5 +499,17 @@ private fun String.toLocalDateOrNull(): LocalDate? {
         LocalDate.parse(this)
     } catch (_: DateTimeParseException) {
         null
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReflectionFilterChipsPreview() {
+    MaterialTheme {
+        ReflectionFilterChips(
+            selectedFilter = ReflectionFieldFilter.INSIGHTS,
+            onSelectAll = {},
+            onSelectFilter = {}
+        )
     }
 }
