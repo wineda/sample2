@@ -402,7 +402,7 @@ fun MessageActionOverlay(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.14f))
+            .background(Color.Black.copy(alpha = 0.32f))
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
@@ -493,21 +493,11 @@ fun MessageActionOverlay(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        val calendar = Calendar.getInstance().apply { timeInMillis = editingTimestamp }
-                        TimePickerDialog(
-                            context,
-                            { _, hour, minute ->
-                                val updated = Calendar.getInstance().apply {
-                                    timeInMillis = editingTimestamp
-                                    set(Calendar.HOUR_OF_DAY, hour)
-                                    set(Calendar.MINUTE, minute)
-                                }
-                                editingTimestamp = updated.timeInMillis
-                            },
-                            calendar.get(Calendar.HOUR_OF_DAY),
-                            calendar.get(Calendar.MINUTE),
-                            DateFormat.is24HourFormat(context)
-                        ).show()
+                        showTimestampPicker(
+                            context = context,
+                            initialTimestamp = editingTimestamp,
+                            onSelected = { editingTimestamp = it }
+                        )
                     },
                 shape = RoundedCornerShape(14.dp),
                 color = Color.White
@@ -794,7 +784,6 @@ private fun AdditiveEmotionEditor(
                                 EmotionCircleBadge(
                                     emotion = emotion,
                                     size = 28.dp,
-                                    fontSize = 12.sp,
                                     alpha = if (isAdded) 0.4f else 1f
                                 )
                                 Text(
@@ -855,7 +844,7 @@ private fun EmotionSegmentRow(
                     .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                EmotionCircleBadge(emotion = emotion, size = 32.dp, fontSize = 13.sp)
+                EmotionCircleBadge(emotion = emotion, size = 32.dp)
             }
             Text(
                 text = emotion.label,
@@ -1266,34 +1255,25 @@ private fun emotionTheme(type: EmotionType): EmotionTheme = when (type) {
     EmotionType.CALM -> EmotionTheme(Color(0xFF3B82F6), Color(0xFFDBEAFE))
 }
 
-private fun emotionShortLabel(type: EmotionType): String = when (type) {
-    EmotionType.ANXIETY -> "不"
-    EmotionType.ANGRY -> "怒"
-    EmotionType.SAD -> "悲"
-    EmotionType.HAPPY -> "喜"
-    EmotionType.CALM -> "安"
-}
-
 @Composable
 private fun EmotionCircleBadge(
     emotion: EmotionType,
     size: androidx.compose.ui.unit.Dp,
-    fontSize: androidx.compose.ui.unit.TextUnit,
     alpha: Float = 1f
 ) {
-    val theme = emotionTheme(emotion)
+    val ui = emotion.toUiSpec()
     Box(
         modifier = Modifier
             .size(size)
-            .clip(CircleShape)
-            .background(theme.main.copy(alpha = alpha)),
+            .clip(RoundedCornerShape(10.dp))
+            .background(ui.color.copy(alpha = 0.16f * alpha)),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = emotionShortLabel(emotion),
-            color = Color.White.copy(alpha = alpha),
-            fontWeight = FontWeight.Bold,
-            fontSize = fontSize
+        Icon(
+            painter = painterResource(id = ui.iconRes),
+            contentDescription = emotion.label,
+            tint = ui.color.copy(alpha = alpha),
+            modifier = Modifier.size((size.value * 0.56f).dp)
         )
     }
 }
