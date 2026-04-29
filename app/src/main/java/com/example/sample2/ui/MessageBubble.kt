@@ -381,6 +381,7 @@ fun MessageActionOverlay(
     onCreate: (MessageV2) -> Unit = {}
 ) {
     var editingText by remember(message.id) { mutableStateOf(TextFieldValue(message.text)) }
+    var editingTimestamp by remember(message.id) { mutableStateOf(message.timestamp) }
     var editingEmotions by remember(message.id) { mutableStateOf(message.emotions) }
     var editingFlags by remember(message.id) { mutableStateOf(message.flags) }
     var isActionTypeExpanded by remember(message.id) { mutableStateOf(false) }
@@ -389,6 +390,7 @@ fun MessageActionOverlay(
 
     val scrollState = rememberScrollState()
     val blockClicks = remember { MutableInteractionSource() }
+    val context = LocalContext.current
     val textFocusRequester = remember { FocusRequester() }
     var isTextFocused by remember { mutableStateOf(false) }
 
@@ -484,6 +486,65 @@ fun MessageActionOverlay(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val calendar = Calendar.getInstance().apply { timeInMillis = editingTimestamp }
+                        TimePickerDialog(
+                            context,
+                            { _, hour, minute ->
+                                val updated = Calendar.getInstance().apply {
+                                    timeInMillis = editingTimestamp
+                                    set(Calendar.HOUR_OF_DAY, hour)
+                                    set(Calendar.MINUTE, minute)
+                                }
+                                editingTimestamp = updated.timeInMillis
+                            },
+                            calendar.get(Calendar.HOUR_OF_DAY),
+                            calendar.get(Calendar.MINUTE),
+                            DateFormat.is24HourFormat(context)
+                        ).show()
+                    },
+                shape = RoundedCornerShape(14.dp),
+                color = Color.White
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFF5F2EA)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("🕒", color = Color(0xFF9CA3AF), fontSize = 12.sp)
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "時刻",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = Color(0xFF999999),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = formatEditorTime(editingTimestamp),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = (-0.02).sp,
+                        color = Color(0xFF1A1A1A)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("⌄", color = Color(0xFFCCCCCC), fontSize = 14.sp)
+                }
+            }
+
             Spacer(modifier = Modifier.height(18.dp))
 
             Surface(
@@ -548,6 +609,7 @@ fun MessageActionOverlay(
                         onClick = {
                             val payload = message.copy(
                                 text = editingText.text,
+                                timestamp = editingTimestamp,
                                 emotions = editingEmotions,
                                 flags = editingFlags
                             )
@@ -611,6 +673,20 @@ fun MessageActionOverlay(
                 }
             }
         )
+    }
+}
+
+private fun formatEditorTime(timestamp: Long): String {
+    val selected = Calendar.getInstance().apply { timeInMillis = timestamp }
+    val now = Calendar.getInstance()
+    val isToday = selected.get(Calendar.YEAR) == now.get(Calendar.YEAR) &&
+            selected.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR)
+    val hhmm = SimpleDateFormat("HH:mm", Locale.JAPANESE).format(Date(timestamp))
+    return if (isToday) {
+        "今日 $hhmm"
+    } else {
+        val md = SimpleDateFormat("M/d", Locale.JAPANESE).format(Date(timestamp))
+        "$md $hhmm"
     }
 }
 
