@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -56,6 +57,12 @@ import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.firstEnabledActionOrNull
 import com.example.sample2.data.maxEmotionOrNull
+import com.example.sample2.ui.theme.CategoryEmotionNegative
+import com.example.sample2.ui.theme.CategoryEmotionPositive
+import com.example.sample2.ui.theme.CategoryExerciseBody
+import com.example.sample2.ui.theme.CategoryMorningHabit
+import com.example.sample2.ui.theme.CategorySleep
+import com.example.sample2.ui.theme.CategoryWork
 import com.example.sample2.util.formatDate
 import com.example.sample2.util.formatTime
 import java.util.Calendar
@@ -81,6 +88,7 @@ private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + 20.dp
 private val ChildTimeColumnWidth = 44.dp
 private val ChildStatusColumnWidth = 28.dp
 private val ChildBubbleRightPadding = 20.dp
+private val CategoryBarWidth = 4.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -132,7 +140,10 @@ fun MessageBubble(
         ) {
             Text(
                 text = formatTime(message.timestamp),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 13.sp,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                ),
                 color = TimeColor
             )
         }
@@ -146,32 +157,44 @@ fun MessageBubble(
 
         Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
 
-        Surface(
-            color = BubbleColor,
-            shape = RoundedCornerShape(4.dp, 16.dp, 16.dp, 16.dp),
+        Row(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = BubbleRightPadding)
-                .combinedClickable(
-                    onClick = {},
-                    onDoubleClick = { onDoubleClick(message) },
-                    onLongClick = { state.selectedMessage = message }
-                )
+                .padding(end = BubbleRightPadding),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = displayText,
-                modifier = Modifier.padding(
-                    horizontal = BubbleTextHorizontalPadding,
-                    vertical = textVerticalPadding
-                ),
-                color = TextColor,
-                maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
-                overflow = if (state.isSingleLineMode) {
-                    TextOverflow.Ellipsis
-                } else {
-                    TextOverflow.Clip
-                }
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(CategoryBarWidth)
+                    .background(color = categoryColorFor(message))
             )
+            Surface(
+                color = BubbleColor,
+                shape = RoundedCornerShape(0.dp, 16.dp, 16.dp, 16.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .combinedClickable(
+                        onClick = {},
+                        onDoubleClick = { onDoubleClick(message) },
+                        onLongClick = { state.selectedMessage = message }
+                    )
+            ) {
+                Text(
+                    text = displayText,
+                    modifier = Modifier.padding(
+                        horizontal = BubbleTextHorizontalPadding,
+                        vertical = textVerticalPadding
+                    ),
+                    color = TextColor,
+                    maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
+                    overflow = if (state.isSingleLineMode) {
+                        TextOverflow.Ellipsis
+                    } else {
+                        TextOverflow.Clip
+                    }
+                )
+            }
         }
     }
 }
@@ -237,14 +260,27 @@ fun EmotionResponseChildBubble(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Text(
-                text = formatTime(message.timestamp),
-                modifier = Modifier.padding(top = 4.dp, end = 2.dp),
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
         }
     }
+}
+
+
+private fun categoryColorFor(message: MessageV2): Color {
+    if (message.entryType == JournalEntryType.EMOTION_RESPONSE) {
+        return CategoryMorningHabit
+    }
+    if (message.emotions.happy > 0 || message.emotions.calm > 0) return CategoryEmotionPositive
+    if (message.emotions.anxiety > 0 || message.emotions.angry > 0 || message.emotions.sad > 0) return CategoryEmotionNegative
+    if (message.flags.exercised) return CategoryExerciseBody
+    if (message.flags.alcohol || message.flags.hangover) return CategorySleep
+
+    val isWorkLike =
+        message.flags.pendingTask || message.flags.meetingStress || message.flags.delegate ||
+            message.flags.instruct || message.flags.challenge || message.flags.breakdown ||
+            message.flags.quickAction || message.flags.smartphoneDrift || message.flags.socialized
+    if (isWorkLike) return CategoryWork
+
+    return CategoryMorningHabit
 }
 
 @Composable
