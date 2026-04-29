@@ -1,7 +1,6 @@
 package com.example.sample2.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,7 +49,6 @@ fun <T> JournalMessageListPane(
         }
     }
 
-    val messageItemSpacing = if (isSingleLineMode) 3.dp else 8.dp
 
     Box(
         modifier = modifier
@@ -66,8 +64,7 @@ fun <T> JournalMessageListPane(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             state = listState,
-            contentPadding = PaddingValues(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(messageItemSpacing)
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             itemsIndexed(messages) { index, message ->
                 val previous = messages.getOrNull(index - 1)

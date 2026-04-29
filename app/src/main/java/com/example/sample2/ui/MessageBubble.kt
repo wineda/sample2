@@ -83,6 +83,8 @@ private val BubbleTextHorizontalPadding = 18.dp
 
 private val BubbleTextVerticalPadding = 14.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
+private val MessageRowVerticalPadding = 4.dp
+private val MessageRowVerticalPaddingCompact = 1.5.dp
 private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + TimeColumnWidth + TimeToStatusSpacing + TimelineColumnWidth + 18.dp
 private val ChildBubbleRightPadding = 20.dp
 
@@ -101,6 +103,10 @@ fun MessageBubble(
         if (state.isSingleLineMode) BubbleTextVerticalPaddingCompact
         else BubbleTextVerticalPadding
 
+    val rowVerticalPadding =
+        if (state.isSingleLineMode) MessageRowVerticalPaddingCompact
+        else MessageRowVerticalPadding
+
     val displayText = if (state.isSingleLineMode) {
         message.text
             .replace("\r\n", " ")
@@ -114,7 +120,7 @@ fun MessageBubble(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
-            .padding(horizontal = MessageRowHorizontalPadding),
+            .padding(horizontal = MessageRowHorizontalPadding, vertical = rowVerticalPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val context = LocalContext.current
