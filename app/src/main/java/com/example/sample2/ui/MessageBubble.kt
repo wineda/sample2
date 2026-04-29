@@ -61,6 +61,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -392,6 +393,7 @@ fun MessageActionOverlay(
     val scrollState = rememberScrollState()
     val blockClicks = remember { MutableInteractionSource() }
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val textFocusRequester = remember { FocusRequester() }
     var isTextFocused by remember { mutableStateOf(false) }
 
@@ -548,7 +550,10 @@ fun MessageActionOverlay(
                     Column {
                         AddEmotionButton(
                             text = "種類を追加",
-                            onClick = { isActionTypeExpanded = !isActionTypeExpanded }
+                            onClick = {
+                                focusManager.clearFocus(force = true)
+                                isActionTypeExpanded = !isActionTypeExpanded
+                            }
                         )
                         if (isActionTypeExpanded) {
                             Spacer(modifier = Modifier.height(12.dp))
@@ -568,7 +573,10 @@ fun MessageActionOverlay(
                     CollapsibleActionTypeEditor(
                         selectedType = selectedActionType,
                         expanded = isActionTypeExpanded,
-                        onToggleExpanded = { isActionTypeExpanded = !isActionTypeExpanded },
+                        onToggleExpanded = {
+                            focusManager.clearFocus(force = true)
+                            isActionTypeExpanded = !isActionTypeExpanded
+                        },
                         onSelected = { selected ->
                             selectedActionType = selected
                             editingFlags = ActionFlags().selectOnly(selected)
