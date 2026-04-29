@@ -18,11 +18,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -69,24 +72,16 @@ import java.util.Calendar
 
 private val MessageRowHorizontalPadding = 12.dp
 private val TimeColumnWidth = 52.dp
+private val TimelineColumnWidth = 24.dp
 
-private val TimeToStatusSpacing = 6.dp
-private val StatusColumnWidth = 32.dp
-private val StatusToBubbleSpacing = 8.dp
+private val TimeToStatusSpacing = 2.dp
+private val StatusToBubbleSpacing = 10.dp
 private val BubbleRightPadding = 12.dp
 private val BubbleTextHorizontalPadding = 14.dp
-private val BubbleStartIndent =
-    MessageRowHorizontalPadding +
-            TimeColumnWidth +
-            TimeToStatusSpacing +
-            StatusColumnWidth +
-            StatusToBubbleSpacing
 
 private val BubbleTextVerticalPadding = 10.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
-private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + 20.dp
-private val ChildTimeColumnWidth = 44.dp
-private val ChildStatusColumnWidth = 28.dp
+private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + TimeColumnWidth + TimeToStatusSpacing + TimelineColumnWidth + 18.dp
 private val ChildBubbleRightPadding = 20.dp
 private val CategoryBarWidth = 4.dp
 
@@ -140,19 +135,16 @@ fun MessageBubble(
         ) {
             Text(
                 text = formatTime(message.timestamp),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 13.sp,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-                ),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                 color = TimeColor
             )
         }
 
         Spacer(modifier = Modifier.width(TimeToStatusSpacing))
 
-        StatusIconBox(
-            message = message,
-            modifier = Modifier.width(StatusColumnWidth)
+        ParentTimelineNode(
+            modifier = Modifier.width(TimelineColumnWidth),
+            message = message
         )
 
         Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
@@ -212,53 +204,89 @@ fun EmotionResponseChildBubble(
             .padding(start = ChildBubbleIndent, end = BubbleRightPadding),
         verticalAlignment = Alignment.Top
     ) {
-        Box(
-            modifier = Modifier
-                .width(ChildTimeColumnWidth)
-                .padding(vertical = 6.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            // Keep the time column width for alignment, but hide child time text.
-        }
-
-        Spacer(modifier = Modifier.width(TimeToStatusSpacing))
-
-        ChildStatusIconBox(
-            message = message,
-            modifier = Modifier.width(ChildStatusColumnWidth)
-        )
-
-        Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
-
         Column(
             modifier = Modifier
                 .weight(1f)
                 .padding(end = ChildBubbleRightPadding),
             horizontalAlignment = Alignment.End
         ) {
-            Surface(
-                color = BubbleColor.copy(alpha = 0.75f),
-                shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .combinedClickable(
-                        onClick = {},
-                        onLongClick = { onLongClick(message) }
-                    )
-            ) {
-                Text(
-                    text = message.text,
-                    modifier = Modifier.padding(
-                        start = 12.dp,
-                        top = 7.dp,
-                        end = 12.dp,
-                        bottom = 8.dp
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextColor,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+            Row(verticalAlignment = Alignment.Top) {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 10.dp, end = 8.dp)
+                        .size(width = 12.dp, height = 1.dp)
+                        .background(TimeColor.copy(alpha = 0.4f))
                 )
+                Surface(
+                    color = BubbleColor.copy(alpha = 0.58f),
+                    shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .combinedClickable(
+                            onClick = {},
+                            onLongClick = { onLongClick(message) }
+                        )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(
+                            start = 12.dp,
+                            top = 7.dp,
+                            end = 12.dp,
+                            bottom = 6.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        Text(
+                            text = message.text,
+                            modifier = Modifier.fillMaxWidth(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextColor
+                        )
+                        Text(
+                            text = formatTime(message.timestamp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            color = TimeColor
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ParentTimelineNode(
+    modifier: Modifier = Modifier,
+    message: MessageV2
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .width(1.dp)
+                .fillMaxHeight()
+                .background(TimeColor.copy(alpha = 0.35f))
+        )
+        Box(
+            modifier = Modifier
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(2.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(14.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .padding(2.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                StatusIconBox(message = message, modifier = Modifier.size(12.dp).offset(y = (-0.5f).dp))
             }
         }
     }
