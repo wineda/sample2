@@ -73,20 +73,13 @@ import com.example.sample2.util.formatDate
 import com.example.sample2.util.formatTime
 import java.util.Calendar
 
-private val MessageRowHorizontalPadding = 12.dp
-private val TimeColumnWidth = 52.dp
+private val MessageRowHorizontalPadding = 16.dp
 
-private val TimeToStatusSpacing = 6.dp
-private val StatusColumnWidth = 32.dp
-private val StatusToBubbleSpacing = 8.dp
 private val BubbleRightPadding = 12.dp
 private val BubbleTextHorizontalPadding = 14.dp
 private val BubbleStartIndent =
     MessageRowHorizontalPadding +
-            TimeColumnWidth +
-            TimeToStatusSpacing +
-            StatusColumnWidth +
-            StatusToBubbleSpacing
+            46.dp
 
 private val BubbleTextVerticalPadding = 10.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
@@ -121,36 +114,6 @@ fun MessageBubble(
         verticalAlignment = Alignment.CenterVertically
     ) {
         val context = LocalContext.current
-
-        Box(
-            modifier = Modifier
-                .width(TimeColumnWidth)
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = {
-                        showTimestampPicker(
-                            context = context,
-                            initialTimestamp = message.timestamp,
-                            onSelected = { newTimestamp ->
-                                onUpdate(message.copy(timestamp = newTimestamp))
-                            }
-                        )
-                    }
-                )
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = formatTime(message.timestamp),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 13.sp,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-                ),
-                color = TimeColor
-            )
-        }
-
-        Spacer(modifier = Modifier.width(TimeToStatusSpacing + StatusColumnWidth + StatusToBubbleSpacing))
 
         Row(
             modifier = Modifier
@@ -211,6 +174,14 @@ fun MessageBubble(
                             maxLines = if (state.isSingleLineMode) 1 else 2,
                             overflow = TextOverflow.Ellipsis
                         )
+                        Text(
+                            text = formatTime(message.timestamp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace
+                            ),
+                            color = TimeColor
+                        )
                     }
                 }
             }
@@ -225,7 +196,7 @@ private fun emotionTypeToLabel(type: EmotionType?): String? =
         EmotionType.SAD -> "悲しみ"
         EmotionType.HAPPY -> "喜び"
         EmotionType.CALM -> "安心"
-        null -> "メモ"
+        null -> null
     }
 
 @Composable
