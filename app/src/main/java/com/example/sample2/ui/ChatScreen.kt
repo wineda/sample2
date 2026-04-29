@@ -44,6 +44,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -397,6 +398,17 @@ fun ChatRoute() {
             ) {
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
+                    floatingActionButton = {
+                        if (currentMode == JournalScreenMode.Journal) {
+                            FloatingActionButton(
+                                onClick = { state.addMessage() },
+                                containerColor = androidx.compose.ui.graphics.Color.Black,
+                                contentColor = androidx.compose.ui.graphics.Color.White
+                            ) {
+                                Icon(imageVector = Icons.Default.EditNote, contentDescription = "記録する")
+                            }
+                        }
+                    },
                     bottomBar = {
                         Column(
                             modifier = Modifier
@@ -1035,6 +1047,14 @@ private fun CompactActionChip(
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelMedium
+            )
+        }
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(androidx.compose.ui.graphics.Color(0xFFB91C1C))
             )
         }
     }

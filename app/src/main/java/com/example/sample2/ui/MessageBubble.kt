@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,6 +41,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -56,6 +58,7 @@ import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.firstEnabledActionOrNull
 import com.example.sample2.data.maxEmotionOrNull
+import com.example.sample2.ui.theme.CategoryColor
 import com.example.sample2.util.formatDate
 import com.example.sample2.util.formatTime
 import java.util.Calendar
@@ -81,6 +84,31 @@ private val ChildBubbleIndent: Dp = MessageRowHorizontalPadding + 20.dp
 private val ChildTimeColumnWidth = 44.dp
 private val ChildStatusColumnWidth = 28.dp
 private val ChildBubbleRightPadding = 20.dp
+
+private fun categoryColor(message: MessageV2): Color = when {
+    message.flags.exercised -> CategoryColor.ExerciseBody
+    message.flags.smartphoneDrift -> CategoryColor.MorningHabit
+    message.flags.hangover -> CategoryColor.Sleep
+    message.emotions.maxEmotionOrNull() == EmotionType.HAPPY || message.emotions.maxEmotionOrNull() == EmotionType.CALM -> CategoryColor.EmotionPositive
+    message.emotions.maxEmotionOrNull() in listOf(EmotionType.ANXIETY, EmotionType.ANGRY, EmotionType.SAD) -> CategoryColor.EmotionNegative
+    else -> CategoryColor.Work
+}
+
+private fun categoryLabel(message: MessageV2): String = when {
+    message.flags.exercised -> "運動"
+    message.flags.smartphoneDrift -> "朝の習慣"
+    message.flags.hangover -> "睡眠"
+    message.emotions.maxEmotionOrNull() == EmotionType.HAPPY || message.emotions.maxEmotionOrNull() == EmotionType.CALM -> "感情 · ポジティブ"
+    message.emotions.maxEmotionOrNull() in listOf(EmotionType.ANXIETY, EmotionType.ANGRY, EmotionType.SAD) -> "感情 · ネガティブ"
+    else -> "仕事"
+}
+
+private fun formatDuration(start: Long, end: Long): String {
+    val minutes = ((end - start) / 60000L).coerceAtLeast(0L)
+    val h = minutes / 60
+    val m = minutes % 60
+    return "${h}h${m}m"
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -130,11 +158,21 @@ fun MessageBubble(
                 .padding(vertical = 8.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Text(
-                text = formatTime(message.timestamp),
-                style = MaterialTheme.typography.labelSmall,
-                color = TimeColor
-            )
+            Column {
+                Text(
+                    text = formatTime(message.timestamp),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                    color = TimeColor
+                )
+                Text(
+                    text = formatDuration(message.timestamp, System.currentTimeMillis()),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 9.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(TimeToStatusSpacing))
@@ -146,32 +184,67 @@ fun MessageBubble(
 
         Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
 
+        val category = categoryColor(message)
+        val isNegative = category == CategoryColor.EmotionNegative
+        val isPositive = category == CategoryColor.EmotionPositive
         Surface(
-            color = BubbleColor,
+            color = when {
+                isNegative -> Color(0xFFFDF2F1)
+                isPositive -> Color(0xFFF1F9F3)
+                else -> BubbleColor
+            },
             shape = RoundedCornerShape(4.dp, 16.dp, 16.dp, 16.dp),
             modifier = Modifier
                 .weight(1f)
                 .padding(end = BubbleRightPadding)
+                .border(
+                    width = 1.dp,
+                    color = when {
+                        isNegative -> Color(0xFFF5D9D6)
+                        isPositive -> Color(0xFFD4EAD9)
+                        else -> Color.Transparent
+                    },
+                    shape = RoundedCornerShape(4.dp, 16.dp, 16.dp, 16.dp)
+                )
                 .combinedClickable(
                     onClick = {},
                     onDoubleClick = { onDoubleClick(message) },
                     onLongClick = { state.selectedMessage = message }
                 )
         ) {
-            Text(
-                text = displayText,
-                modifier = Modifier.padding(
-                    horizontal = BubbleTextHorizontalPadding,
-                    vertical = textVerticalPadding
-                ),
-                color = TextColor,
-                maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
-                overflow = if (state.isSingleLineMode) {
-                    TextOverflow.Ellipsis
-                } else {
-                    TextOverflow.Clip
+            Row {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .height(64.dp)
+                        .background(category)
+                )
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = BubbleTextHorizontalPadding,
+                        vertical = textVerticalPadding
+                    )
+                ) {
+                    Text(
+                        text = categoryLabel(message),
+                        color = category,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 9.sp
+                    )
+                    Text(
+                        text = displayText,
+                        color = TextColor,
+                        maxLines = if (state.isSingleLineMode) 1 else Int.MAX_VALUE,
+                        overflow = if (state.isSingleLineMode) TextOverflow.Ellipsis else TextOverflow.Clip
+                    )
+                    Text(
+                        text = "→ ${formatTime(System.currentTimeMillis())}",
+                        modifier = Modifier.align(Alignment.End),
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
                 }
-            )
+            }
         }
     }
 }
@@ -213,6 +286,27 @@ fun EmotionResponseChildBubble(
                 .padding(end = ChildBubbleRightPadding),
             horizontalAlignment = Alignment.End
         ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(20.dp)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+                )
+                Box(
+                    modifier = Modifier
+                        .width(10.dp)
+                        .height(1.dp)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+                )
+                Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                    Text(
+                        text = "気付き",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
             Surface(
                 color = BubbleColor.copy(alpha = 0.75f),
                 shape = RoundedCornerShape(4.dp, 14.dp, 14.dp, 14.dp),
@@ -261,18 +355,32 @@ fun DateLabel(timestamp: Long) {
                 top = 8.dp,
                 bottom = 8.dp
             ),
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Surface(
-            color = Color(0xFFE0E0E0),
-            shape = RoundedCornerShape(12.dp)
-        ) {
+        Text(
+            text = dateText,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        if (relative == "今日") {
             Text(
-                text = "$dateText - $relative",
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.bodySmall
+                text = "TODAY",
+                modifier = Modifier
+                    .background(Color.Black, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall
             )
         }
+        Spacer(modifier = Modifier.weight(1f))
+        Box(
+            modifier = Modifier
+                .height(1.dp)
+                .width(80.dp)
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f))
+        )
     }
 }
 
