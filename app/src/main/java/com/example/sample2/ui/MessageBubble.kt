@@ -249,7 +249,7 @@ fun EmotionResponseChildBubble(
                             color = TimeColor
                         )
                     }
-                )
+                }
             }
         }
     }
