@@ -304,8 +304,8 @@ private fun TimelineSnippetLine(
                 text = text,
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF1F1F1F),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                maxLines = Int.MAX_VALUE,
+                overflow = TextOverflow.Clip
             )
         }
         if (drawDivider) {
@@ -334,8 +334,8 @@ private fun TomorrowActionBlock(text: String) {
             text = text,
             color = Color(0xFF3A6EA5),
             style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+            maxLines = Int.MAX_VALUE,
+            overflow = TextOverflow.Clip
         )
     }
 }
