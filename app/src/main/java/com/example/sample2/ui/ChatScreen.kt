@@ -588,12 +588,14 @@ fun ChatRoute() {
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxWidth()
-                                ) { msg ->
+                                ) { msg, isConnectedToPreviousInDay, isConnectedToNextInDay ->
                                     val childEntries = childEntriesByParentId[msg.id].orEmpty()
                                     Column {
                                         MessageBubble(
                                             message = msg,
                                             state = state,
+                                            isConnectedToPreviousInDay = isConnectedToPreviousInDay,
+                                            isConnectedToNextInDay = isConnectedToNextInDay,
                                             onDelete = { state.deleteMessage(msg) },
                                             onUpdate = { updated ->
                                                 state.updateMessage(updated)

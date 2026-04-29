@@ -90,6 +90,8 @@ private val ChildBubbleRightPadding = 20.dp
 fun MessageBubble(
     message: MessageV2,
     state: JournalViewModel,
+    isConnectedToPreviousInDay: Boolean,
+    isConnectedToNextInDay: Boolean,
     onDelete: () -> Unit,
     onUpdate: (MessageV2) -> Unit,
     onDoubleClick: (MessageV2) -> Unit = {}
@@ -144,7 +146,9 @@ fun MessageBubble(
 
         ParentTimelineNode(
             modifier = Modifier.width(TimelineColumnWidth),
-            message = message
+            message = message,
+            isConnectedToPreviousInDay = isConnectedToPreviousInDay,
+            isConnectedToNextInDay = isConnectedToNextInDay
         )
 
         Spacer(modifier = Modifier.width(StatusToBubbleSpacing))
@@ -248,18 +252,32 @@ fun EmotionResponseChildBubble(
 @Composable
 private fun ParentTimelineNode(
     modifier: Modifier = Modifier,
-    message: MessageV2
+    message: MessageV2,
+    isConnectedToPreviousInDay: Boolean,
+    isConnectedToNextInDay: Boolean
 ) {
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .width(1.dp)
-                .fillMaxHeight()
-                .background(TimeColor.copy(alpha = 0.35f))
-        )
+        if (isConnectedToPreviousInDay) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .width(1.dp)
+                    .fillMaxHeight(0.5f)
+                    .background(TimeColor.copy(alpha = 0.35f))
+            )
+        }
+        if (isConnectedToNextInDay) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .width(1.dp)
+                    .fillMaxHeight(0.5f)
+                    .background(TimeColor.copy(alpha = 0.35f))
+            )
+        }
         Box(
             modifier = Modifier
                 .size(18.dp)
