@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.sample2.BubbleColor
 import com.example.sample2.TextColor
@@ -50,6 +51,7 @@ import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.EmotionMetrics
 import com.example.sample2.data.EmotionType
+import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.firstEnabledActionOrNull
 import com.example.sample2.data.maxEmotionOrNull
@@ -74,6 +76,7 @@ private val BubbleStartIndent =
 
 private val BubbleTextVerticalPadding = 10.dp
 private val BubbleTextVerticalPaddingCompact = 4.dp
+private val ChildBubbleIndent: Dp = BubbleStartIndent + 10.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -162,6 +165,54 @@ fun MessageBubble(
                 } else {
                     TextOverflow.Clip
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun EmotionResponseChildBubble(
+    message: MessageV2,
+    modifier: Modifier = Modifier
+) {
+    if (message.entryType != JournalEntryType.EMOTION_RESPONSE) return
+
+    val response = message.response
+    val emotionLabel = EmotionType.entries
+        .firstOrNull { it.key == response?.targetEmotionKey }
+        ?.label
+        ?: "感情未設定"
+    val actionLabel = ActionType.entries
+        .firstOrNull { it.key == response?.actionKey }
+        ?.label
+        ?: "行動未設定"
+    val effectScore = response?.effectScore ?: 0
+    val detailText = response?.note?.takeIf { it.isNotBlank() } ?: message.text
+
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = ChildBubbleIndent, end = BubbleRightPadding)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = "└ ${formatTime(message.timestamp)} $emotionLabel → $actionLabel / 効果$effectScore",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = detailText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

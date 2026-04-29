@@ -70,6 +70,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.DefaultJournalRepository
+import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
 import com.example.sample2.data.MessageV2
@@ -203,11 +204,30 @@ fun ChatRoute() {
         switchToJournal()
     }
 
-    val displayMessages by remember {
+    val parentEntries by remember {
         derivedStateOf {
             state.messages
-                .filter { filterState.matches(it) }
+                .filter {
+                    it.parentId == null &&
+                            it.entryType == JournalEntryType.MEMO &&
+                            filterState.matches(it)
+                }
                 .sortedBy { it.timestamp }
+        }
+    }
+
+    val childEntriesByParentId by remember {
+        derivedStateOf {
+            state.messages
+                .asSequence()
+                .filter {
+                    it.parentId != null &&
+                            it.entryType == JournalEntryType.EMOTION_RESPONSE
+                }
+                .groupBy { it.parentId!! }
+                .mapValues { (_, children) ->
+                    children.sortedBy { it.timestamp }
+                }
         }
     }
 
@@ -218,15 +238,15 @@ fun ChatRoute() {
     }
 
     val dateLabel = buildJournalDateLabel(
-        timestamp = displayMessages.lastOrNull()?.timestamp ?: System.currentTimeMillis()
+        timestamp = parentEntries.lastOrNull()?.timestamp ?: System.currentTimeMillis()
     )
 
-    LaunchedEffect(displayMessages.size, currentMode) {
+    LaunchedEffect(parentEntries.size, currentMode) {
         if (
             currentMode == JournalScreenMode.Journal &&
-            displayMessages.isNotEmpty()
+            parentEntries.isNotEmpty()
         ) {
-            listState.scrollToItem(displayMessages.lastIndex)
+            listState.scrollToItem(parentEntries.lastIndex)
         }
     }
 
@@ -521,7 +541,7 @@ fun ChatRoute() {
                                 ) {
                                     JournalFilterHeader(
                                         filterState = filterState,
-                                        resultCount = displayMessages.size,
+                                        resultCount = parentEntries.size,
                                         onOpenSheet = { showFilterSheet = true },
                                         onClearWeekday = {
                                             filterState = filterState.copy(
@@ -558,7 +578,7 @@ fun ChatRoute() {
                                 }
 
                                 JournalMessageListPane(
-                                    messages = displayMessages,
+                                    messages = parentEntries,
                                     listState = listState,
                                     isSingleLineMode = state.isSingleLineMode,
                                     timestampOf = { it.timestamp },
@@ -566,14 +586,22 @@ fun ChatRoute() {
                                         .weight(1f)
                                         .fillMaxWidth()
                                 ) { msg ->
-                                    MessageBubble(
-                                        message = msg,
-                                        state = state,
-                                        onDelete = { state.deleteMessage(msg) },
-                                        onUpdate = { updated ->
-                                            state.updateMessage(updated)
-                                        }
-                                    )
+                                    Column {
+                                        MessageBubble(
+                                            message = msg,
+                                            state = state,
+                                            onDelete = { state.deleteMessage(msg) },
+                                            onUpdate = { updated ->
+                                                state.updateMessage(updated)
+                                            }
+                                        )
+
+                                        childEntriesByParentId[msg.id]
+                                            .orEmpty()
+                                            .forEach { child ->
+                                                EmotionResponseChildBubble(message = child)
+                                            }
+                                    }
                                 }
                             }
 
