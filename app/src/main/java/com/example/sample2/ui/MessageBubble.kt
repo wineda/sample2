@@ -221,11 +221,10 @@ fun MessageBubble(
 private fun emotionTypeToLabel(type: EmotionType?): String? =
     when (type) {
         EmotionType.ANXIETY -> "不安・焦り"
-        EmotionType.ANGER -> "怒り・不満"
-        EmotionType.TIREDNESS -> "疲れ"
-        EmotionType.JOY -> "喜び"
+        EmotionType.ANGRY -> "怒り・不満"
+        EmotionType.SAD -> "悲しみ"
+        EmotionType.HAPPY -> "喜び"
         EmotionType.CALM -> "安心"
-        EmotionType.SADNESS -> "悲しみ"
         null -> "メモ"
     }
 
