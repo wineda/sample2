@@ -975,7 +975,21 @@ private fun ActionTypeGrid(
     selectedType: ActionType?,
     onSelected: (ActionType) -> Unit
 ) {
-    ActionType.entries.chunked(4).forEach { rowTypes ->
+    val allActionTypes = listOf(
+        ActionType.EXERCISED,
+        ActionType.SOCIALIZED,
+        ActionType.DELEGATE,
+        ActionType.CHALLENGE,
+        ActionType.BREAKDOWN,
+        ActionType.INSTRUCT,
+        ActionType.QUICK_ACTION,
+        ActionType.PENDING_TASK,
+        ActionType.MEETING_STRESS,
+        ActionType.SMARTPHONE_DRIFT,
+        ActionType.ALCOHOL,
+        ActionType.HANGOVER
+    )
+    allActionTypes.chunked(4).forEach { rowTypes ->
         Row(
             modifier = Modifier
                 .fillMaxWidth()
