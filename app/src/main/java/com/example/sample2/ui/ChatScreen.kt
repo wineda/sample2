@@ -136,6 +136,7 @@ fun ChatRoute() {
     var workModeEnabled by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
     var addChildTarget by remember { mutableStateOf<MessageV2?>(null) }
+    var selectedParentForFab by remember { mutableStateOf<MessageV2?>(null) }
     var createEditorMessage by remember { mutableStateOf<MessageV2?>(null) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
@@ -410,11 +411,15 @@ fun ChatRoute() {
                         if (currentMode == JournalScreenMode.Journal) {
                             FloatingActionButton(
                                 onClick = {
-                                    createEditorMessage = MessageV2(
-                                        id = "__new__",
-                                        timestamp = System.currentTimeMillis(),
-                                        text = ""
-                                    )
+                                    selectedParentForFab?.let { parent ->
+                                        addChildTarget = parent
+                                    } ?: run {
+                                        createEditorMessage = MessageV2(
+                                            id = "__new__",
+                                            timestamp = System.currentTimeMillis(),
+                                            text = ""
+                                        )
+                                    }
                                 },
                                 containerColor = Color(0xFF1A1A1A),
                                 contentColor = Color.White,
@@ -613,7 +618,7 @@ fun ChatRoute() {
                                                 state.updateMessage(updated)
                                             },
                                             onDoubleClick = { parent ->
-                                                addChildTarget = parent
+                                                selectedParentForFab = parent
                                             }
                                         )
 
@@ -684,7 +689,10 @@ fun ChatRoute() {
         addChildTarget?.let { parent ->
             AddChildMessageDialog(
                 parent = parent,
-                onDismiss = { addChildTarget = null },
+                onDismiss = {
+                    addChildTarget = null
+                    selectedParentForFab = null
+                },
                 onAdd = { note ->
                     state.addEmotionResponse(
                         parent = parent,
@@ -694,6 +702,7 @@ fun ChatRoute() {
                         note = note
                     )
                     addChildTarget = null
+                    selectedParentForFab = null
                 }
             )
         }
