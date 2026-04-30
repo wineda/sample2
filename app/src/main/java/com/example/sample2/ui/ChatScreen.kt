@@ -30,17 +30,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.HistoryEdu
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.ViewStream
+import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.ViewStream
+import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -537,11 +537,16 @@ fun ChatRoute() {
                                         state.isSingleLineMode = !state.isSingleLineMode
                                     },
                                     modifier = Modifier.padding(
-                                        start = 12.dp,
-                                        end = 12.dp,
-                                        top = 8.dp,
-                                        bottom = 2.dp
+                                        start = 20.dp,
+                                        end = 20.dp,
+                                        top = 18.dp,
+                                        bottom = 14.dp
                                     )
+                                )
+
+                                HorizontalDivider(
+                                    thickness = 1.dp,
+                                    color = Color(0xFFF3F4F6)
                                 )
 
                                 AnimatedVisibility(
@@ -851,18 +856,28 @@ private fun JournalCompactMetaRow(
         CompactHeaderIconButton(
             selected = false,
             onClick = onMenuClick,
-            icon = Icons.Default.Menu,
+            icon = Icons.Outlined.Menu,
             contentDescription = "メニュー"
         )
 
         Spacer(modifier = Modifier.size(8.dp))
 
-        Text(
-            text = dateLabel,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = dateLabel.substringBefore('・'),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF111827)
+            )
+            if (dateLabel.contains("今日")) {
+                Text(
+                    text = "今日",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF9CA3AF)
+                )
+            }
+        }
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -871,14 +886,14 @@ private fun JournalCompactMetaRow(
             CompactHeaderIconButton(
                 selected = hasActiveFilter,
                 onClick = onFilterClick,
-                icon = Icons.Default.FilterList,
+                icon = Icons.Outlined.FilterList,
                 contentDescription = "フィルタ"
             )
 
             CompactHeaderIconButton(
                 selected = isWorkMode,
                 onClick = onToggleWorkMode,
-                icon = Icons.Default.Work,
+                icon = Icons.Outlined.WorkOutline,
                 contentDescription = if (isWorkMode) "仕事表示をオフ" else "仕事表示をオン"
             )
 
@@ -886,15 +901,16 @@ private fun JournalCompactMetaRow(
                 selected = effectiveSingleLineMode,
                 onClick = onToggleSingleLine,
                 icon = if (effectiveSingleLineMode) {
-                    Icons.Default.ViewAgenda
+                    Icons.Outlined.ViewAgenda
                 } else {
-                    Icons.Default.ViewStream
+                    Icons.Outlined.ViewStream
                 },
                 contentDescription = if (effectiveSingleLineMode) {
                     "通常表示に切り替え"
                 } else {
                     "1行表示に切り替え"
-                }
+                },
+                showNotificationDot = effectiveSingleLineMode
             )
         }
     }
@@ -1015,47 +1031,42 @@ private fun CompactHeaderIconButton(
     onClick: () -> Unit,
     icon: ImageVector,
     contentDescription: String,
+    showNotificationDot: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val containerColor = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
-    }
-
     val contentColor = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
+        Color(0xFF6366F1)
     } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+        Color(0xFF4B5563)
     }
 
     Surface(
-        modifier = modifier,
+        modifier = modifier.size(40.dp),
         onClick = onClick,
-        shape = CircleShape,
-        color = containerColor,
+        shape = RoundedCornerShape(12.dp),
+        color = Color.Transparent,
         contentColor = contentColor,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Box(
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = contentDescription,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(22.dp)
             )
 
-            if (selected) {
+            if (showNotificationDot) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 4.dp, end = 4.dp)
-                        .size(5.dp)
+                        .padding(top = 9.dp, end = 8.dp)
+                        .size(6.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
+                        .background(Color(0xFFEF4444))
                 )
             }
         }
