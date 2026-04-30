@@ -195,7 +195,7 @@ private fun ReflectionTimelineEntries(reflection: DailyReflection, fieldFilters:
         ReflectionFieldFilter.TOMORROW_FIRST_ACTION to reflection.tomorrowFirstAction
     ).filter { (filter, text) -> text.isNotBlank() && (fieldFilters.isEmpty() || filter in fieldFilters) }
 
-    Column(modifier = Modifier.weight(1f).clickable(onClick = onClick)) {
+    Column(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         contentItems.forEachIndexed { index, (filter, text) ->
             TimelineEntry(filter, text, showDivider = index < contentItems.lastIndex)
         }
