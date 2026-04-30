@@ -12,6 +12,14 @@ import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.ActionType
 import com.example.sample2.model.JournalJsonStorage
+
+import com.example.sample2.analytics.PersonalityScoreModel
+import com.example.sample2.ui.analytics.state.AnalyticsPeriod
+import com.example.sample2.ui.analytics.state.AnalyticsUiState
+import com.example.sample2.ui.analytics.state.AnalyticsUiStateMapper
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
 class JournalViewModel(
@@ -25,8 +33,13 @@ class JournalViewModel(
     var deleteTarget by mutableStateOf<MessageV2?>(null)
     var isSingleLineMode by mutableStateOf(false)
 
+
+    private val _analyticsUiState = MutableStateFlow(AnalyticsUiState())
+    val analyticsUiState: StateFlow<AnalyticsUiState> = _analyticsUiState.asStateFlow()
+
     init {
         messages.addAll(repository.loadMessages())
+        refreshAnalyticsUiState()
     }
 
     fun addMessage() {
@@ -130,10 +143,23 @@ class JournalViewModel(
         val result = repository.restoreBackupFromUri(uri)
         messages.clear()
         messages.addAll(repository.loadMessages())
+        refreshAnalyticsUiState()
         return result
     }
 
     private fun persistMessages() {
         repository.saveMessages(messages.toList())
+        refreshAnalyticsUiState()
+    }
+
+
+    fun setAnalyticsPeriod(period: AnalyticsPeriod) {
+        refreshAnalyticsUiState(period)
+    }
+
+    private fun refreshAnalyticsUiState(period: AnalyticsPeriod = _analyticsUiState.value.period) {
+        val records = repository.loadDailyRecords()
+        val scores = PersonalityScoreModel.analyzeAllDays(messages.toList(), records)
+        _analyticsUiState.value = AnalyticsUiStateMapper.map(scores, messages.toList(), records, period)
     }
 }
