@@ -69,6 +69,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
@@ -135,8 +136,8 @@ fun ChatRoute() {
     var showFilterSheet by remember { mutableStateOf(false) }
     var workModeEnabled by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
-    var addChildTarget by remember { mutableStateOf<MessageV2?>(null) }
     var createEditorMessage by remember { mutableStateOf<MessageV2?>(null) }
+    var createEditorParentTarget by remember { mutableStateOf<MessageV2?>(null) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
@@ -360,51 +361,64 @@ fun ChatRoute() {
         )
     }
 
+    val isCreateOverlayVisible = createEditorMessage != null
+
     Box(modifier = Modifier.fillMaxSize()) {
         if (state.selectedMessage == null) {
-            ModalNavigationDrawer(
-                drawerState = drawerState,
-                drawerContent = {
-                    JournalDrawerContent(
-                        onClose = {
-                            scope.launch { drawerState.close() }
-                        },
-                        onCopy = {
-                            val text = state.messages.joinToString("\n") {
-                                "${formatDate(it.timestamp)} ${it.text}"
-                            }
-
-                            if (text.isNotBlank()) {
-                                val clipboard =
-                                    context.getSystemService(ClipboardManager::class.java)
-                                val clip = ClipData.newPlainText("chat.txt", text)
-                                clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, "コピー", Toast.LENGTH_SHORT).show()
-                            }
-
-                            scope.launch { drawerState.close() }
-                        },
-                        onShare = {
-                            try {
-                                shareJournalBackup(context, repository)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                Toast.makeText(context, "共有に失敗しました", Toast.LENGTH_SHORT).show()
-                            }
-                            scope.launch { drawerState.close() }
-                        },
-                        onBackup = {
-                            backupLauncher.launch("journal_backup.json")
-                            scope.launch { drawerState.close() }
-                        },
-                        onRestore = {
-                            state.showRestoreDialog = true
-                            scope.launch { drawerState.close() }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (isCreateOverlayVisible) {
+                            Modifier.blur(8.dp)
+                        } else {
+                            Modifier
                         }
                     )
-                }
             ) {
-                Scaffold(
+                ModalNavigationDrawer(
+                    drawerState = drawerState,
+                    drawerContent = {
+                        JournalDrawerContent(
+                            onClose = {
+                                scope.launch { drawerState.close() }
+                            },
+                            onCopy = {
+                                val text = state.messages.joinToString("\n") {
+                                    "${formatDate(it.timestamp)} ${it.text}"
+                                }
+
+                                if (text.isNotBlank()) {
+                                    val clipboard =
+                                        context.getSystemService(ClipboardManager::class.java)
+                                    val clip = ClipData.newPlainText("chat.txt", text)
+                                    clipboard.setPrimaryClip(clip)
+                                    Toast.makeText(context, "コピー", Toast.LENGTH_SHORT).show()
+                                }
+
+                                scope.launch { drawerState.close() }
+                            },
+                            onShare = {
+                                try {
+                                    shareJournalBackup(context, repository)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    Toast.makeText(context, "共有に失敗しました", Toast.LENGTH_SHORT).show()
+                                }
+                                scope.launch { drawerState.close() }
+                            },
+                            onBackup = {
+                                backupLauncher.launch("journal_backup.json")
+                                scope.launch { drawerState.close() }
+                            },
+                            onRestore = {
+                                state.showRestoreDialog = true
+                                scope.launch { drawerState.close() }
+                            }
+                        )
+                    }
+                ) {
+                    Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     floatingActionButton = {
                         if (currentMode == JournalScreenMode.Journal) {
@@ -448,7 +462,7 @@ fun ChatRoute() {
                             )
                         }
                     }
-                ) { padding ->
+                    ) { padding ->
                     when (currentMode) {
                         JournalScreenMode.DailyRecord -> {
                             Box(modifier = Modifier.padding(padding)) {
@@ -613,7 +627,12 @@ fun ChatRoute() {
                                                 state.updateMessage(updated)
                                             },
                                             onDoubleClick = { parent ->
-                                                addChildTarget = parent
+                                                createEditorParentTarget = parent
+                                                createEditorMessage = MessageV2(
+                                                    id = "__new__",
+                                                    timestamp = System.currentTimeMillis(),
+                                                    text = ""
+                                                )
                                             }
                                         )
 
@@ -645,6 +664,7 @@ fun ChatRoute() {
                             }
                         }
                     }
+                    }
                 }
             }
         }
@@ -667,77 +687,36 @@ fun ChatRoute() {
                 message = draft,
                 mode = EditorMode.CREATE,
                 state = state,
-                onDismiss = { createEditorMessage = null },
+                onDismiss = {
+                    createEditorMessage = null
+                    createEditorParentTarget = null
+                },
                 onDelete = {},
                 onUpdate = {},
                 onCreate = { created ->
-                    state.inputText = created.text
-                    val beforeIds = state.messages.map { it.id }.toSet()
-                    state.addMessage()
-                    state.messages.firstOrNull { it.id !in beforeIds }?.let { inserted ->
-                        state.updateMessage(inserted.copy(emotions = created.emotions, flags = created.flags))
+                    val targetParent = createEditorParentTarget
+                    if (targetParent == null) {
+                        state.inputText = created.text
+                        val beforeIds = state.messages.map { it.id }.toSet()
+                        state.addMessage()
+                        state.messages.firstOrNull { it.id !in beforeIds }?.let { inserted ->
+                            state.updateMessage(inserted.copy(emotions = created.emotions, flags = created.flags))
+                        }
+                    } else {
+                        state.addEmotionResponse(
+                            parent = targetParent,
+                            targetEmotionKey = targetParent.emotions.maxEmotionOrNull()?.key ?: "",
+                            actionKey = "",
+                            effectScore = 0,
+                            note = created.text
+                        )
                     }
                     createEditorMessage = null
-                }
-            )
-        }
-        addChildTarget?.let { parent ->
-            AddChildMessageDialog(
-                parent = parent,
-                onDismiss = { addChildTarget = null },
-                onAdd = { note ->
-                    state.addEmotionResponse(
-                        parent = parent,
-                        targetEmotionKey = parent.emotions.maxEmotionOrNull()?.key ?: "",
-                        actionKey = "",
-                        effectScore = 0,
-                        note = note
-                    )
-                    addChildTarget = null
+                    createEditorParentTarget = null
                 }
             )
         }
     }
-}
-
-@Composable
-private fun AddChildMessageDialog(
-    parent: MessageV2,
-    onDismiss: () -> Unit,
-    onAdd: (note: String) -> Unit
-) {
-    var note by remember(parent.id) { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("子メッセージを追加") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("親: ${parent.text.take(40)}")
-
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("テキスト") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onAdd(note)
-                }
-            ) {
-                Text("追加")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("キャンセル")
-            }
-        }
-    )
 }
 
 @Composable
