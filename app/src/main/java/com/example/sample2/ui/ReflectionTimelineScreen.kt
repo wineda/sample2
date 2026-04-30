@@ -15,15 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.SentimentDissatisfied
 import androidx.compose.material.icons.filled.TaskAlt
@@ -31,12 +26,19 @@ import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.WbIncandescent
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Badge
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +49,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,20 +63,21 @@ import java.util.Locale
 
 private enum class ReflectionFieldFilter(
     val label: String,
+    val emoji: String,
     val icon: ImageVector,
     val textColor: Color,
     val bgColor: Color
 ) {
-    SUMMARY("ひとこと", Icons.Default.Chat, Color(0xFF6B6B6B), Color(0xFFEFEDEA)),
-    WINS("うまくいった", Icons.Default.ThumbUp, Color(0xFF4A7C4A), Color(0xFFEAF3E8)),
-    DIFFICULTIES("しんどかった", Icons.Default.SentimentDissatisfied, Color(0xFFB85C4A), Color(0xFFF7E9E4)),
-    INSIGHTS("気づき", Icons.Default.WbIncandescent, Color(0xFFC79410), Color(0xFFFAF0D8)),
-    TOMORROW_FIRST_ACTION("明日まずやる", Icons.Default.TaskAlt, Color(0xFF3A6EA5), Color(0xFFE6EEF7))
+    SUMMARY("コメント", "💬", Icons.Default.Chat, Color(0xFF6B6B6B), Color(0xFFEFEDEA)),
+    WINS("いいね", "👍", Icons.Default.ThumbUp, Color(0xFF4A7C4A), Color(0xFFEAF3E8)),
+    DIFFICULTIES("顔", "😐", Icons.Default.SentimentDissatisfied, Color(0xFFB85C4A), Color(0xFFF7E9E4)),
+    INSIGHTS("電球", "💡", Icons.Default.WbIncandescent, Color(0xFFC79410), Color(0xFFFAF0D8)),
+    TOMORROW_FIRST_ACTION("チェック", "✓", Icons.Default.TaskAlt, Color(0xFF3A6EA5), Color(0xFFE6EEF7))
 }
 
 private data class ReflectionListUiState(
     val query: String = "",
-    val fieldFilter: ReflectionFieldFilter? = null
+    val fieldFilters: Set<ReflectionFieldFilter> = emptySet()
 )
 
 private sealed interface ReflectionTimelineItem {
@@ -88,6 +93,9 @@ fun ReflectionTimelineScreen(
     modifier: Modifier = Modifier
 ) {
     var uiState by remember { mutableStateOf(ReflectionListUiState()) }
+    var isSearchExpanded by rememberSaveable { mutableStateOf(false) }
+    var isFilterSheetOpen by rememberSaveable { mutableStateOf(false) }
+    val searchFocusRequester = remember { FocusRequester() }
 
     val timelineItems = remember(reflections, uiState) {
         buildTimelineItems(
@@ -118,26 +126,34 @@ fun ReflectionTimelineScreen(
                     Text("＋ 今日を入力")
                 }
             }
-
-            OutlinedTextField(
-                value = uiState.query,
-                onValueChange = { value ->
-                    uiState = uiState.copy(query = value)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                label = { Text("キーワードで探す") }
-            )
-
-            ReflectionFilterChips(
-                selectedFilter = uiState.fieldFilter,
-                onSelectAll = { uiState = uiState.copy(fieldFilter = null) },
-                onSelectFilter = { filter ->
-                    uiState = uiState.copy(
-                        fieldFilter = if (uiState.fieldFilter == filter) null else filter
+            if (isSearchExpanded) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = uiState.query,
+                        onValueChange = { value -> uiState = uiState.copy(query = value) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(searchFocusRequester),
+                        singleLine = true,
+                        label = { Text("キーワードで探す") }
                     )
+                    TextButton(onClick = { isSearchExpanded = false }) {
+                        Text("キャンセル")
+                    }
                 }
-            )
+                LaunchedEffect(Unit) { searchFocusRequester.requestFocus() }
+            } else {
+                ReflectionCompactBar(
+                    query = uiState.query,
+                    selectedFilters = uiState.fieldFilters,
+                    onTapSearch = { isSearchExpanded = true },
+                    onTapFilter = { isFilterSheetOpen = true }
+                )
+            }
 
             if (timelineItems.isEmpty()) {
                 Surface(
@@ -174,7 +190,7 @@ fun ReflectionTimelineScreen(
                             is ReflectionTimelineItem.ReflectionCard -> {
                                 TimelineRow(
                                     reflection = item.reflection,
-                                    fieldFilter = uiState.fieldFilter,
+                                    fieldFilters = uiState.fieldFilters,
                                     onClick = { onOpenReflection(item.reflection.date) }
                                 )
                             }
@@ -184,107 +200,132 @@ fun ReflectionTimelineScreen(
             }
         }
     }
+
+    if (isFilterSheetOpen) {
+        ReflectionFilterSheet(
+            selectedFilters = uiState.fieldFilters,
+            onDismiss = { isFilterSheetOpen = false },
+            onClear = { uiState = uiState.copy(fieldFilters = emptySet()) },
+            onSelectAll = { uiState = uiState.copy(fieldFilters = emptySet()) },
+            onToggleFilter = { filter ->
+                uiState = uiState.copy(
+                    fieldFilters = if (filter in uiState.fieldFilters) {
+                        uiState.fieldFilters - filter
+                    } else {
+                        uiState.fieldFilters + filter
+                    }
+                )
+            }
+        )
+    }
 }
 
 @Composable
-private fun ReflectionFilterChips(
-    selectedFilter: ReflectionFieldFilter?,
-    onSelectAll: () -> Unit,
-    onSelectFilter: (ReflectionFieldFilter) -> Unit
+private fun ReflectionCompactBar(
+    query: String,
+    selectedFilters: Set<ReflectionFieldFilter>,
+    onTapSearch: () -> Unit,
+    onTapFilter: () -> Unit
 ) {
-    val scrollState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
-    LazyRow(
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        state = scrollState,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp)
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        item {
-            ReflectionFilterChip(
-                icon = Icons.Default.Add,
-                label = "すべて",
-                color = Color.White,
-                isSelected = selectedFilter == null,
-                alwaysExpanded = true,
-                onClick = onSelectAll
+        Surface(
+            color = Color(0xFFF2EEE7),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text(
+                text = compactLabel(query, selectedFilters),
+                fontSize = 11.sp,
+                color = Color(0xFF666666),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
             )
         }
-        items(ReflectionFieldFilter.entries) { filter ->
-            ReflectionFilterChip(
-                icon = filter.icon,
-                label = filter.label,
-                color = filter.textColor,
-                isSelected = selectedFilter == filter,
-                onClick = { onSelectFilter(filter) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            IconButton(
+                onClick = onTapSearch,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(Icons.Default.Search, contentDescription = "検索")
+            }
+            Box {
+                IconButton(
+                    onClick = onTapFilter,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(Icons.Default.FilterList, contentDescription = "フィルター")
+                }
+                if (selectedFilters.isNotEmpty()) {
+                    Badge(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(7.dp),
+                        containerColor = Color(0xFFD97757)
+                    ) {}
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReflectionFilterSheet(
+    selectedFilters: Set<ReflectionFieldFilter>,
+    onDismiss: () -> Unit,
+    onClear: () -> Unit,
+    onSelectAll: () -> Unit,
+    onToggleFilter: (ReflectionFieldFilter) -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            TextButton(onClick = onClear) { Text("クリア") }
+            TextButton(onClick = onDismiss) { Text("完了") }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterOptionChip(
+                label = "すべて",
+                selected = selectedFilters.isEmpty(),
+                onClick = onSelectAll
             )
+            ReflectionFieldFilter.entries.forEach { filter ->
+                FilterOptionChip(
+                    label = "${filter.emoji} ${filter.label}",
+                    selected = filter in selectedFilters,
+                    onClick = { onToggleFilter(filter) }
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ReflectionFilterChip(
-    icon: ImageVector,
-    label: String,
-    color: Color,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    alwaysExpanded: Boolean = false
-) {
-    val expanded = alwaysExpanded || isSelected
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(
-            modifier = Modifier
-                .height(36.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (expanded) Color(0xFF1A1A1A) else Color.White)
-                .border(
-                    width = if (expanded) 0.dp else 1.dp,
-                    color = Color(0xFFE8E4DC),
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .clickable(onClick = onClick)
-                .animateContentSize(animationSpec = tween(durationMillis = 200))
-                .padding(
-                    start = if (expanded) 10.dp else 0.dp,
-                    end = if (expanded) 12.dp else 0.dp
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = if (expanded) Color.White else Color(0xFF1A1A1A),
-                modifier = Modifier
-                    .padding(start = if (expanded) 0.dp else 10.dp, end = if (expanded) 0.dp else 10.dp)
-                    .size(16.dp)
-            )
-            if (expanded) {
-                Text(
-                    text = label,
-                    color = Color.White,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(start = 6.dp)
-                )
-            }
-        }
-        if (!expanded && !alwaysExpanded) {
-            Box(
-                modifier = Modifier
-                    .padding(top = 2.dp)
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(color)
-            )
-        }
+private fun FilterOptionChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
+        color = if (selected) Color(0xFF1A1A1A) else Color.White
+    ) {
+        Text(
+            text = label,
+            color = if (selected) Color.White else Color(0xFF1A1A1A),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            fontSize = 12.sp
+        )
     }
 }
 
 @Composable
 private fun TimelineRow(
     reflection: DailyReflection,
-    fieldFilter: ReflectionFieldFilter?,
+    fieldFilters: Set<ReflectionFieldFilter>,
     onClick: () -> Unit
 ) {
     val date = reflection.date.toLocalDateOrNull()
@@ -309,14 +350,14 @@ private fun TimelineRow(
                     .background(Color(0xFFE2DDD4))
             )
         }
-        ReflectionTimelineCard(reflection = reflection, fieldFilter = fieldFilter, onClick = onClick)
+        ReflectionTimelineCard(reflection = reflection, fieldFilters = fieldFilters, onClick = onClick)
     }
 }
 
 @Composable
 private fun ReflectionTimelineCard(
     reflection: DailyReflection,
-    fieldFilter: ReflectionFieldFilter?,
+    fieldFilters: Set<ReflectionFieldFilter>,
     onClick: () -> Unit
 ) {
     Surface(
@@ -334,7 +375,7 @@ private fun ReflectionTimelineCard(
                 ReflectionFieldFilter.DIFFICULTIES to reflection.difficulties,
                 ReflectionFieldFilter.INSIGHTS to reflection.insights
             ).filter { (filter, text) ->
-                text.isNotBlank() && (fieldFilter == null || fieldFilter == filter)
+                text.isNotBlank() && (fieldFilters.isEmpty() || filter in fieldFilters)
             }
 
             contentItems.forEachIndexed { index, (filter, text) ->
@@ -348,7 +389,7 @@ private fun ReflectionTimelineCard(
             }
 
             if (reflection.tomorrowFirstAction.isNotBlank() &&
-                (fieldFilter == null || fieldFilter == ReflectionFieldFilter.TOMORROW_FIRST_ACTION)
+                (fieldFilters.isEmpty() || ReflectionFieldFilter.TOMORROW_FIRST_ACTION in fieldFilters)
             ) {
                 TomorrowActionBlock(text = reflection.tomorrowFirstAction)
             }
@@ -432,13 +473,15 @@ private fun buildTimelineItems(
             }
         }
         .filter { reflection ->
-            when (uiState.fieldFilter) {
-                null -> true
-                ReflectionFieldFilter.SUMMARY -> reflection.summary.isNotBlank()
-                ReflectionFieldFilter.WINS -> reflection.wins.isNotBlank()
-                ReflectionFieldFilter.DIFFICULTIES -> reflection.difficulties.isNotBlank()
-                ReflectionFieldFilter.INSIGHTS -> reflection.insights.isNotBlank()
-                ReflectionFieldFilter.TOMORROW_FIRST_ACTION -> reflection.tomorrowFirstAction.isNotBlank()
+            val selected = uiState.fieldFilters
+            if (selected.isEmpty()) true else selected.any { filter ->
+                when (filter) {
+                    ReflectionFieldFilter.SUMMARY -> reflection.summary.isNotBlank()
+                    ReflectionFieldFilter.WINS -> reflection.wins.isNotBlank()
+                    ReflectionFieldFilter.DIFFICULTIES -> reflection.difficulties.isNotBlank()
+                    ReflectionFieldFilter.INSIGHTS -> reflection.insights.isNotBlank()
+                    ReflectionFieldFilter.TOMORROW_FIRST_ACTION -> reflection.tomorrowFirstAction.isNotBlank()
+                }
             }
         }
         .toList()
@@ -502,14 +545,8 @@ private fun String.toLocalDateOrNull(): LocalDate? {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun ReflectionFilterChipsPreview() {
-    MaterialTheme {
-        ReflectionFilterChips(
-            selectedFilter = ReflectionFieldFilter.INSIGHTS,
-            onSelectAll = {},
-            onSelectFilter = {}
-        )
-    }
+private fun compactLabel(query: String, selectedFilters: Set<ReflectionFieldFilter>): String {
+    if (query.isNotBlank()) return "「${query.trim()}」で絞り込み中"
+    if (selectedFilters.isEmpty()) return "すべて表示中"
+    return selectedFilters.joinToString("・", postfix = " のみ表示中") { it.label }
 }
