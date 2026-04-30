@@ -137,6 +137,9 @@ fun ChatRoute() {
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
     var addChildTargetId by remember { mutableStateOf<String?>(null) }
     var createEditorMessage by remember { mutableStateOf<MessageV2?>(null) }
+    fun openAddChildFlow(parentId: String? = null) {
+        addChildTargetId = parentId
+    }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
@@ -1201,6 +1204,3 @@ private fun buildJournalDateLabel(timestamp: Long): String {
         dateText
     }
 }
-    fun openAddChildFlow(parentId: String? = null) {
-        addChildTargetId = parentId
-    }
