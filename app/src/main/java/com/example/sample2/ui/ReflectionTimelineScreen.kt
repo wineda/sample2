@@ -272,7 +272,6 @@ private fun ReflectionCompactBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 private fun ReflectionFilterSheet(
     selectedFilters: Set<ReflectionFieldFilter>,
     onDismiss: () -> Unit,
