@@ -69,6 +69,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
@@ -360,51 +361,64 @@ fun ChatRoute() {
         )
     }
 
+    val isCreateOverlayVisible = createEditorMessage != null
+
     Box(modifier = Modifier.fillMaxSize()) {
         if (state.selectedMessage == null) {
-            ModalNavigationDrawer(
-                drawerState = drawerState,
-                drawerContent = {
-                    JournalDrawerContent(
-                        onClose = {
-                            scope.launch { drawerState.close() }
-                        },
-                        onCopy = {
-                            val text = state.messages.joinToString("\n") {
-                                "${formatDate(it.timestamp)} ${it.text}"
-                            }
-
-                            if (text.isNotBlank()) {
-                                val clipboard =
-                                    context.getSystemService(ClipboardManager::class.java)
-                                val clip = ClipData.newPlainText("chat.txt", text)
-                                clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, "コピー", Toast.LENGTH_SHORT).show()
-                            }
-
-                            scope.launch { drawerState.close() }
-                        },
-                        onShare = {
-                            try {
-                                shareJournalBackup(context, repository)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                Toast.makeText(context, "共有に失敗しました", Toast.LENGTH_SHORT).show()
-                            }
-                            scope.launch { drawerState.close() }
-                        },
-                        onBackup = {
-                            backupLauncher.launch("journal_backup.json")
-                            scope.launch { drawerState.close() }
-                        },
-                        onRestore = {
-                            state.showRestoreDialog = true
-                            scope.launch { drawerState.close() }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (isCreateOverlayVisible) {
+                            Modifier.blur(8.dp)
+                        } else {
+                            Modifier
                         }
                     )
-                }
             ) {
-                Scaffold(
+                ModalNavigationDrawer(
+                    drawerState = drawerState,
+                    drawerContent = {
+                        JournalDrawerContent(
+                            onClose = {
+                                scope.launch { drawerState.close() }
+                            },
+                            onCopy = {
+                                val text = state.messages.joinToString("\n") {
+                                    "${formatDate(it.timestamp)} ${it.text}"
+                                }
+
+                                if (text.isNotBlank()) {
+                                    val clipboard =
+                                        context.getSystemService(ClipboardManager::class.java)
+                                    val clip = ClipData.newPlainText("chat.txt", text)
+                                    clipboard.setPrimaryClip(clip)
+                                    Toast.makeText(context, "コピー", Toast.LENGTH_SHORT).show()
+                                }
+
+                                scope.launch { drawerState.close() }
+                            },
+                            onShare = {
+                                try {
+                                    shareJournalBackup(context, repository)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    Toast.makeText(context, "共有に失敗しました", Toast.LENGTH_SHORT).show()
+                                }
+                                scope.launch { drawerState.close() }
+                            },
+                            onBackup = {
+                                backupLauncher.launch("journal_backup.json")
+                                scope.launch { drawerState.close() }
+                            },
+                            onRestore = {
+                                state.showRestoreDialog = true
+                                scope.launch { drawerState.close() }
+                            }
+                        )
+                    }
+                ) {
+                    Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     floatingActionButton = {
                         if (currentMode == JournalScreenMode.Journal) {
@@ -448,7 +462,7 @@ fun ChatRoute() {
                             )
                         }
                     }
-                ) { padding ->
+                    ) { padding ->
                     when (currentMode) {
                         JournalScreenMode.DailyRecord -> {
                             Box(modifier = Modifier.padding(padding)) {
@@ -649,6 +663,7 @@ fun ChatRoute() {
                                 )
                             }
                         }
+                    }
                     }
                 }
             }
