@@ -135,7 +135,7 @@ fun ChatRoute() {
     var showFilterSheet by remember { mutableStateOf(false) }
     var workModeEnabled by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
-    var addChildTarget by remember { mutableStateOf<MessageV2?>(null) }
+    var addChildTargetId by remember { mutableStateOf<String?>(null) }
     var createEditorMessage by remember { mutableStateOf<MessageV2?>(null) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
@@ -410,11 +410,7 @@ fun ChatRoute() {
                         if (currentMode == JournalScreenMode.Journal) {
                             FloatingActionButton(
                                 onClick = {
-                                    createEditorMessage = MessageV2(
-                                        id = "__new__",
-                                        timestamp = System.currentTimeMillis(),
-                                        text = ""
-                                    )
+                                    openAddChildFlow()
                                 },
                                 containerColor = Color(0xFF1A1A1A),
                                 contentColor = Color.White,
@@ -613,7 +609,7 @@ fun ChatRoute() {
                                                 state.updateMessage(updated)
                                             },
                                             onDoubleClick = { parent ->
-                                                addChildTarget = parent
+                                                openAddChildFlow(parent.id)
                                             }
                                         )
 
@@ -681,11 +677,12 @@ fun ChatRoute() {
                 }
             )
         }
-        addChildTarget?.let { parent ->
+        addChildTargetId?.let { initialParentId ->
             AddChildMessageDialog(
-                parent = parent,
-                onDismiss = { addChildTarget = null },
-                onAdd = { note ->
+                parentCandidates = parentEntries,
+                initialParentId = initialParentId,
+                onDismiss = { addChildTargetId = null },
+                onAdd = { parent, note ->
                     state.addEmotionResponse(
                         parent = parent,
                         targetEmotionKey = parent.emotions.maxEmotionOrNull()?.key ?: "",
@@ -693,7 +690,7 @@ fun ChatRoute() {
                         effectScore = 0,
                         note = note
                     )
-                    addChildTarget = null
+                    addChildTargetId = null
                 }
             )
         }
@@ -702,18 +699,46 @@ fun ChatRoute() {
 
 @Composable
 private fun AddChildMessageDialog(
-    parent: MessageV2,
+    parentCandidates: List<MessageV2>,
+    initialParentId: String?,
     onDismiss: () -> Unit,
-    onAdd: (note: String) -> Unit
+    onAdd: (parent: MessageV2, note: String) -> Unit
 ) {
-    var note by remember(parent.id) { mutableStateOf("") }
+    var note by remember(initialParentId) { mutableStateOf("") }
+    var selectedParentId by remember(initialParentId, parentCandidates) {
+        mutableStateOf(initialParentId?.takeIf { id -> parentCandidates.any { it.id == id } })
+    }
+    val selectedParent = parentCandidates.firstOrNull { it.id == selectedParentId }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("子メッセージを追加") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("親: ${parent.text.take(40)}")
+                Text("親を選択")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    parentCandidates.forEach { parent ->
+                        val isSelected = selectedParentId == parent.id
+                        TextButton(
+                            onClick = { selectedParentId = parent.id },
+                            colors = ButtonDefaults.textButtonColors(
+                                containerColor = if (isSelected) Color(0xFF1A1A1A) else Color(0xFFF3F4F6),
+                                contentColor = if (isSelected) Color.White else Color(0xFF333333)
+                            )
+                        ) {
+                            Text(parent.text.take(14))
+                        }
+                    }
+                }
+                Text(
+                    text = selectedParent?.let { "選択中: ${it.text.take(40)}" } ?: "親を選択してください",
+                    style = MaterialTheme.typography.bodySmall
+                )
 
                 OutlinedTextField(
                     value = note,
@@ -726,8 +751,9 @@ private fun AddChildMessageDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onAdd(note)
-                }
+                    selectedParent?.let { onAdd(it, note) }
+                },
+                enabled = selectedParent != null
             ) {
                 Text("追加")
             }
@@ -1175,3 +1201,6 @@ private fun buildJournalDateLabel(timestamp: Long): String {
         dateText
     }
 }
+    fun openAddChildFlow(parentId: String? = null) {
+        addChildTargetId = parentId
+    }
