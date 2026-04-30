@@ -135,8 +135,8 @@ fun ChatRoute() {
     var showFilterSheet by remember { mutableStateOf(false) }
     var workModeEnabled by remember { mutableStateOf(false) }
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
-    var addChildTarget by remember { mutableStateOf<MessageV2?>(null) }
     var createEditorMessage by remember { mutableStateOf<MessageV2?>(null) }
+    var createEditorParentTarget by remember { mutableStateOf<MessageV2?>(null) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
@@ -613,7 +613,12 @@ fun ChatRoute() {
                                                 state.updateMessage(updated)
                                             },
                                             onDoubleClick = { parent ->
-                                                addChildTarget = parent
+                                                createEditorParentTarget = parent
+                                                createEditorMessage = MessageV2(
+                                                    id = "__new__",
+                                                    timestamp = System.currentTimeMillis(),
+                                                    text = ""
+                                                )
                                             }
                                         )
 
@@ -667,77 +672,36 @@ fun ChatRoute() {
                 message = draft,
                 mode = EditorMode.CREATE,
                 state = state,
-                onDismiss = { createEditorMessage = null },
+                onDismiss = {
+                    createEditorMessage = null
+                    createEditorParentTarget = null
+                },
                 onDelete = {},
                 onUpdate = {},
                 onCreate = { created ->
-                    state.inputText = created.text
-                    val beforeIds = state.messages.map { it.id }.toSet()
-                    state.addMessage()
-                    state.messages.firstOrNull { it.id !in beforeIds }?.let { inserted ->
-                        state.updateMessage(inserted.copy(emotions = created.emotions, flags = created.flags))
+                    val targetParent = createEditorParentTarget
+                    if (targetParent == null) {
+                        state.inputText = created.text
+                        val beforeIds = state.messages.map { it.id }.toSet()
+                        state.addMessage()
+                        state.messages.firstOrNull { it.id !in beforeIds }?.let { inserted ->
+                            state.updateMessage(inserted.copy(emotions = created.emotions, flags = created.flags))
+                        }
+                    } else {
+                        state.addEmotionResponse(
+                            parent = targetParent,
+                            targetEmotionKey = targetParent.emotions.maxEmotionOrNull()?.key ?: "",
+                            actionKey = "",
+                            effectScore = 0,
+                            note = created.text
+                        )
                     }
                     createEditorMessage = null
-                }
-            )
-        }
-        addChildTarget?.let { parent ->
-            AddChildMessageDialog(
-                parent = parent,
-                onDismiss = { addChildTarget = null },
-                onAdd = { note ->
-                    state.addEmotionResponse(
-                        parent = parent,
-                        targetEmotionKey = parent.emotions.maxEmotionOrNull()?.key ?: "",
-                        actionKey = "",
-                        effectScore = 0,
-                        note = note
-                    )
-                    addChildTarget = null
+                    createEditorParentTarget = null
                 }
             )
         }
     }
-}
-
-@Composable
-private fun AddChildMessageDialog(
-    parent: MessageV2,
-    onDismiss: () -> Unit,
-    onAdd: (note: String) -> Unit
-) {
-    var note by remember(parent.id) { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("子メッセージを追加") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("親: ${parent.text.take(40)}")
-
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("テキスト") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onAdd(note)
-                }
-            ) {
-                Text("追加")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("キャンセル")
-            }
-        }
-    )
 }
 
 @Composable
