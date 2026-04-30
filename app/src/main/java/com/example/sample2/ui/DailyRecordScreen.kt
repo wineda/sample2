@@ -4,7 +4,9 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,32 +16,27 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.outlined.Bedtime
+import androidx.compose.material.icons.outlined.DirectionsWalk
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,643 +51,138 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.sample2.data.DailyRecord
 import com.example.sample2.data.SleepData
 import com.example.sample2.model.JournalJsonStorage
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val TokyoZone: ZoneId = ZoneId.of("Asia/Tokyo")
+private val LineColor = Color(0xFFE8EBF0)
+private val AccentSoft = Color(0xFFEEF1F5)
+private val Ink2 = Color(0xFF4A5568)
+private val Ink3 = Color(0xFF8B95A7)
+private val GoodGreen = Color(0xFF4A8C6F)
+private val GoodGreenLight = Color(0xFF6BB58D)
+private val GoodGreenSoft = Color(0xFFE5F0EA)
+private val BadRed = Color(0xFFC25450)
+private val GreyBadgeBg = Color(0xFFF1F3F7)
+private val SleepGradientStart = Color(0xFFF8FAFD)
+private val SleepGradientEnd = Color(0xFFF1F4F9)
+
+enum class SleepQuality { BAD, SLIGHTLY_BAD, NORMAL, GOOD, VERY_GOOD }
+
+internal fun computeDurationMinutes(bed: LocalTime, wake: LocalTime): Int {
+    val wakeMin = wake.hour * 60 + wake.minute
+    val bedMin = bed.hour * 60 + bed.minute
+    return if (bedMin <= wakeMin) wakeMin - bedMin else (24 * 60 - bedMin) + wakeMin
+}
+
+internal fun applyStepDelta(current: Int, delta: Int): Int = (current + delta).coerceIn(0, 999_999)
+
 @Composable
-fun DailyRecordScreen(
-    onClose: () -> Unit,
-    initialDate: String = todayDateString(),
-    onOpenReflection: (String) -> Unit = {}
-) {
+fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString(), onOpenReflection: (String) -> Unit = {}) {
     val context = LocalContext.current
+    BackHandler(onBack = onClose)
 
-    BackHandler {
-        onClose()
-    }
-
-    var selectedDate by rememberSaveable { mutableStateOf(initialDate) }
-    var sleepStartMinutes by rememberSaveable { mutableStateOf<Int?>(null) }
-    var sleepEndMinutes by rememberSaveable { mutableStateOf<Int?>(null) }
-    var sleepQuality by rememberSaveable { mutableIntStateOf(0) }
-    var stepsText by rememberSaveable { mutableStateOf("") }
+    val today = remember { LocalDate.now(TokyoZone) }
+    var selectedDate by rememberSaveable { mutableStateOf(LocalDate.parse(initialDate)) }
+    var bedTime by rememberSaveable { mutableStateOf<LocalTime?>(null) }
+    var wakeTime by rememberSaveable { mutableStateOf<LocalTime?>(null) }
+    var quality by rememberSaveable { mutableStateOf<SleepQuality?>(null) }
+    var steps by rememberSaveable { mutableIntStateOf(0) }
 
     LaunchedEffect(selectedDate) {
-        val record = JournalJsonStorage.findDailyRecordOrNull(context, selectedDate)
-        if (record != null) {
-            sleepStartMinutes = record.sleep.startTimestamp?.let(::extractMinutesOfDay)
-            sleepEndMinutes = record.sleep.endTimestamp?.let(::extractMinutesOfDay)
-            sleepQuality = record.sleep.quality
-            stepsText = if (record.steps > 0) record.steps.toString() else ""
-        } else {
-            sleepStartMinutes = null
-            sleepEndMinutes = null
-            sleepQuality = 0
-            stepsText = ""
+        JournalJsonStorage.findDailyRecordOrNull(context, selectedDate.toString())?.let { r ->
+            bedTime = r.sleep.startTimestamp?.let { Instant.ofEpochMilli(it).atZone(TokyoZone).toLocalTime() }
+            wakeTime = r.sleep.endTimestamp?.let { Instant.ofEpochMilli(it).atZone(TokyoZone).toLocalTime() }
+            quality = r.sleep.quality.toUiQuality()
+            steps = r.steps
+        } ?: run {
+            bedTime = null; wakeTime = null; quality = null; steps = 0
         }
     }
 
-    val sleepDurationMinutes = calculateSleepDurationMinutes(
-        startMinutes = sleepStartMinutes,
-        endMinutes = sleepEndMinutes
-    )
+    val duration = if (bedTime != null && wakeTime != null) computeDurationMinutes(bedTime!!, wakeTime!!) else null
+    val enabled = bedTime != null || wakeTime != null || quality != null || steps > 0
 
-    Scaffold(
-        contentWindowInsets = WindowInsets.safeDrawing,
-        bottomBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .imePadding()
-                        .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    TextButton(
-                        onClick = onClose,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.secondary
-                        )
-                    ) {
-                        Icon(Icons.Default.Cancel, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("キャンセル")
-                    }
-
-                    Button(
-                        onClick = {
-                            val steps = stepsText.toIntOrNull()?.coerceAtLeast(0) ?: 0
-                            val sleepTimestamps = buildSleepTimestamps(
-                                date = selectedDate,
-                                startMinutes = sleepStartMinutes,
-                                endMinutes = sleepEndMinutes
-                            )
-
-                            val record = DailyRecord(
-                                date = selectedDate,
-                                sleep = SleepData(
-                                    durationMinutes = sleepDurationMinutes ?: 0,
-                                    quality = sleepQuality,
-                                    startTimestamp = sleepTimestamps?.first,
-                                    endTimestamp = sleepTimestamps?.second
-                                ),
-                                steps = steps
-                            )
-
-                            JournalJsonStorage.upsertDailyRecord(context, record)
-                            Toast.makeText(context, "日次記録を保存しました", Toast.LENGTH_SHORT).show()
-                            onClose()
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("保存")
-                    }
-                }
-            }
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            DateHeaderCard(
-                date = selectedDate,
-                onPrev = { selectedDate = shiftDate(selectedDate, -1) },
-                onNext = { selectedDate = shiftDate(selectedDate, 1) },
-                onToday = { selectedDate = todayDateString() },
-                onOpenReflection = { onOpenReflection(selectedDate) },
-                onPickDate = {
-                    showDatePicker(
-                        context = context,
-                        contextDate = selectedDate,
-                        onDateSelected = { selectedDate = it }
-                    )
-                }
-            )
-
-            SleepCard(
-                startMinutes = sleepStartMinutes,
-                endMinutes = sleepEndMinutes,
-                durationMinutes = sleepDurationMinutes,
-                quality = sleepQuality,
-                onStartClick = {
-                    showTimePicker(
-                        context = context,
-                        initialMinutes = sleepStartMinutes,
-                        onSelected = { sleepStartMinutes = it }
-                    )
-                },
-                onEndClick = {
-                    showTimePicker(
-                        context = context,
-                        initialMinutes = sleepEndMinutes,
-                        onSelected = { sleepEndMinutes = it }
-                    )
-                },
-                onQualitySelected = { sleepQuality = it }
-            )
-
-            StepsCard(
-                stepsText = stepsText,
-                onStepsChange = { value ->
-                    stepsText = value.filter { it.isDigit() }
-                },
-                onPresetClick = { preset ->
-                    stepsText = preset.toString()
-                },
-                onAddClick = { add ->
-                    val current = stepsText.toIntOrNull() ?: 0
-                    stepsText = (current + add).toString()
-                }
-            )
-
-            Spacer(modifier = Modifier.height(18.dp))
+    Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0), bottomBar = {
+        FooterActions(onCancel = onClose, onSave = {
+            val pair = buildSleepTimestamps(selectedDate, bedTime, wakeTime)
+            JournalJsonStorage.upsertDailyRecord(context, DailyRecord(selectedDate.toString(), SleepData(duration ?: 0, quality.toModelQuality(), pair?.first, pair?.second), steps))
+            Toast.makeText(context, "日次記録を保存しました", Toast.LENGTH_SHORT).show(); onClose()
+        }, enabled = enabled)
+    }) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            DateHeaderCard(selectedDate, today, { if (selectedDate > LocalDate.MIN) selectedDate = selectedDate.minusDays(1) }, { if (selectedDate < today) selectedDate = selectedDate.plusDays(1) }, { selectedDate = today.minusDays(1) }, { selectedDate = today }, { onOpenReflection(selectedDate.toString()) }) { showDatePicker(context, selectedDate) { picked -> selectedDate = picked } }
+            SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it }
+            StepCard(steps, onSetSteps = { steps = it.coerceIn(0, 999_999) }, onDelta = { steps = applyStepDelta(steps, it) })
         }
     }
 }
 
-@Composable
-private fun DateHeaderCard(
-    date: String,
-    onPrev: () -> Unit,
-    onNext: () -> Unit,
-    onToday: () -> Unit,
-    onOpenReflection: () -> Unit,
-    onPickDate: () -> Unit
-) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                MiniNavButton(
-                    icon = Icons.Default.ChevronLeft,
-                    contentDescription = "prev",
-                    onClick = onPrev
-                )
-
-                Surface(
-                    onClick = onPickDate,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = formatDisplayDate(date),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                MiniNavButton(
-                    icon = Icons.Default.ChevronRight,
-                    contentDescription = "next",
-                    onClick = onNext
-                )
+@Composable private fun DateHeaderCard(selectedDate: LocalDate, today: LocalDate, onPrev: () -> Unit, onNext: () -> Unit, onYesterday: () -> Unit, onToday: () -> Unit, onReflection: () -> Unit, onDatePick: (LocalDate) -> Unit) { /* simplified */
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, LineColor)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                CircleNav(Icons.Rounded.ChevronLeft, "前日", onPrev)
+                Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd (E)", Locale.JAPANESE)), modifier = Modifier.weight(1f).clickable { onDatePick(selectedDate) }.semantics { contentDescription = "日付選択" }, fontWeight = FontWeight.SemiBold)
+                CircleNav(Icons.Rounded.ChevronRight, "翌日", onNext, enabled = selectedDate < today)
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                FilterChip(
-                    selected = false,
-                    onClick = onToday,
-                    label = { Text("今日") },
-                    leadingIcon = {
-                        Icon(Icons.Default.Today, contentDescription = null)
-                    },
-                    colors = actionChipColors()
-                )
-
-                FilterChip(
-                    selected = false,
-                    onClick = onOpenReflection,
-                    label = { Text("振り返り") },
-                    colors = actionChipColors()
-                )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                QuickChip("昨日", false, Modifier.weight(1f), onYesterday); QuickChip("今日", selectedDate == today, Modifier.weight(1f), onToday); QuickChip("振り返り", false, Modifier.weight(1f), onReflection)
             }
         }
     }
 }
+@Composable private fun CircleNav(icon: androidx.compose.ui.graphics.vector.ImageVector, cd: String, onClick: () -> Unit, enabled: Boolean = true) { Surface(onClick = onClick, enabled = enabled, modifier = Modifier.size(36.dp), shape = CircleShape, color = AccentSoft) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, cd) } } }
+@Composable private fun QuickChip(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) { Surface(onClick = onClick, modifier = modifier.height(42.dp), shape = RoundedCornerShape(10.dp), color = if (selected) MaterialTheme.colorScheme.primary else AccentSoft, contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else Ink2) { Box(contentAlignment = Alignment.Center) { Text(label, fontWeight = FontWeight.SemiBold) } } }
 
-@Composable
-private fun MiniNavButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.size(42.dp),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.primary
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = contentDescription)
-        }
+@Composable private fun SleepCard(bed: LocalTime?, wake: LocalTime?, quality: SleepQuality?, duration: Int?, onBed: () -> Unit, onWake: () -> Unit, onQuality: (SleepQuality) -> Unit) {
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.dp, LineColor)) { Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Bedtime, null); Spacer(Modifier.width(6.dp)); Text("睡眠", fontWeight = FontWeight.Bold); Spacer(Modifier.weight(1f)); StatusBadge(bed != null || wake != null || quality != null) }
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Brush.linearGradient(listOf(SleepGradientStart, SleepGradientEnd))).padding(14.dp), verticalAlignment = Alignment.CenterVertically) { TimeCell("就寝", bed, Modifier.weight(1f), onBed); Text("→", color = Ink3); TimeCell("起床", wake, Modifier.weight(1f), onWake) }
+        if (duration != null) { HorizontalDivider(color = LineColor); Text("睡眠時間 ${formatDuration(duration)}") }
+        Text("睡眠の質", color = Ink2, fontSize = 12.sp)
+        val items = listOf("😣" to "悪い", "😕" to "やや悪", "😐" to "普通", "🙂" to "良い", "😄" to "とても")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) { SleepQuality.entries.forEachIndexed { i, q -> QualityButton(items[i].first, items[i].second, quality == q, Modifier.weight(1f), { onQuality(q) }) } }
+    } }
+}
+@Composable private fun TimeCell(label: String, time: LocalTime?, modifier: Modifier, onClick: () -> Unit) { Column(modifier.clickable(onClickLabel = "$label 時刻入力", onClick = onClick).padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text(label, color = Ink3, fontSize = 11.sp); Text(time?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "未設定", fontSize = if (time == null) 14.sp else 22.sp, fontWeight = FontWeight.SemiBold, color = if (time == null) Ink3 else MaterialTheme.colorScheme.onSurface) } }
+@Composable private fun QualityButton(emoji: String, label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) { Surface(onClick = onClick, modifier = modifier.height(72.dp), shape = RoundedCornerShape(8.dp), color = if (selected) MaterialTheme.colorScheme.primary else Color.White, border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else LineColor), contentColor = if (selected) Color.White else Ink2) { Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) { Text(emoji); Text(label, fontSize = 11.sp) } } }
+
+@Composable private fun StepCard(steps: Int, onSetSteps: (Int) -> Unit, onDelta: (Int) -> Unit) { Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.dp, LineColor)) { Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.DirectionsWalk, null); Spacer(Modifier.width(6.dp)); Text("歩数", fontWeight = FontWeight.Bold); Spacer(Modifier.weight(1f)); StatusBadge(steps > 0) }
+    val progress = (steps.toFloat()/10000f).coerceIn(0f,1f)
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Brush.linearGradient(listOf(SleepGradientStart, SleepGradientEnd))).padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) { Row(verticalAlignment = Alignment.Bottom) { Text(String.format("%,d", steps), fontSize = 38.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1).sp); Text("歩", color = Ink3, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)) }
+    LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp), color = GoodGreen, trackColor = Color(0xFFE1E6ED))
+    Text(if (progress < 1f) "目標 10,000歩 まで あと ${String.format("%,d", 10_000-steps.coerceAtMost(10_000))}歩" else "目標達成！(${String.format("%,d", steps - 10_000)}歩)", fontSize = 10.sp, color = Ink3)
     }
-}
-
-@Composable
-private fun SleepCard(
-    startMinutes: Int?,
-    endMinutes: Int?,
-    durationMinutes: Int?,
-    quality: Int,
-    onStartClick: () -> Unit,
-    onEndClick: () -> Unit,
-    onQualitySelected: (Int) -> Unit
-) {
-    val qualityLabels = remember {
-        listOf("未設定", "悪い", "やや悪い", "普通", "良い", "かなり良い")
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) { listOf(3000,5000,8000,10000).forEach { v -> Surface(onClick={onSetSteps(v)}, modifier=Modifier.weight(1f).height(46.dp), shape=RoundedCornerShape(8.dp), color=if(steps==v) MaterialTheme.colorScheme.primary else Color.White, border=androidx.compose.foundation.BorderStroke(1.dp, LineColor), contentColor=if(steps==v) Color.White else MaterialTheme.colorScheme.onSurface){Box(contentAlignment=Alignment.Center){Text(String.format("%,d",v), fontWeight=FontWeight.SemiBold)}} } }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) { Text("微調整", color = Ink3, fontSize = 11.sp, modifier = Modifier.width(32.dp)); listOf(-1000,-500,500,1000).forEach { d -> Surface(onClick={onDelta(d)}, modifier=Modifier.weight(1f).height(44.dp), shape=RoundedCornerShape(8.dp), color=Color.White, border=androidx.compose.foundation.BorderStroke(1.dp, LineColor)) { Box(contentAlignment=Alignment.Center){Text((if(d>0) "+" else "−") + String.format("%,d", kotlin.math.abs(d)), color=if(d<0) BadRed else GoodGreen, fontWeight=FontWeight.SemiBold)} } }
     }
+} } }
 
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "睡眠",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Surface(
-                    shape = RoundedCornerShape(999.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ) {
-                    Text(
-                        text = formatDuration(durationMinutes),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+@Composable fun StatusBadge(filled: Boolean) { val (bg, fg, label) = if (filled) Triple(GoodGreenSoft, GoodGreen, "入力済み") else Triple(GreyBadgeBg, Ink3, "未入力"); Surface(shape = RoundedCornerShape(999.dp), color = bg) { Text(label, color = fg, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)) } }
 
-            Text(
-                text = "起床日ベースで保存。就寝が起床より遅い場合は前日就寝として扱います。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+@Composable fun FooterActions(onCancel: () -> Unit, onSave: () -> Unit, enabled: Boolean) { Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().border(1.dp, LineColor).padding(10.dp)) { Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) { TextButton(onClick = onCancel, modifier = Modifier.weight(0.35f).height(52.dp), colors = ButtonDefaults.textButtonColors(containerColor = AccentSoft, contentColor = Ink2)) { Text("キャンセル") }; Button(onClick = onSave, enabled = enabled, modifier = Modifier.weight(1f).height(52.dp)) { Text("保存") } } } }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                TimeFieldButton(
-                    label = "就寝",
-                    timeText = minutesToTimeText(startMinutes),
-                    modifier = Modifier.weight(1f),
-                    onClick = onStartClick
-                )
-                TimeFieldButton(
-                    label = "起床",
-                    timeText = minutesToTimeText(endMinutes),
-                    modifier = Modifier.weight(1f),
-                    onClick = onEndClick
-                )
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "睡眠の質",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    qualityLabels.forEachIndexed { index, label ->
-                        FilterChip(
-                            selected = quality == index,
-                            onClick = { onQualitySelected(index) },
-                            label = { Text(label) },
-                            colors = selectionChipColors()
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TimeFieldButton(
-    label: String,
-    timeText: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 12.dp)
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = timeText,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-@Composable
-private fun StepsCard(
-    stepsText: String,
-    onStepsChange: (String) -> Unit,
-    onPresetClick: (Int) -> Unit,
-    onAddClick: (Int) -> Unit
-) {
-    val presets = remember { listOf(3000, 5000, 8000, 10000) }
-    val addValues = remember { listOf(1000, 3000, 5000) }
-
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Text(
-                text = "歩数",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            OutlinedTextField(
-                value = stepsText,
-                onValueChange = onStepsChange,
-                label = { Text("歩数") },
-                suffix = { Text("歩") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "よく使う値",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    presets.forEach { preset ->
-                        FilterChip(
-                            selected = false,
-                            onClick = { onPresetClick(preset) },
-                            label = { Text("${preset}歩") },
-                            colors = actionChipColors()
-                        )
-                    }
-                }
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "加算",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    addValues.forEach { add ->
-                        FilterChip(
-                            selected = false,
-                            onClick = { onAddClick(add) },
-                            label = { Text("+${add}") },
-                            colors = actionChipColors()
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun selectionChipColors() = FilterChipDefaults.filterChipColors(
-    containerColor = MaterialTheme.colorScheme.surface,
-    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
-)
-
-@Composable
-private fun actionChipColors() = FilterChipDefaults.filterChipColors(
-    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-    labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
-)
-
-private fun todayDateString(): String {
-    return SimpleDateFormat("yyyy-MM-dd", Locale.JAPAN).format(Date())
-}
-
-private fun formatDisplayDate(date: String): String {
-    val cal = parseDate(date)
-    return SimpleDateFormat("yyyy/MM/dd (E)", Locale.JAPAN).format(cal.time)
-}
-
-private fun shiftDate(date: String, days: Int): String {
-    val cal = parseDate(date)
-    cal.add(Calendar.DAY_OF_MONTH, days)
-    return SimpleDateFormat("yyyy-MM-dd", Locale.JAPAN).format(cal.time)
-}
-
-private fun parseDate(date: String): Calendar {
-    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.JAPAN)
-    val parsed = sdf.parse(date) ?: Date()
-    return Calendar.getInstance().apply {
-        time = parsed
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }
-}
-
-private fun showDatePicker(
-    context: android.content.Context,
-    contextDate: String,
-    onDateSelected: (String) -> Unit
-) {
-    val cal = parseDate(contextDate)
-    val dialog = DatePickerDialog(
-        context,
-        { _, year, month, dayOfMonth ->
-            val selected = Calendar.getInstance().apply {
-                set(Calendar.YEAR, year)
-                set(Calendar.MONTH, month)
-                set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            onDateSelected(
-                SimpleDateFormat("yyyy-MM-dd", Locale.JAPAN).format(selected.time)
-            )
-        },
-        cal.get(Calendar.YEAR),
-        cal.get(Calendar.MONTH),
-        cal.get(Calendar.DAY_OF_MONTH)
-    )
-    dialog.show()
-}
-
-private fun showTimePicker(
-    context: android.content.Context,
-    initialMinutes: Int?,
-    onSelected: (Int) -> Unit
-) {
-    val hour = initialMinutes?.div(60) ?: 23
-    val minute = initialMinutes?.rem(60) ?: 0
-    val dialog = TimePickerDialog(
-        context,
-        { _, selectedHour, selectedMinute ->
-            onSelected(selectedHour * 60 + selectedMinute)
-        },
-        hour,
-        minute,
-        true
-    )
-    dialog.show()
-}
-
-private fun minutesToTimeText(minutes: Int?): String {
-    if (minutes == null) return "未設定"
-    val hour = minutes / 60
-    val minute = minutes % 60
-    return "%02d:%02d".format(hour, minute)
-}
-
-private fun calculateSleepDurationMinutes(
-    startMinutes: Int?,
-    endMinutes: Int?
-): Int? {
-    if (startMinutes == null || endMinutes == null) return null
-    return if (endMinutes >= startMinutes) {
-        endMinutes - startMinutes
-    } else {
-        24 * 60 - startMinutes + endMinutes
-    }
-}
-
-private fun formatDuration(durationMinutes: Int?): String {
-    if (durationMinutes == null) return "未設定"
-    val hour = durationMinutes / 60
-    val minute = durationMinutes % 60
-    return "${hour}時間${minute}分"
-}
-
-private fun extractMinutesOfDay(timestamp: Long): Int {
-    val cal = Calendar.getInstance().apply { timeInMillis = timestamp }
-    return cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
-}
-
-private fun buildSleepTimestamps(
-    date: String,
-    startMinutes: Int?,
-    endMinutes: Int?
-): Pair<Long, Long>? {
-    if (startMinutes == null || endMinutes == null) return null
-
-    val endCal = parseDate(date).apply {
-        set(Calendar.HOUR_OF_DAY, endMinutes / 60)
-        set(Calendar.MINUTE, endMinutes % 60)
-    }
-
-    val startCal = parseDate(date).apply {
-        if (startMinutes > endMinutes) {
-            add(Calendar.DAY_OF_MONTH, -1)
-        }
-        set(Calendar.HOUR_OF_DAY, startMinutes / 60)
-        set(Calendar.MINUTE, startMinutes % 60)
-    }
-
-    return startCal.timeInMillis to endCal.timeInMillis
-}
+private fun buildSleepTimestamps(date: LocalDate, bed: LocalTime?, wake: LocalTime?): Pair<Long, Long>? { if (bed == null || wake == null) return null; val wakeDate = date.atTime(wake).atZone(TokyoZone).toInstant().toEpochMilli(); val bedDate = (if (bed <= wake) date else date.minusDays(1)).atTime(bed).atZone(TokyoZone).toInstant().toEpochMilli(); return bedDate to wakeDate }
+private fun SleepQuality?.toModelQuality(): Int = when (this) { SleepQuality.BAD -> 1; SleepQuality.SLIGHTLY_BAD -> 2; SleepQuality.NORMAL -> 3; SleepQuality.GOOD -> 4; SleepQuality.VERY_GOOD -> 5; null -> 0 }
+private fun Int.toUiQuality(): SleepQuality? = when (this) { 1 -> SleepQuality.BAD; 2 -> SleepQuality.SLIGHTLY_BAD; 3 -> SleepQuality.NORMAL; 4 -> SleepQuality.GOOD; 5 -> SleepQuality.VERY_GOOD; else -> null }
+private fun formatDuration(minutes: Int): String = if (minutes / 60 == 0) "${minutes % 60}分" else "${minutes / 60}時間${minutes % 60}分"
+private fun todayDateString(): String = LocalDate.now(TokyoZone).toString()
+private fun showTimePicker(context: android.content.Context, initial: LocalTime?, onSelected: (LocalTime) -> Unit) { TimePickerDialog(context, { _, h, m -> onSelected(LocalTime.of(h, m)) }, initial?.hour ?: 23, initial?.minute ?: 0, true).show() }
+private fun showDatePicker(context: android.content.Context, initial: LocalDate, onSelected: (LocalDate) -> Unit) { DatePickerDialog(context, { _, y, mo, d -> onSelected(LocalDate.of(y, mo + 1, d)) }, initial.year, initial.monthValue - 1, initial.dayOfMonth).show() }
