@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -138,7 +138,7 @@ fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDa
 
 @Composable private fun SummarySection(h: ReflectionHints, s: com.example.sample2.analytics.DailyPersonalityScore?, state: PersonalityState?, hasBreakdown: Boolean) { Column(Modifier.fillMaxWidth().background(bgCard).border(1.dp,line).padding(16.dp,12.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("STATUS", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = inkSoft); StatusBadge(state) }; Spacer(Modifier.height(10.dp)); Row(Modifier.fillMaxWidth().border(1.dp,line).background(bgSubtle)) { MetricCell("STABLE", s?.stability?.toInt()?.toString() ?: "--", true); MetricCell("ANXIETY", s?.anxiety?.let { "%.1f".format(it) } ?: "--", true); MetricCell("ENERGY", s?.energy?.toInt()?.toString() ?: "--", true); MetricCell("CONTROL", s?.control?.toInt()?.toString() ?: "--", false) }; Spacer(Modifier.height(8.dp)); Text("MSG  ${h.messageCountText.filter { it.isDigit() }}件", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = inkSoft); Text("SLEEP  ${h.dailyRecordText.substringBefore(" /").replace("睡眠 ","").replace("時間","h ").replace("分","m")}", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = inkSoft); Text("EMOTION  ${h.emotionTrendText.removePrefix("感情傾向: ").replace(" が多め", "+")}", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = inkSoft); Text("FLAGS  ${if (hasBreakdown) "体×1" else "--"}", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = inkSoft); Spacer(Modifier.height(8.dp)); Box(Modifier.fillMaxWidth().background(bgSubtle).border(1.dp, line).padding(10.dp)) { Text(s?.summary ?: h.analysisSummaryText, fontSize = 11.sp, color = inkMid, lineHeight = 17.sp) } } }
 @Composable private fun StatusBadge(state: PersonalityState?) { val (fg,bg) = when(state){PersonalityState.STABLE->accent to accentSoft; PersonalityState.RECOVERING->warn to warnSoft; PersonalityState.TENSE->Color(0xFF7A4A12) to warnSoft; PersonalityState.EXHAUSTED->Color(0xFF8A2A2A) to Color(0xFFF4E8E6); null->inkSoft to bgSubtle}; Row(Modifier.background(bg, RoundedCornerShape(3.dp)).padding(horizontal = 8.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) { Box(Modifier.width(6.dp).height(6.dp).background(fg, CircleShape)); Spacer(Modifier.width(6.dp)); Text(state?.label ?: "不明", color = fg, fontSize = 11.sp, fontWeight = FontWeight.SemiBold) } }
-@Composable private fun MetricCell(label:String,value:String,divider:Boolean){ Column(Modifier.weight(1f).then(if(divider) Modifier.border(0.5.dp,line) else Modifier).padding(8.dp)) { Text(label,fontFamily=FontFamily.Monospace,fontSize=9.sp,color=inkSoft); Text(value,fontFamily=FontFamily.Monospace,fontSize=18.sp,fontWeight=FontWeight.Medium,color=inkStrong) } }
+@Composable private fun RowScope.MetricCell(label:String,value:String,divider:Boolean){ Column(Modifier.weight(1f).then(if(divider) Modifier.border(0.5.dp,line) else Modifier).padding(8.dp)) { Text(label,fontFamily=FontFamily.Monospace,fontSize=9.sp,color=inkSoft); Text(value,fontFamily=FontFamily.Monospace,fontSize=18.sp,fontWeight=FontWeight.Medium,color=inkStrong) } }
 
 @Composable private fun InputHead(filled:Int){ Row(Modifier.fillMaxWidth().background(bgPage).padding(16.dp,14.dp,16.dp,6.dp), horizontalArrangement = Arrangement.SpaceBetween){ Text("INPUT — 5 ITEMS", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = inkSoft); Text("$filled OF 5 FILLED", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = inkSoft) } }
 
