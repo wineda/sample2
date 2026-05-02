@@ -484,6 +484,7 @@ private fun PeriodPresetRow(
     }
 }
 
+@Composable
 fun colorForCount(baseColor: Color, count: Double): Color {
     return when {
         count == 0.0 -> MaterialTheme.appColors.dividerSoft
