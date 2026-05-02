@@ -50,6 +50,7 @@ import com.example.sample2.data.DailyReflection
 import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.SemanticColors
+import com.example.sample2.ui.theme.appColors
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.time.format.TextStyle

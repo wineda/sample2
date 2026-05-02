@@ -53,6 +53,7 @@ import com.example.sample2.data.DailyReflection
 import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.SemanticColors
+import com.example.sample2.ui.theme.appColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

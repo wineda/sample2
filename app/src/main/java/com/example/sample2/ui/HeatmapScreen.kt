@@ -1,4 +1,5 @@
 package com.example.sample2.ui
+import com.example.sample2.ui.theme.appColors
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

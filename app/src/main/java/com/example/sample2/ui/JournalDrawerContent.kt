@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.MenuIconPalette
+import com.example.sample2.ui.theme.appColors
 
 @Composable
 fun JournalDrawerContent(

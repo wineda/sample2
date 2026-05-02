@@ -64,6 +64,7 @@ import com.example.sample2.data.SleepData
 import com.example.sample2.model.JournalJsonStorage
 import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.SemanticColors
+import com.example.sample2.ui.theme.appColors
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime

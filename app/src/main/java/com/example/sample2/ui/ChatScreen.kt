@@ -89,6 +89,7 @@ import com.example.sample2.ui.analytics.AnalyticsDisplayMode
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.util.formatDate
 import com.example.sample2.ui.theme.SemanticColors
+import com.example.sample2.ui.theme.appColors
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat

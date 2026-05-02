@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import com.example.sample2.ui.theme.AppShapeTokens
+import com.example.sample2.ui.theme.appColors
 import androidx.compose.ui.unit.dp
 
 

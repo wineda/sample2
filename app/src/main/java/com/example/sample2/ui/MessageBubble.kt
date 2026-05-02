@@ -83,6 +83,7 @@ import com.example.sample2.data.firstEnabledActionOrNull
 import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.theme.EmotionPalette
 import com.example.sample2.ui.theme.colorSpec
+import com.example.sample2.ui.theme.appColors
 import com.example.sample2.util.formatTime
 import java.text.SimpleDateFormat
 import java.util.Calendar
