@@ -88,6 +88,7 @@ import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.analytics.AnalyticsDisplayMode
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.util.formatDate
+import com.example.sample2.ui.theme.AppColors
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -430,7 +431,7 @@ fun ChatRoute() {
                                         text = ""
                                     )
                                 },
-                                containerColor = Color(0xFF1A1A1A),
+                                containerColor = AppColors.InkPrimary,
                                 contentColor = Color.White,
                                 shape = CircleShape,
                                 modifier = Modifier
@@ -734,7 +735,7 @@ private fun JournalBottomModeBar(
             .fillMaxWidth()
             .background(Color.White)
     ) {
-        HorizontalDivider(thickness = 1.dp, color = Color(0xFFEFECE4))
+        HorizontalDivider(thickness = 1.dp, color = AppColors.SurfaceBeigeDeep)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -793,13 +794,13 @@ private fun JournalBottomTab(
                 Icon(
                     imageVector = icon,
                     contentDescription = text,
-                    tint = if (selected) Color(0xFF1A1A1A) else Color(0xFF999999),
+                    tint = if (selected) AppColors.InkPrimary else AppColors.InkTertiary,
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
                     text = text,
                     fontSize = 11.sp,
-                    color = if (selected) Color(0xFF1A1A1A) else Color(0xFF999999),
+                    color = if (selected) AppColors.InkPrimary else AppColors.InkTertiary,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                 )
             }
@@ -853,7 +854,7 @@ private fun JournalCompactMetaRow(
                     text = "今日",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF9CA3AF)
+                    color = AppColors.InkTertiary
                 )
             }
         }

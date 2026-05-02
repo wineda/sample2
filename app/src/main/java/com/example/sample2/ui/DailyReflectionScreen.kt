@@ -51,6 +51,7 @@ import com.example.sample2.analytics.PersonalityScoreModel
 import com.example.sample2.analytics.PersonalityState
 import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.DailyReflection
+import com.example.sample2.ui.theme.AppColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,7 +59,7 @@ import java.util.Locale
 private val bgPage = Color(0xFFF5F5F5)
 private val bgCard = Color(0xFFFFFFFF)
 private val bgSubtle = Color(0xFFFAFAFA)
-private val inkStrong = Color(0xFF1A1A1A)
+private val inkStrong = AppColors.InkPrimary
 private val inkMid = Color(0xFF4A4A4A)
 private val inkSoft = Color(0xFF757575)
 private val inkFaint = Color(0xFFB0B0B0)

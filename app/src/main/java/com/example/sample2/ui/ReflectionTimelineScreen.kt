@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sample2.data.DailyReflection
+import com.example.sample2.ui.theme.AppColors
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.time.format.TextStyle
@@ -252,8 +253,8 @@ private fun ReflectionFilterSheet(selectedFilters: Set<ReflectionFieldFilter>, o
 
 @Composable
 private fun FilterOptionChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick), color = if (selected) Color(0xFF1A1A1A) else Color.White) {
-        Text(text = label, color = if (selected) Color.White else Color(0xFF1A1A1A), modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), fontSize = 12.sp)
+    Surface(modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick), color = if (selected) AppColors.InkPrimary else Color.White) {
+        Text(text = label, color = if (selected) Color.White else AppColors.InkPrimary, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), fontSize = 12.sp)
     }
 }
 
