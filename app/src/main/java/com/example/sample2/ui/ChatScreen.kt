@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Article
@@ -70,7 +69,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -829,41 +827,13 @@ private fun JournalCompactMetaRow(
     modifier: Modifier = Modifier
 ) {
     val effectiveSingleLineMode = isSingleLineMode || isWorkMode
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        CompactHeaderIconButton(
-            selected = false,
-            onClick = onMenuClick,
-            icon = Icons.Outlined.Menu,
-            contentDescription = "メニュー"
-        )
-
-        Spacer(modifier = Modifier.size(8.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = dateLabel.substringBefore('・'),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.appColors.inkPrimary
-            )
-            if (dateLabel.contains("今日")) {
-                Text(
-                    text = "今日",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.appColors.inkTertiary
-                )
-            }
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    JournalTopHeader(
+        title = dateLabel.substringBefore('・'),
+        subtitle = if (dateLabel.contains("今日")) "今日" else null,
+        navigationIcon = Icons.Outlined.Menu,
+        navigationContentDescription = "メニュー",
+        onNavigationClick = onMenuClick,
+        actions = {
             CompactHeaderIconButton(
                 selected = hasActiveFilter,
                 onClick = onFilterClick,
@@ -893,8 +863,9 @@ private fun JournalCompactMetaRow(
                 },
                 showNotificationDot = effectiveSingleLineMode
             )
-        }
-    }
+        },
+        modifier = modifier
+    )
 }
 
 private data class WorkActionSummary(
@@ -1004,54 +975,6 @@ private fun MessageV2.isToday(): Boolean {
 
     return target.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
             target.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)
-}
-
-@Composable
-private fun CompactHeaderIconButton(
-    selected: Boolean,
-    onClick: () -> Unit,
-    icon: ImageVector,
-    contentDescription: String,
-    showNotificationDot: Boolean = false,
-    modifier: Modifier = Modifier
-) {
-    val contentColor = if (selected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Surface(
-        modifier = modifier.size(40.dp),
-        onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = Color.Transparent,
-        contentColor = contentColor,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                modifier = Modifier.size(22.dp)
-            )
-
-            if (showNotificationDot) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 9.dp, end = 8.dp)
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(SemanticColors.NegativeMain)
-                )
-            }
-        }
-    }
 }
 
 @Composable
