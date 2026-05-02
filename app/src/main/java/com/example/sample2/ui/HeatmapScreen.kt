@@ -46,6 +46,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowBack
 import com.example.sample2.analytics.buildActionHeatmap
 import com.example.sample2.analytics.buildEmotionHeatmap
 import com.example.sample2.analytics.getMessagesForActionSlot
@@ -99,6 +101,17 @@ fun HeatmapScreen(
             .fillMaxSize()
             .padding(12.dp)
     ) {
+        JournalTopHeader(
+            title = "詳細分析",
+            subtitle = "1日単位の内訳",
+            navigationIcon = Icons.Outlined.ArrowBack,
+            navigationContentDescription = "戻る",
+            onNavigationClick = onBack,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {}
+
         PeriodPresetRow(
             selectedPeriod = selectedPeriod,
             onSelectPreset = { preset ->

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -91,6 +92,7 @@ import com.example.sample2.data.SleepData
 import com.example.sample2.data.EmotionType
 import com.example.sample2.ui.ActionHeatmapBlock
 import com.example.sample2.ui.EmotionHeatmapBlock
+import com.example.sample2.ui.JournalTopHeader
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
 import com.example.sample2.util.formatTime
@@ -419,6 +421,17 @@ fun PersonalityAnalyticsScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
+        JournalTopHeader(
+            title = if (availableDisplayModes == listOf(AnalyticsDisplayMode.DETAIL)) "詳細分析" else "分析",
+            subtitle = if (availableDisplayModes == listOf(AnalyticsDisplayMode.DETAIL)) "1日単位の内訳" else "感情・行動の推移",
+            navigationIcon = Icons.Outlined.ArrowBack,
+            navigationContentDescription = "戻る",
+            onNavigationClick = {},
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 14.dp)
+        ) {}
+
         if (availableDisplayModes.size > 1) {
             AnalyticsDisplayModeToggle(
                 current = displayMode,

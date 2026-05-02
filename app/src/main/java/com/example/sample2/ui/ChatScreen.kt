@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.HistoryEdu
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.ViewAgenda
 import androidx.compose.material.icons.outlined.ViewStream
@@ -830,40 +832,14 @@ private fun JournalCompactMetaRow(
 ) {
     val effectiveSingleLineMode = isSingleLineMode || isWorkMode
 
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+    JournalTopHeader(
+        title = dateLabel.substringBefore('・'),
+        subtitle = if (dateLabel.contains("今日")) "今日" else null,
+        navigationIcon = Icons.Outlined.Menu,
+        navigationContentDescription = "メニュー",
+        onNavigationClick = onMenuClick,
+        modifier = modifier
     ) {
-        CompactHeaderIconButton(
-            selected = false,
-            onClick = onMenuClick,
-            icon = Icons.Outlined.Menu,
-            contentDescription = "メニュー"
-        )
-
-        Spacer(modifier = Modifier.size(8.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = dateLabel.substringBefore('・'),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.appColors.inkPrimary
-            )
-            if (dateLabel.contains("今日")) {
-                Text(
-                    text = "今日",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.appColors.inkTertiary
-                )
-            }
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
             CompactHeaderIconButton(
                 selected = hasActiveFilter,
                 onClick = onFilterClick,
@@ -893,7 +869,51 @@ private fun JournalCompactMetaRow(
                 },
                 showNotificationDot = effectiveSingleLineMode
             )
+    }
+}
+
+@Composable
+fun JournalTopHeader(
+    title: String,
+    subtitle: String?,
+    navigationIcon: ImageVector,
+    navigationContentDescription: String,
+    onNavigationClick: () -> Unit,
+    actions: @Composable RowScope.() -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CompactHeaderIconButton(
+            selected = false,
+            onClick = onNavigationClick,
+            icon = navigationIcon,
+            contentDescription = navigationContentDescription
+        )
+        Spacer(modifier = Modifier.size(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.appColors.inkPrimary
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.appColors.inkTertiary
+                )
+            }
         }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            content = actions
+        )
     }
 }
 
@@ -1007,7 +1027,7 @@ private fun MessageV2.isToday(): Boolean {
 }
 
 @Composable
-private fun CompactHeaderIconButton(
+fun CompactHeaderIconButton(
     selected: Boolean,
     onClick: () -> Unit,
     icon: ImageVector,
