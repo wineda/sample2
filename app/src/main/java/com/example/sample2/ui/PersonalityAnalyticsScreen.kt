@@ -418,7 +418,12 @@ fun PersonalityAnalyticsScreen(
 
 
     val moodAvgText = remember(filteredRawScoresDesc) {
-        filteredRawScoresDesc.map { it.score.overall }.average().takeIf { !it.isNaN() }?.let { "%.1f".format(it) } ?: "--"
+        filteredRawScoresDesc
+            .map { (it.stability + it.energy + it.control - it.anxiety) / 4.0 }
+            .average()
+            .takeIf { !it.isNaN() }
+            ?.let { "%.1f".format(it) }
+            ?: "--"
     }
     val sleepAvgText = remember(filteredRawScoresDesc, dailyRecordMap) {
         val hours = filteredRawScoresDesc.mapNotNull { dailyRecordMap[it.date.toString()]?.sleep?.durationMinutes?.takeIf { m -> m > 0 }?.div(60f) }
