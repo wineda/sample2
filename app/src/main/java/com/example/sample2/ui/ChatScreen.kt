@@ -832,6 +832,7 @@ private fun JournalCompactMetaRow(
     JournalTopHeader(
         title = dateLabel.substringBefore('・'),
         subtitle = if (dateLabel.contains("今日")) "今日" else null,
+        showLiveDot = dateLabel.contains("今日"),
         navigationIcon = Icons.Outlined.Menu,
         navigationContentDescription = "メニュー",
         onNavigationClick = onMenuClick,

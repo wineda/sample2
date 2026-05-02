@@ -416,6 +416,21 @@ fun PersonalityAnalyticsScreen(
         }.orEmpty()
     }
 
+
+    val moodAvgText = remember(filteredRawScoresDesc) {
+        filteredRawScoresDesc.map { it.score.overall }.average().takeIf { !it.isNaN() }?.let { "%.1f".format(it) } ?: "--"
+    }
+    val sleepAvgText = remember(filteredRawScoresDesc, dailyRecordMap) {
+        val hours = filteredRawScoresDesc.mapNotNull { dailyRecordMap[it.date.toString()]?.sleep?.durationMinutes?.takeIf { m -> m > 0 }?.div(60f) }
+        if (hours.isEmpty()) "--" else "%.1fh".format(hours.average())
+    }
+    val entriesCountText = remember(filteredMessages) { filteredMessages.size.toString() }
+    val moodDeltaText: String? = null
+    val sleepDeltaText: String? = null
+    val entriesDeltaText: String? = null
+    val moodDeltaPositive = true
+    val sleepDeltaPositive = true
+    val entriesDeltaPositive = true
     val comparisonDayRecord = remember(comparisonDate, dailyRecordMap) {
         comparisonDate?.let { dailyRecordMap[it.toString()] }
     }
@@ -427,7 +442,13 @@ fun PersonalityAnalyticsScreen(
             navigationIcon = Icons.Outlined.Menu,
             navigationContentDescription = "メニュー",
             onNavigationClick = {},
-            actions = {},
+            bottomSlot = {
+                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    HeaderStatCell(value = moodAvgText, label = "MOOD AVG", delta = moodDeltaText, deltaPositive = moodDeltaPositive)
+                    HeaderStatCell(value = sleepAvgText, label = "SLEEP", delta = sleepDeltaText, deltaPositive = sleepDeltaPositive)
+                    HeaderStatCell(value = entriesCountText, label = "ENTRIES", delta = entriesDeltaText, deltaPositive = entriesDeltaPositive)
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp)

@@ -109,6 +109,11 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
 
     val duration = if (bedTime != null && wakeTime != null) computeDurationMinutes(bedTime!!, wakeTime!!) else null
     val enabled = bedTime != null || wakeTime != null || quality != null || steps > 0
+    val filledCount = listOf(
+        bedTime != null || wakeTime != null,
+        quality != null,
+        steps > 0
+    ).count { it }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background, contentWindowInsets = WindowInsets(0, 0, 0, 0), bottomBar = {
         FooterActions(onCancel = onClose, onSave = {
@@ -120,11 +125,12 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             JournalTopHeader(
                 title = "日次記録",
+                titleStyle = JournalHeaderTitleStyle.Medium,
                 subtitle = selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd(E)", Locale.JAPANESE)),
                 navigationIcon = Icons.AutoMirrored.Outlined.ArrowBack,
                 navigationContentDescription = "戻る",
                 onNavigationClick = onClose,
-                actions = {}
+                trailing = { HeaderProgressStack(current = filledCount, total = 3, label = "FILLED") }
             )
             DateHeaderCard(selectedDate, today, { if (selectedDate > LocalDate.MIN) selectedDate = selectedDate.minusDays(1) }, { if (selectedDate < today) selectedDate = selectedDate.plusDays(1) }, { selectedDate = today.minusDays(1) }, { selectedDate = today }, { onOpenReflection(selectedDate.toString()) }) { showDatePicker(context, selectedDate) { picked -> selectedDate = picked } }
             SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it }

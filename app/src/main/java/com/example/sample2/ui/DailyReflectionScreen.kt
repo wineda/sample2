@@ -24,6 +24,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -110,7 +112,16 @@ fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDa
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing, containerColor = MaterialTheme.colorScheme.background,
         bottomBar = { SaveBar(progress = progress, filled = filled, onDraft = { saveDraft() }, onSave = { saveDraft() }) }) { p ->
         Column(Modifier.fillMaxSize().padding(p)) {
-            Header(date = selectedDate, filled = filled)
+            JournalTopHeader(
+                title = "振り返り入力",
+                titleStyle = JournalHeaderTitleStyle.Medium,
+                subtitle = formatDisplayDate(selectedDate),
+                navigationIcon = Icons.AutoMirrored.Outlined.ArrowBack,
+                navigationContentDescription = "戻る",
+                onNavigationClick = onClose,
+                trailing = { HeaderProgressStack(current = filled, total = 5, label = "FIELDS", large = true) },
+                strongBottomBorder = true
+            )
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 SummarySection(hints, score, state = score?.state, hasBreakdown = hasBreakdown)
                 InputHead(filled)
@@ -124,7 +135,6 @@ fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDa
     }
 }
 
-@Composable private fun Header(date: String, filled: Int) { Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).border(1.dp, MaterialTheme.appColors.dividerNeutral).padding(12.dp,10.dp), horizontalArrangement = Arrangement.SpaceBetween) { Column { Text("DAILY REFLECTION", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary, letterSpacing = 1.sp)); Text(formatDisplayDate(date), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.appColors.inkPrimary) }; Row(verticalAlignment = Alignment.Bottom) { Text("$filled", style = MonoTypography.Numeric.copy(fontWeight = FontWeight.SemiBold, color = MaterialTheme.appColors.inkPrimary)); Text(" / 5", fontFamily = FontFamily.Monospace, color = MaterialTheme.appColors.inkSecondary) } } }
 
 @Composable private fun SummarySection(h: ReflectionHints, s: com.example.sample2.analytics.DailyPersonalityScore?, state: PersonalityState?, hasBreakdown: Boolean) { Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).border(1.dp,MaterialTheme.appColors.dividerNeutral).padding(16.dp,12.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("STATUS", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary)); StatusBadge(state) }; Spacer(Modifier.height(10.dp)); Row(Modifier.fillMaxWidth().border(1.dp,MaterialTheme.appColors.dividerNeutral).background(MaterialTheme.appColors.surfaceMuted)) { MetricCell("STABLE", s?.stability?.toInt()?.toString() ?: "--", true); MetricCell("ANXIETY", s?.anxiety?.let { "%.1f".format(it) } ?: "--", true); MetricCell("ENERGY", s?.energy?.toInt()?.toString() ?: "--", true); MetricCell("CONTROL", s?.control?.toInt()?.toString() ?: "--", false) }; Spacer(Modifier.height(8.dp)); Text("MSG  ${h.messageCountText.filter { it.isDigit() }}件", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary)); Text("SLEEP  ${h.dailyRecordText.substringBefore(" /").replace("睡眠 ","").replace("時間","h ").replace("分","m")}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary)); Text("EMOTION  ${h.emotionTrendText.removePrefix("感情傾向: ").replace(" が多め", "+")}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary)); Text("FLAGS  ${if (hasBreakdown) "体×1" else "--"}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary)); Spacer(Modifier.height(8.dp)); Box(Modifier.fillMaxWidth().background(MaterialTheme.appColors.surfaceMuted).border(1.dp, MaterialTheme.appColors.dividerNeutral).padding(10.dp)) { Text(s?.summary ?: h.analysisSummaryText, style = MaterialTheme.typography.labelMedium.copy(lineHeight = 17.sp), color = MaterialTheme.appColors.inkSecondary) } } }
 @Composable private fun StatusBadge(state: PersonalityState?) { val (fg,bg) = when(state){PersonalityState.STABLE->SemanticColors.InfoMain to SemanticColors.InfoSoft; PersonalityState.RECOVERING->SemanticColors.WarningMain to SemanticColors.WarningSoft; PersonalityState.TENSE->SemanticColors.WarningMain to SemanticColors.WarningSoft; PersonalityState.EXHAUSTED->SemanticColors.NegativeMain to SemanticColors.NegativeSoft; null->MaterialTheme.appColors.inkTertiary to MaterialTheme.appColors.surfaceMuted}; Row(Modifier.background(bg, AppShapeTokens.Tech).padding(horizontal = 8.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) { Box(Modifier.width(6.dp).height(6.dp).background(fg, CircleShape)); Spacer(Modifier.width(6.dp)); Text(state?.label ?: "不明", color = fg, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)) } }
