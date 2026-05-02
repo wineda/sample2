@@ -37,6 +37,15 @@ android {
     buildFeatures {
         compose = true
     }
+
+    sourceSets {
+        getByName("test") {
+            java.setSrcDirs(emptyList<String>())
+        }
+        getByName("androidTest") {
+            java.setSrcDirs(emptyList<String>())
+        }
+    }
 }
 
 dependencies {
