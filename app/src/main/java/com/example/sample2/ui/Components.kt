@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.SemanticColors
@@ -74,49 +77,69 @@ fun VerticalScrollbar(
     }
 }
 
+enum class JournalHeaderTitleStyle { Default, Medium }
+
+@Composable
+fun HeaderProgressStack(current: Int, total: Int, label: String, large: Boolean = false) {
+    Column(horizontalAlignment = Alignment.End) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(text = "$current", fontFamily = FontFamily.Monospace, fontSize = if (large) 24.sp else 18.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.appColors.inkPrimary)
+            Text(text = " / $total", fontFamily = FontFamily.Monospace, fontSize = if (large) 14.sp else 12.sp, color = MaterialTheme.appColors.inkTertiary)
+        }
+        Text(text = label.uppercase(), fontFamily = FontFamily.Monospace, fontSize = 9.sp, letterSpacing = 1.5.sp, color = MaterialTheme.appColors.inkTertiary)
+    }
+}
+
+@Composable
+fun HeaderStatCell(value: String, label: String, delta: String? = null, deltaPositive: Boolean = true) {
+    Column {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(text = value, fontFamily = FontFamily.Monospace, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.5).sp, color = MaterialTheme.appColors.inkPrimary)
+            delta?.let {
+                Spacer(Modifier.width(4.dp))
+                Text(text = it, fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = if (deltaPositive) SemanticColors.PositiveMain else SemanticColors.NegativeMain)
+            }
+        }
+        Text(text = label.uppercase(), fontFamily = FontFamily.Monospace, fontSize = 9.sp, letterSpacing = 1.5.sp, color = MaterialTheme.appColors.inkTertiary)
+    }
+}
+
 @Composable
 fun JournalTopHeader(
     title: String,
-    subtitle: String?,
+    subtitle: String? = null,
+    showLiveDot: Boolean = false,
+    titleStyle: JournalHeaderTitleStyle = JournalHeaderTitleStyle.Default,
     navigationIcon: ImageVector,
     navigationContentDescription: String,
     onNavigationClick: () -> Unit,
-    actions: @Composable RowScope.() -> Unit,
+    actions: @Composable RowScope.() -> Unit = {},
+    trailing: (@Composable () -> Unit)? = null,
+    bottomSlot: (@Composable ColumnScope.() -> Unit)? = null,
+    strongBottomBorder: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        CompactHeaderIconButton(
-            selected = false,
-            onClick = onNavigationClick,
-            icon = navigationIcon,
-            contentDescription = navigationContentDescription
-        )
-        Spacer(modifier = Modifier.size(8.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.appColors.inkPrimary
-            )
-            subtitle?.let {
-                Text(
-                    text = it,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.appColors.inkTertiary
-                )
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            CompactHeaderIconButton(selected = false, onClick = onNavigationClick, icon = navigationIcon, contentDescription = navigationContentDescription)
+            Spacer(modifier = Modifier.size(8.dp))
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
+                if (showLiveDot) { Box(Modifier.size(6.dp).clip(CircleShape).background(SemanticColors.PositiveMain)); Spacer(Modifier.width(6.dp)) }
+                Text(text = title, fontSize = if (titleStyle == JournalHeaderTitleStyle.Default) 22.sp else 18.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp, color = MaterialTheme.appColors.inkStrongAlt)
+                subtitle?.let { Text(text = it, modifier = Modifier.padding(start = 6.dp), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.appColors.inkTertiary) }
             }
+            if (trailing != null) trailing() else Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
         }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            content = actions
-        )
+        bottomSlot?.let {
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider(color = MaterialTheme.appColors.dividerCool)
+            Spacer(Modifier.height(10.dp))
+            Column(content = it)
+        }
     }
+    HorizontalDivider(color = if (strongBottomBorder) MaterialTheme.appColors.inkStrongAlt else MaterialTheme.appColors.dividerCool)
 }
 
 @Composable
