@@ -24,6 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.DirectionsWalk
 import androidx.compose.material.icons.rounded.ChevronLeft
@@ -117,6 +118,14 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
         }, enabled = enabled)
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            JournalTopHeader(
+                title = "日次記録",
+                subtitle = selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd(E)", Locale.JAPANESE)),
+                navigationIcon = Icons.AutoMirrored.Outlined.ArrowBack,
+                navigationContentDescription = "戻る",
+                onNavigationClick = onClose,
+                actions = {}
+            )
             DateHeaderCard(selectedDate, today, { if (selectedDate > LocalDate.MIN) selectedDate = selectedDate.minusDays(1) }, { if (selectedDate < today) selectedDate = selectedDate.plusDays(1) }, { selectedDate = today.minusDays(1) }, { selectedDate = today }, { onOpenReflection(selectedDate.toString()) }) { showDatePicker(context, selectedDate) { picked -> selectedDate = picked } }
             SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it }
             StepCard(steps, onSetSteps = { steps = it.coerceIn(0, 999_999) }, onDelta = { steps = applyStepDelta(steps, it) })

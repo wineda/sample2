@@ -91,8 +91,10 @@ import com.example.sample2.data.SleepData
 import com.example.sample2.data.EmotionType
 import com.example.sample2.ui.ActionHeatmapBlock
 import com.example.sample2.ui.EmotionHeatmapBlock
+import com.example.sample2.ui.JournalTopHeader
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
+import androidx.compose.material.icons.outlined.Menu
 import com.example.sample2.util.formatTime
 import com.example.sample2.ui.theme.ActionPalette
 import com.example.sample2.ui.theme.ScorePalette
@@ -419,6 +421,18 @@ fun PersonalityAnalyticsScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
+        JournalTopHeader(
+            title = if (initialDisplayMode == AnalyticsDisplayMode.DETAIL) "詳細分析" else "分析",
+            subtitle = if (initialDisplayMode == AnalyticsDisplayMode.DETAIL) "1日単位の内訳" else "感情・行動の推移",
+            navigationIcon = Icons.Outlined.Menu,
+            navigationContentDescription = "メニュー",
+            onNavigationClick = {},
+            actions = {},
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        )
+
         if (availableDisplayModes.size > 1) {
             AnalyticsDisplayModeToggle(
                 current = displayMode,
