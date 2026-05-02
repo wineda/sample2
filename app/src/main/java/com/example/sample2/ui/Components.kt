@@ -9,10 +9,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.example.sample2.ui.theme.AppColors
+import com.example.sample2.ui.theme.AppShapeTokens
 import androidx.compose.ui.unit.dp
 
 
@@ -48,7 +48,7 @@ fun VerticalScrollbar(
                 .fillMaxWidth()
                 .height(height * proportion)
                 .offset(y = height * offset)
-                .background(AppColors.InkTertiary, RoundedCornerShape(2.dp))
+                .background(AppColors.InkTertiary, AppShapeTokens.Tech)
         )
     }
 }
