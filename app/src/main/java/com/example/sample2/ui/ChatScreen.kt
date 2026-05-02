@@ -488,7 +488,8 @@ fun ChatRoute() {
                                     onOpenReflection = { date ->
                                         openReflectionEditor(date)
                                     },
-                                    onCreateToday = { openReflectionEditor() }
+                                    onCreateToday = { openReflectionEditor() },
+                                    onMenuClick = { scope.launch { drawerState.open() } }
                                 )
                             } else {
                                 DailyReflectionScreen(

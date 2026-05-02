@@ -81,6 +81,7 @@ fun ReflectionTimelineScreen(
     reflections: List<DailyReflection>,
     onOpenReflection: (String) -> Unit,
     onCreateToday: () -> Unit,
+    onMenuClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var uiState by remember { mutableStateOf(ReflectionListUiState()) }
@@ -118,7 +119,7 @@ fun ReflectionTimelineScreen(
                 showLiveDot = reflections.any { it.date == LocalDate.now().toString() && it.hasAnyContent() },
                 navigationIcon = Icons.Outlined.Menu,
                 navigationContentDescription = "メニュー",
-                onNavigationClick = {},
+                onNavigationClick = onMenuClick,
                 actions = {
                     CompactHeaderIconButton(selected = false, onClick = { isSearchExpanded = true }, icon = Icons.Default.Search, contentDescription = "検索")
                     CompactHeaderIconButton(selected = uiState.fieldFilters.isNotEmpty(), onClick = { isFilterSheetOpen = true }, icon = Icons.Default.FilterList, contentDescription = "フィルター", showNotificationDot = uiState.fieldFilters.isNotEmpty())
