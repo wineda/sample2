@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.example.sample2.ui.theme.AppColors
+import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.MenuIconPalette
 
 @Composable

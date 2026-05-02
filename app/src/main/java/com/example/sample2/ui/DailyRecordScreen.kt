@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bedtime
@@ -64,6 +63,7 @@ import com.example.sample2.data.DailyRecord
 import com.example.sample2.data.SleepData
 import com.example.sample2.model.JournalJsonStorage
 import com.example.sample2.ui.theme.AppColors
+import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.SemanticColors
 import java.time.Instant
 import java.time.LocalDate

@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -41,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -53,6 +51,8 @@ import com.example.sample2.analytics.PersonalityState
 import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.DailyReflection
 import com.example.sample2.ui.theme.AppColors
+import com.example.sample2.ui.theme.AppShapeTokens
+import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.SemanticColors
 import java.text.SimpleDateFormat
 import java.util.Date
