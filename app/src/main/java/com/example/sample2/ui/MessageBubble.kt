@@ -90,7 +90,8 @@ import com.example.sample2.ui.theme.CategoryExerciseBody
 import com.example.sample2.ui.theme.CategoryMorningHabit
 import com.example.sample2.ui.theme.CategorySleep
 import com.example.sample2.ui.theme.CategoryWork
-import com.example.sample2.ui.theme.emotionCategoryToColor
+import com.example.sample2.ui.theme.EmotionPalette
+import com.example.sample2.ui.theme.colorSpec
 import com.example.sample2.util.formatTime
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -158,7 +159,7 @@ fun MessageBubble(
                 shape = RoundedCornerShape(18.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     width = 1.5.dp,
-                    color = emotionCategoryToColor(message.emotions.maxEmotionOrNull()).border
+                    color = (message.emotions.maxEmotionOrNull()?.colorSpec() ?: EmotionPalette.Neutral).main
                 ),
                 modifier = Modifier
                     .weight(1f)
@@ -305,7 +306,7 @@ fun EmotionResponseChildBubble(
 
 
 private fun categoryColorFor(message: MessageV2): Color {
-    return emotionCategoryToColor(message.emotions.maxEmotionOrNull()).border
+    return (message.emotions.maxEmotionOrNull()?.colorSpec() ?: EmotionPalette.Neutral).main
 }
 
 @Composable
@@ -847,7 +848,7 @@ private fun EmotionSegmentRow(
     onValueChanged: (Int) -> Unit,
     onRemove: () -> Unit
 ) {
-    val theme = emotionTheme(emotion)
+    val colorSpec = emotion.colorSpec()
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = Color.White
@@ -886,7 +887,7 @@ private fun EmotionSegmentRow(
                             .clip(RoundedCornerShape(8.dp))
                             .clickable { onValueChanged(score) },
                         shape = RoundedCornerShape(8.dp),
-                        color = if (score == value) theme.main else Color(0xFFF5F2EA)
+                        color = if (score == value) colorSpec.main else Color(0xFFF5F2EA)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
@@ -1275,16 +1276,6 @@ private fun ActionFlags.toggle(type: ActionType): ActionFlags {
 
 private fun ActionFlags.selectOnly(type: ActionType): ActionFlags {
     return ActionFlags().toggle(type)
-}
-
-private data class EmotionTheme(val main: Color, val light: Color)
-
-private fun emotionTheme(type: EmotionType): EmotionTheme = when (type) {
-    EmotionType.ANXIETY -> EmotionTheme(Color(0xFF9333EA), Color(0xFFF3E8FF))
-    EmotionType.ANGRY -> EmotionTheme(Color(0xFFDC2626), Color(0xFFFEE2E2))
-    EmotionType.SAD -> EmotionTheme(Color(0xFF6366F1), Color(0xFFE0E7FF))
-    EmotionType.HAPPY -> EmotionTheme(Color(0xFFB45309), Color(0xFFFEF3C7))
-    EmotionType.CALM -> EmotionTheme(Color(0xFF3B82F6), Color(0xFFDBEAFE))
 }
 
 @Composable

@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import com.example.sample2.R
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.EmotionType
+import com.example.sample2.ui.theme.colorSpec
 
 data class EmotionUiSpec(
     val iconRes: Int,
@@ -17,11 +18,11 @@ data class ActionUiSpec(
 
 fun EmotionType.toUiSpec(): EmotionUiSpec {
     return when (this) {
-        EmotionType.ANXIETY -> EmotionUiSpec(R.drawable.ic_anxiety, Color(0xFF9C27B0))
-        EmotionType.ANGRY -> EmotionUiSpec(R.drawable.ic_angry, Color(0xFFE53935))
-        EmotionType.SAD -> EmotionUiSpec(R.drawable.ic_sad, Color(0xFF1E88E5))
-        EmotionType.HAPPY -> EmotionUiSpec(R.drawable.ic_happy, Color(0xFFFB8C00))
-        EmotionType.CALM -> EmotionUiSpec(R.drawable.ic_satisfied, Color(0xFF43A047))
+        EmotionType.ANXIETY -> EmotionUiSpec(R.drawable.ic_anxiety, colorSpec().main)
+        EmotionType.ANGRY -> EmotionUiSpec(R.drawable.ic_angry, colorSpec().main)
+        EmotionType.SAD -> EmotionUiSpec(R.drawable.ic_sad, colorSpec().main)
+        EmotionType.HAPPY -> EmotionUiSpec(R.drawable.ic_happy, colorSpec().main)
+        EmotionType.CALM -> EmotionUiSpec(R.drawable.ic_satisfied, colorSpec().main)
     }
 }
 
