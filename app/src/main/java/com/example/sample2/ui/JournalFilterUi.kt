@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Tune
@@ -122,7 +121,7 @@ fun JournalFilterHeader(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Surface(
-            shape = RoundedCornerShape(18.dp),
+            shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
             tonalElevation = 0.dp,
             shadowElevation = 0.dp

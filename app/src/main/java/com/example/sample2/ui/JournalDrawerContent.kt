@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.example.sample2.ui.theme.AppColors
+import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.MenuIconPalette
 
 @Composable
@@ -62,7 +63,7 @@ fun JournalDrawerContent(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .size(width = 36.dp, height = 4.dp)
-                    .clip(RoundedCornerShape(2.dp))
+                    .clip(AppShapeTokens.Tech)
                     .background(AppColors.DividerSoft)
             )
 
@@ -214,7 +215,7 @@ private fun SmartDrawerHeader(
         Box(
             modifier = Modifier
                 .size(32.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(MaterialTheme.shapes.large)
                 .clickable(onClick = onClose),
             contentAlignment = Alignment.Center
         ) {
@@ -238,7 +239,7 @@ private fun SmartDrawerMenuItem(
     icon: @Composable () -> Unit,
     onClick: () -> Unit
 ) {
-    val shape = RoundedCornerShape(12.dp)
+    val shape = MaterialTheme.shapes.medium
 
     Surface(
         modifier = Modifier
@@ -255,7 +256,7 @@ private fun SmartDrawerMenuItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                shape = RoundedCornerShape(10.dp),
+                shape = MaterialTheme.shapes.small,
                 color = iconBackground
             ) {
                 Box(
