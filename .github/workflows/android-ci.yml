@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: read
+  issues: write
+  pull-requests: read
 
 jobs:
   build:
@@ -38,7 +40,83 @@ jobs:
           ./gradlew --version
 
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+        id: build_debug_apk
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleDebug --stacktrace 2>&1 | tee build-debug.log
+
+      - name: Comment build failure log on PR
+        if: ${{ github.event_name == 'pull_request' && steps.build_debug_apk.outcome == 'failure' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            const marker = '<!-- android-ci-failure-log -->';
+            const logPath = 'build-debug.log';
+
+            let log = fs.existsSync(logPath)
+              ? fs.readFileSync(logPath, 'utf8')
+              : 'build-debug.log was not found.';
+
+            const maxChars = 60000;
+            if (log.length > maxChars) {
+              log = log.slice(log.length - maxChars);
+              log = `... log truncated. Showing last ${maxChars} chars ...\n\n${log}`;
+            }
+
+            // Markdownのコードフェンス崩れ対策
+            log = log.replace(/```/g, '` ` `');
+
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+
+            const body = `${marker}
+            ## ❌ Android CI build failed
+
+            ビルドログをCodexへ渡しやすい形で貼っています。
+
+            **Workflow run:** ${runUrl}
+
+            ### Codexに投げる用
+
+            以下のGitHub Actions失敗ログを読んで、Androidビルドが通るように修正してください。
+
+            \`\`\`text
+            ${log}
+            \`\`\`
+            `;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const previous = comments.data.find(comment =>
+              comment.user?.type === 'Bot' &&
+              comment.body?.includes(marker)
+            );
+
+            if (previous) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: previous.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
 
       - name: Run unit tests (disabled)
         if: ${{ false }}
