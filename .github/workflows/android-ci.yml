@@ -47,7 +47,7 @@ jobs:
           ./gradlew :app:assembleDebug --stacktrace 2>&1 | tee build-debug.log
 
       - name: Comment build failure log on PR
-        if: ${{ github.event_name == 'pull_request' && steps.build_debug_apk.outcome == 'failure' }}
+        if: ${{ always() && github.event_name == 'pull_request' && steps.build_debug_apk.outcome == 'failure' }}
         uses: actions/github-script@v7
         with:
           script: |
