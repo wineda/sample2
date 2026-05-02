@@ -1,7 +1,6 @@
 package com.example.sample2.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -69,7 +68,8 @@ private val ChatGptLightColors = lightColorScheme(
 fun ChatGptTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = ChatGptLightColors,
-        typography = Typography(), // 必要ならカスタム
+        typography = Typography,
+        shapes = AppShapes,
         content = content
     )
 }
