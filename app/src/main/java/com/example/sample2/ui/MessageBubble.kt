@@ -73,9 +73,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import com.example.sample2.BubbleColor
-import com.example.sample2.TextColor
-import com.example.sample2.TimeColor
 import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.EmotionMetrics
@@ -84,12 +81,6 @@ import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.firstEnabledActionOrNull
 import com.example.sample2.data.maxEmotionOrNull
-import com.example.sample2.ui.theme.CategoryEmotionNegative
-import com.example.sample2.ui.theme.CategoryEmotionPositive
-import com.example.sample2.ui.theme.CategoryExerciseBody
-import com.example.sample2.ui.theme.CategoryMorningHabit
-import com.example.sample2.ui.theme.CategorySleep
-import com.example.sample2.ui.theme.CategoryWork
 import com.example.sample2.ui.theme.EmotionPalette
 import com.example.sample2.ui.theme.colorSpec
 import com.example.sample2.util.formatTime
@@ -202,7 +193,7 @@ fun MessageBubble(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = (-0.16).sp
                             ),
-                            color = TextColor,
+                            color = Color(0xFF222222),
                             maxLines = if (state.isSingleLineMode) 1 else 2,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -212,7 +203,7 @@ fun MessageBubble(
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace
                             ),
-                            color = TimeColor
+                            color = Color(0xFF888888)
                         )
                     }
                 }
@@ -280,7 +271,7 @@ fun EmotionResponseChildBubble(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = TextColor,
+                    color = Color(0xFF222222),
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -476,7 +467,7 @@ fun MessageActionOverlay(
                         textStyle = TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 21.sp,
-                            color = TextColor
+                            color = Color(0xFF222222)
                         ),
                         maxLines = 5,
                         modifier = Modifier
