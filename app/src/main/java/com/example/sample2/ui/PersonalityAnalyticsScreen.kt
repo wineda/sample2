@@ -91,6 +91,7 @@ import com.example.sample2.data.SleepData
 import com.example.sample2.data.EmotionType
 import com.example.sample2.ui.ActionHeatmapBlock
 import com.example.sample2.ui.EmotionHeatmapBlock
+import com.example.sample2.ui.HeaderStatCell
 import com.example.sample2.ui.JournalTopHeader
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
