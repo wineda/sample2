@@ -63,6 +63,8 @@ import androidx.compose.ui.unit.sp
 import com.example.sample2.data.DailyRecord
 import com.example.sample2.data.SleepData
 import com.example.sample2.model.JournalJsonStorage
+import com.example.sample2.ui.theme.AppColors
+import com.example.sample2.ui.theme.SemanticColors
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -71,15 +73,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val TokyoZone: ZoneId = ZoneId.of("Asia/Tokyo")
-private val LineColor = Color(0xFFE8EBF0)
-private val AccentSoft = Color(0xFFEEF1F5)
-private val Ink2 = Color(0xFF4A5568)
-private val Ink3 = Color(0xFF8B95A7)
-private val GoodGreen = Color(0xFF4A8C6F)
-private val GoodGreenLight = Color(0xFF6BB58D)
-private val GoodGreenSoft = Color(0xFFE5F0EA)
-private val BadRed = Color(0xFFC25450)
-private val GreyBadgeBg = Color(0xFFF1F3F7)
 private val SleepGradientStart = Color(0xFFF8FAFD)
 private val SleepGradientEnd = Color(0xFFF1F4F9)
 
@@ -135,7 +128,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
 }
 
 @Composable private fun DateHeaderCard(selectedDate: LocalDate, today: LocalDate, onPrev: () -> Unit, onNext: () -> Unit, onYesterday: () -> Unit, onToday: () -> Unit, onReflection: () -> Unit, onDatePick: (LocalDate) -> Unit) { /* simplified */
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, LineColor)) {
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.DividerCool)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 CircleNav(Icons.Rounded.ChevronLeft, "前日", onPrev)
@@ -148,36 +141,36 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
         }
     }
 }
-@Composable private fun CircleNav(icon: androidx.compose.ui.graphics.vector.ImageVector, cd: String, onClick: () -> Unit, enabled: Boolean = true) { Surface(onClick = onClick, enabled = enabled, modifier = Modifier.size(36.dp), shape = CircleShape, color = AccentSoft) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, cd) } } }
-@Composable private fun QuickChip(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) { Surface(onClick = onClick, modifier = modifier.height(42.dp), shape = RoundedCornerShape(10.dp), color = if (selected) MaterialTheme.colorScheme.primary else AccentSoft, contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else Ink2) { Box(contentAlignment = Alignment.Center) { Text(label, fontWeight = FontWeight.SemiBold) } } }
+@Composable private fun CircleNav(icon: androidx.compose.ui.graphics.vector.ImageVector, cd: String, onClick: () -> Unit, enabled: Boolean = true) { Surface(onClick = onClick, enabled = enabled, modifier = Modifier.size(36.dp), shape = CircleShape, color = AppColors.SurfaceCool) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, cd) } } }
+@Composable private fun QuickChip(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) { Surface(onClick = onClick, modifier = modifier.height(42.dp), shape = RoundedCornerShape(10.dp), color = if (selected) MaterialTheme.colorScheme.primary else AppColors.SurfaceCool, contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else AppColors.InkSecondary) { Box(contentAlignment = Alignment.Center) { Text(label, fontWeight = FontWeight.SemiBold) } } }
 
 @Composable private fun SleepCard(bed: LocalTime?, wake: LocalTime?, quality: SleepQuality?, duration: Int?, onBed: () -> Unit, onWake: () -> Unit, onQuality: (SleepQuality) -> Unit) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.dp, LineColor)) { Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.DividerCool)) { Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Bedtime, null); Spacer(Modifier.width(6.dp)); Text("睡眠", fontWeight = FontWeight.Bold); Spacer(Modifier.weight(1f)); StatusBadge(bed != null || wake != null || quality != null) }
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Brush.linearGradient(listOf(SleepGradientStart, SleepGradientEnd))).padding(14.dp), verticalAlignment = Alignment.CenterVertically) { TimeCell("就寝", bed, Modifier.weight(1f), onBed); Text("→", color = Ink3); TimeCell("起床", wake, Modifier.weight(1f), onWake) }
-        if (duration != null) { HorizontalDivider(color = LineColor); Text("睡眠時間 ${formatDuration(duration)}") }
-        Text("睡眠の質", color = Ink2, fontSize = 12.sp)
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Brush.linearGradient(listOf(SleepGradientStart, SleepGradientEnd))).padding(14.dp), verticalAlignment = Alignment.CenterVertically) { TimeCell("就寝", bed, Modifier.weight(1f), onBed); Text("→", color = AppColors.InkTertiary); TimeCell("起床", wake, Modifier.weight(1f), onWake) }
+        if (duration != null) { HorizontalDivider(color = AppColors.DividerCool); Text("睡眠時間 ${formatDuration(duration)}") }
+        Text("睡眠の質", color = AppColors.InkSecondary, fontSize = 12.sp)
         val items = listOf("😣" to "悪い", "😕" to "やや悪", "😐" to "普通", "🙂" to "良い", "😄" to "とても")
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) { SleepQuality.entries.forEachIndexed { i, q -> QualityButton(items[i].first, items[i].second, quality == q, Modifier.weight(1f), { onQuality(q) }) } }
     } }
 }
-@Composable private fun TimeCell(label: String, time: LocalTime?, modifier: Modifier, onClick: () -> Unit) { Column(modifier.clickable(onClickLabel = "$label 時刻入力", onClick = onClick).padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text(label, color = Ink3, fontSize = 11.sp); Text(time?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "未設定", fontSize = if (time == null) 14.sp else 22.sp, fontWeight = FontWeight.SemiBold, color = if (time == null) Ink3 else MaterialTheme.colorScheme.onSurface) } }
-@Composable private fun QualityButton(emoji: String, label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) { Surface(onClick = onClick, modifier = modifier.height(72.dp), shape = RoundedCornerShape(8.dp), color = if (selected) MaterialTheme.colorScheme.primary else Color.White, border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else LineColor), contentColor = if (selected) Color.White else Ink2) { Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) { Text(emoji); Text(label, fontSize = 11.sp) } } }
+@Composable private fun TimeCell(label: String, time: LocalTime?, modifier: Modifier, onClick: () -> Unit) { Column(modifier.clickable(onClickLabel = "$label 時刻入力", onClick = onClick).padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text(label, color = AppColors.InkTertiary, fontSize = 11.sp); Text(time?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "未設定", fontSize = if (time == null) 14.sp else 22.sp, fontWeight = FontWeight.SemiBold, color = if (time == null) AppColors.InkTertiary else MaterialTheme.colorScheme.onSurface) } }
+@Composable private fun QualityButton(emoji: String, label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) { Surface(onClick = onClick, modifier = modifier.height(72.dp), shape = RoundedCornerShape(8.dp), color = if (selected) MaterialTheme.colorScheme.primary else Color.White, border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else AppColors.DividerCool), contentColor = if (selected) Color.White else AppColors.InkSecondary) { Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) { Text(emoji); Text(label, fontSize = 11.sp) } } }
 
-@Composable private fun StepCard(steps: Int, onSetSteps: (Int) -> Unit, onDelta: (Int) -> Unit) { Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.dp, LineColor)) { Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.DirectionsWalk, null); Spacer(Modifier.width(6.dp)); Text("歩数", fontWeight = FontWeight.Bold); Spacer(Modifier.weight(1f)); StatusBadge(steps > 0) }
+@Composable private fun StepCard(steps: Int, onSetSteps: (Int) -> Unit, onDelta: (Int) -> Unit) { Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.DividerCool)) { Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.DirectionsWalk, null); Spacer(Modifier.width(6.dp)); Text("歩数", fontWeight = FontWeight.Bold); Spacer(Modifier.weight(1f)); StatusBadge(steps > 0) }
     val progress = (steps.toFloat()/10000f).coerceIn(0f,1f)
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Brush.linearGradient(listOf(SleepGradientStart, SleepGradientEnd))).padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) { Row(verticalAlignment = Alignment.Bottom) { Text(String.format("%,d", steps), fontSize = 38.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1).sp); Text("歩", color = Ink3, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)) }
-    LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp), color = GoodGreen, trackColor = Color(0xFFE1E6ED))
-    Text(if (progress < 1f) "目標 10,000歩 まで あと ${String.format("%,d", 10_000-steps.coerceAtMost(10_000))}歩" else "目標達成！(${String.format("%,d", steps - 10_000)}歩)", fontSize = 10.sp, color = Ink3)
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Brush.linearGradient(listOf(SleepGradientStart, SleepGradientEnd))).padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) { Row(verticalAlignment = Alignment.Bottom) { Text(String.format("%,d", steps), fontSize = 38.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1).sp); Text("歩", color = AppColors.InkTertiary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)) }
+    LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp), color = SemanticColors.PositiveMain, trackColor = AppColors.DividerCool)
+    Text(if (progress < 1f) "目標 10,000歩 まで あと ${String.format("%,d", 10_000-steps.coerceAtMost(10_000))}歩" else "目標達成！(${String.format("%,d", steps - 10_000)}歩)", fontSize = 10.sp, color = AppColors.InkTertiary)
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) { listOf(3000,5000,8000,10000).forEach { v -> Surface(onClick={onSetSteps(v)}, modifier=Modifier.weight(1f).height(46.dp), shape=RoundedCornerShape(8.dp), color=if(steps==v) MaterialTheme.colorScheme.primary else Color.White, border=androidx.compose.foundation.BorderStroke(1.dp, LineColor), contentColor=if(steps==v) Color.White else MaterialTheme.colorScheme.onSurface){Box(contentAlignment=Alignment.Center){Text(String.format("%,d",v), fontWeight=FontWeight.SemiBold)}} } }
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) { Text("微調整", color = Ink3, fontSize = 11.sp, modifier = Modifier.width(32.dp)); listOf(-1000,-500,500,1000).forEach { d -> Surface(onClick={onDelta(d)}, modifier=Modifier.weight(1f).height(44.dp), shape=RoundedCornerShape(8.dp), color=Color.White, border=androidx.compose.foundation.BorderStroke(1.dp, LineColor)) { Box(contentAlignment=Alignment.Center){Text((if(d>0) "+" else "−") + String.format("%,d", kotlin.math.abs(d)), color=if(d<0) BadRed else GoodGreen, fontWeight=FontWeight.SemiBold)} } }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) { listOf(3000,5000,8000,10000).forEach { v -> Surface(onClick={onSetSteps(v)}, modifier=Modifier.weight(1f).height(46.dp), shape=RoundedCornerShape(8.dp), color=if(steps==v) MaterialTheme.colorScheme.primary else Color.White, border=androidx.compose.foundation.BorderStroke(1.dp, AppColors.DividerCool), contentColor=if(steps==v) Color.White else MaterialTheme.colorScheme.onSurface){Box(contentAlignment=Alignment.Center){Text(String.format("%,d",v), fontWeight=FontWeight.SemiBold)}} } }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) { Text("微調整", color = AppColors.InkTertiary, fontSize = 11.sp, modifier = Modifier.width(32.dp)); listOf(-1000,-500,500,1000).forEach { d -> Surface(onClick={onDelta(d)}, modifier=Modifier.weight(1f).height(44.dp), shape=RoundedCornerShape(8.dp), color=Color.White, border=androidx.compose.foundation.BorderStroke(1.dp, AppColors.DividerCool)) { Box(contentAlignment=Alignment.Center){Text((if(d>0) "+" else "−") + String.format("%,d", kotlin.math.abs(d)), color=if(d<0) SemanticColors.NegativeMain else SemanticColors.PositiveMain, fontWeight=FontWeight.SemiBold)} } }
     }
 } } }
 
-@Composable fun StatusBadge(filled: Boolean) { val (bg, fg, label) = if (filled) Triple(GoodGreenSoft, GoodGreen, "入力済み") else Triple(GreyBadgeBg, Ink3, "未入力"); Surface(shape = RoundedCornerShape(999.dp), color = bg) { Text(label, color = fg, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)) } }
+@Composable fun StatusBadge(filled: Boolean) { val (bg, fg, label) = if (filled) Triple(SemanticColors.PositiveSoft, SemanticColors.PositiveMain, "入力済み") else Triple(AppColors.SurfaceCool, AppColors.InkTertiary, "未入力"); Surface(shape = RoundedCornerShape(999.dp), color = bg) { Text(label, color = fg, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)) } }
 
-@Composable fun FooterActions(onCancel: () -> Unit, onSave: () -> Unit, enabled: Boolean) { Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().border(1.dp, LineColor).padding(10.dp)) { Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) { TextButton(onClick = onCancel, modifier = Modifier.weight(0.35f).height(52.dp), colors = ButtonDefaults.textButtonColors(containerColor = AccentSoft, contentColor = Ink2)) { Text("キャンセル") }; Button(onClick = onSave, enabled = enabled, modifier = Modifier.weight(1f).height(52.dp)) { Text("保存") } } } }
+@Composable fun FooterActions(onCancel: () -> Unit, onSave: () -> Unit, enabled: Boolean) { Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().border(1.dp, AppColors.DividerCool).padding(10.dp)) { Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) { TextButton(onClick = onCancel, modifier = Modifier.weight(0.35f).height(52.dp), colors = ButtonDefaults.textButtonColors(containerColor = AppColors.SurfaceCool, contentColor = AppColors.InkSecondary)) { Text("キャンセル") }; Button(onClick = onSave, enabled = enabled, modifier = Modifier.weight(1f).height(52.dp)) { Text("保存") } } } }
 
 private fun buildSleepTimestamps(date: LocalDate, bed: LocalTime?, wake: LocalTime?): Pair<Long, Long>? { if (bed == null || wake == null) return null; val wakeDate = date.atTime(wake).atZone(TokyoZone).toInstant().toEpochMilli(); val bedDate = (if (bed <= wake) date else date.minusDays(1)).atTime(bed).atZone(TokyoZone).toInstant().toEpochMilli(); return bedDate to wakeDate }
 private fun SleepQuality?.toModelQuality(): Int = when (this) { SleepQuality.BAD -> 1; SleepQuality.SLIGHTLY_BAD -> 2; SleepQuality.NORMAL -> 3; SleepQuality.GOOD -> 4; SleepQuality.VERY_GOOD -> 5; null -> 0 }

@@ -49,27 +49,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sample2.data.DailyReflection
 import com.example.sample2.ui.theme.AppColors
+import com.example.sample2.ui.theme.SemanticColors
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.time.format.TextStyle
 import java.util.Locale
 
-private val ScreenBg = Color(0xFFFAF9F6)
-private val BodyText = Color(0xFF1F1D1A)
-private val MutedText = Color(0xFF4A4640)
-private val LightText = Color(0xFF8A8278)
-private val DividerColor = Color(0xFFE6E0D4)
 
 private enum class ReflectionFieldFilter(
     val label: String,
     val timelineLabel: String,
     val color: Color
 ) {
-    SUMMARY("Note", "NOTE", Color(0xFF8A8278)),
-    WINS("Good", "GOOD", Color(0xFF4A8A5C)),
-    DIFFICULTIES("気づき", "気づき", Color(0xFFC89232)),
-    INSIGHTS("気づき", "気づき", Color(0xFFC89232)),
-    TOMORROW_FIRST_ACTION("Next", "NEXT", Color(0xFF4A6FA5))
+    SUMMARY("Note", "NOTE", AppColors.InkTertiary),
+    WINS("Good", "GOOD", SemanticColors.PositiveMain),
+    DIFFICULTIES("気づき", "気づき", SemanticColors.WarningMain),
+    INSIGHTS("気づき", "気づき", SemanticColors.WarningMain),
+    TOMORROW_FIRST_ACTION("Next", "NEXT", SemanticColors.InfoMain)
 }
 
 private data class ReflectionListUiState(
@@ -102,15 +98,15 @@ fun ReflectionTimelineScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(ScreenBg)
+                .background(AppColors.SurfaceCream)
                 .padding(padding)
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    Text(text = "Reflections", fontSize = 32.sp, fontWeight = FontWeight.Medium, color = BodyText)
-                    Text(text = "振 り 返 り", fontSize = 11.sp, letterSpacing = 2.sp, color = LightText)
+                    Text(text = "Reflections", fontSize = 32.sp, fontWeight = FontWeight.Medium, color = AppColors.InkStrongAlt)
+                    Text(text = "振 り 返 り", fontSize = 11.sp, letterSpacing = 2.sp, color = AppColors.InkTertiary)
                 }
                 Surface(shape = RoundedCornerShape(999.dp), color = Color(0xFF1F1D1A), modifier = Modifier.clickable(onClick = onCreateToday)) {
                     Text("＋ 今日を入力", color = Color.White, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), fontSize = 12.sp)
@@ -134,8 +130,8 @@ fun ReflectionTimelineScreen(
             }
 
             if (timelineItems.isEmpty()) {
-                Surface(modifier = Modifier.fillMaxWidth().border(1.dp, DividerColor, RoundedCornerShape(16.dp)), color = ScreenBg, shape = RoundedCornerShape(16.dp)) {
-                    Text("まだ振り返りがありません", modifier = Modifier.padding(16.dp), color = LightText)
+                Surface(modifier = Modifier.fillMaxWidth().border(1.dp, AppColors.DividerWarm, RoundedCornerShape(16.dp)), color = AppColors.SurfaceCream, shape = RoundedCornerShape(16.dp)) {
+                    Text("まだ振り返りがありません", modifier = Modifier.padding(16.dp), color = AppColors.InkTertiary)
                 }
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 12.dp)) {
@@ -164,8 +160,8 @@ fun ReflectionTimelineScreen(
 @Composable
 private fun MonthHeader(label: String) {
     Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text = label.uppercase(Locale.US), fontSize = 13.sp, color = LightText, letterSpacing = 2.sp)
-        Box(modifier = Modifier.padding(start = 10.dp).weight(1f).height(1.dp).background(DividerColor))
+        Text(text = label.uppercase(Locale.US), fontSize = 13.sp, color = AppColors.InkTertiary, letterSpacing = 2.sp)
+        Box(modifier = Modifier.padding(start = 10.dp).weight(1f).height(1.dp).background(AppColors.DividerWarm))
     }
 }
 
@@ -175,10 +171,10 @@ private fun TimelineRow(reflection: DailyReflection, fieldFilters: Set<Reflectio
     val isToday = date == LocalDate.now()
     Row(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.width(56.dp), horizontalAlignment = Alignment.End) {
-            Text(text = date?.dayOfMonth?.toString() ?: "-", fontSize = 36.sp, color = if (isToday) Color(0xFF4A6FA5) else BodyText)
-            Text(text = date?.dayOfWeekLabel() ?: "", fontSize = 11.sp, color = LightText)
+            Text(text = date?.dayOfMonth?.toString() ?: "-", fontSize = 36.sp, color = if (isToday) SemanticColors.InfoMain else AppColors.InkStrongAlt)
+            Text(text = date?.dayOfWeekLabel() ?: "", fontSize = 11.sp, color = AppColors.InkTertiary)
             if (isToday) {
-                Text(text = "TODAY", fontSize = 9.sp, color = Color(0xFF4A6FA5), letterSpacing = 1.sp, modifier = Modifier.padding(top = 2.dp))
+                Text(text = "TODAY", fontSize = 9.sp, color = SemanticColors.InfoMain, letterSpacing = 1.sp, modifier = Modifier.padding(top = 2.dp))
             }
         }
         Box(modifier = Modifier.width(16.dp))
@@ -209,18 +205,18 @@ private fun TimelineEntry(filter: ReflectionFieldFilter, text: String, showDivid
         Box(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp).width(3.dp).height(88.dp).clip(RoundedCornerShape(3.dp)).background(filter.color))
         Column(modifier = Modifier.weight(1f).padding(start = 14.dp, top = 18.dp, bottom = 18.dp)) {
             Text(text = filter.timelineLabel, color = filter.color, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.8.sp)
-            Text(text = text, color = if (filter == ReflectionFieldFilter.TOMORROW_FIRST_ACTION) Color(0xFF4A6FA5) else if (filter == ReflectionFieldFilter.SUMMARY) LightText else BodyText, fontSize = 14.sp, lineHeight = 25.sp, fontStyle = if (filter == ReflectionFieldFilter.SUMMARY) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal, modifier = Modifier.padding(top = 8.dp))
+            Text(text = text, color = if (filter == ReflectionFieldFilter.TOMORROW_FIRST_ACTION) SemanticColors.InfoMain else if (filter == ReflectionFieldFilter.SUMMARY) AppColors.InkTertiary else AppColors.InkStrongAlt, fontSize = 14.sp, lineHeight = 25.sp, fontStyle = if (filter == ReflectionFieldFilter.SUMMARY) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal, modifier = Modifier.padding(top = 8.dp))
         }
     }
-    if (showDivider) Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(DividerColor))
+    if (showDivider) Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.DividerWarm))
 }
 
 @Composable
 private fun ReflectionCompactBar(query: String, selectedFilters: Set<ReflectionFieldFilter>, onTapSearch: () -> Unit, onTapFilter: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF4A8A5C)))
-            Text(text = compactLabel(query, selectedFilters), fontSize = 11.sp, color = MutedText, modifier = Modifier.padding(start = 6.dp))
+            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(SemanticColors.PositiveMain))
+            Text(text = compactLabel(query, selectedFilters), fontSize = 11.sp, color = AppColors.InkSecondary, modifier = Modifier.padding(start = 6.dp))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             IconButton(onClick = onTapSearch, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Search, contentDescription = "検索") }

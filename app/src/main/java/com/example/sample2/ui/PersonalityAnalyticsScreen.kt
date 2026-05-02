@@ -94,6 +94,7 @@ import com.example.sample2.ui.EmotionHeatmapBlock
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
 import com.example.sample2.util.formatTime
+import com.example.sample2.ui.theme.ScorePalette
 import java.time.Instant
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -159,10 +160,6 @@ private fun previousAnalyticsPeriod(period: AnalyticsPeriod): AnalyticsPeriod {
     return periods[(index - 1).coerceAtLeast(0)]
 }
 
-private val StabilityChartColor = Color(0xFF8D6E63)
-private val AnxietyChartColor = Color(0xFF8E24AA)
-private val EnergyChartColor = Color(0xFFFB8C00)
-private val ControlChartColor = Color(0xFF43A047)
 
 private val TokyoZoneId: ZoneId = ZoneId.of("Asia/Tokyo")
 private const val DetailChartStartMinutes = 7 * 60f
@@ -849,8 +846,8 @@ private val ActionChartColors = listOf(
     Color(0xFFE53935),
     Color(0xFF8E24AA)
 )
-private val SleepChartColor = Color(0xFF3949AB)
-private val StepsChartColor = Color(0xFF00897B)
+private val SleepChartColor = ScorePalette.Sleep
+private val StepsChartColor = ScorePalette.Steps
 private enum class ChartDrawStyle { LINE, BAR }
 
 @Composable
@@ -866,10 +863,10 @@ private fun CombinedEmotionChart(
         )
     }
     val series = listOf(
-        LineSeries("安定度", StabilityChartColor, scores.map { it.stability.toFloat() }),
-        LineSeries("不安", AnxietyChartColor, scores.map { (it.anxiety * 10.0).coerceIn(0.0, 100.0).toFloat() }),
-        LineSeries("活力", EnergyChartColor, scores.map { it.energy.toFloat() }),
-        LineSeries("制御感", ControlChartColor, scores.map { it.control.toFloat() })
+        LineSeries("安定度", ScorePalette.Stability, scores.map { it.stability.toFloat() }),
+        LineSeries("不安", ScorePalette.Anxiety, scores.map { (it.anxiety * 10.0).coerceIn(0.0, 100.0).toFloat() }),
+        LineSeries("活力", ScorePalette.Energy, scores.map { it.energy.toFloat() }),
+        LineSeries("制御感", ScorePalette.Control, scores.map { it.control.toFloat() })
     )
     MultiLineChart(
         labels = labels,
@@ -1739,25 +1736,25 @@ private fun DailyMessagePseudoTrendCard(
         listOf(
             TimedLineSeries(
                 label = "安定度",
-                color = StabilityChartColor,
+                color = ScorePalette.Stability,
                 values = points.map { it.stability },
                 xValues = points.map { minutesOfDay(it.timestamp) }
             ),
             TimedLineSeries(
                 label = "不安",
-                color = AnxietyChartColor,
+                color = ScorePalette.Anxiety,
                 values = points.map { (it.anxiety * 10f).coerceIn(0f, 100f) },
                 xValues = points.map { minutesOfDay(it.timestamp) }
             ),
             TimedLineSeries(
                 label = "活力",
-                color = EnergyChartColor,
+                color = ScorePalette.Energy,
                 values = points.map { it.energy },
                 xValues = points.map { minutesOfDay(it.timestamp) }
             ),
             TimedLineSeries(
                 label = "制御感",
-                color = ControlChartColor,
+                color = ScorePalette.Control,
                 values = points.map { it.control },
                 xValues = points.map { minutesOfDay(it.timestamp) }
             )
@@ -1773,25 +1770,25 @@ private fun DailyMessagePseudoTrendCard(
         listOf(
             TimedLineSeries(
                 label = "安定度",
-                color = StabilityChartColor,
+                color = ScorePalette.Stability,
                 values = comparisonPoints.map { it.stability },
                 xValues = comparisonPoints.map { minutesOfDay(it.timestamp) }
             ),
             TimedLineSeries(
                 label = "不安",
-                color = AnxietyChartColor,
+                color = ScorePalette.Anxiety,
                 values = comparisonPoints.map { (it.anxiety * 10f).coerceIn(0f, 100f) },
                 xValues = comparisonPoints.map { minutesOfDay(it.timestamp) }
             ),
             TimedLineSeries(
                 label = "活力",
-                color = EnergyChartColor,
+                color = ScorePalette.Energy,
                 values = comparisonPoints.map { it.energy },
                 xValues = comparisonPoints.map { minutesOfDay(it.timestamp) }
             ),
             TimedLineSeries(
                 label = "制御感",
-                color = ControlChartColor,
+                color = ScorePalette.Control,
                 values = comparisonPoints.map { it.control },
                 xValues = comparisonPoints.map { minutesOfDay(it.timestamp) }
             )
@@ -2131,7 +2128,7 @@ private fun SimpleLineChart(
     modifier: Modifier = Modifier
 ) {
     val gridColor = MaterialTheme.colorScheme.outlineVariant
-    val comparisonColor = Color(0xFF9E9E9E)
+    val comparisonColor = ScorePalette.Comparison
     val density = LocalDensity.current
 
     var chartSize by remember { mutableStateOf(IntSize.Zero) }
