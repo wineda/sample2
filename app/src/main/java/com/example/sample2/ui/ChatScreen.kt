@@ -89,6 +89,7 @@ import com.example.sample2.ui.analytics.AnalyticsDisplayMode
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.util.formatDate
 import com.example.sample2.ui.theme.AppColors
+import com.example.sample2.ui.theme.SemanticColors
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -561,7 +562,7 @@ fun ChatRoute() {
 
                                 HorizontalDivider(
                                     thickness = 1.dp,
-                                    color = Color(0xFFF3F4F6)
+                                    color = AppColors.DividerSoft
                                 )
 
                                 AnimatedVisibility(
@@ -810,7 +811,7 @@ private fun JournalBottomTab(
                 .height(2.dp)
                 .size(width = 14.dp, height = 2.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(if (selected) Color(0xFFC44536) else Color.Transparent)
+                .background(if (selected) SemanticColors.AccentRed else Color.Transparent)
         )
     }
 }
@@ -847,7 +848,7 @@ private fun JournalCompactMetaRow(
                 text = dateLabel.substringBefore('・'),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF111827)
+                color = AppColors.InkPrimary
             )
             if (dateLabel.contains("今日")) {
                 Text(
@@ -1015,9 +1016,9 @@ private fun CompactHeaderIconButton(
     modifier: Modifier = Modifier
 ) {
     val contentColor = if (selected) {
-        Color(0xFF6366F1)
+        MaterialTheme.colorScheme.primary
     } else {
-        Color(0xFF4B5563)
+        MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Surface(
@@ -1046,7 +1047,7 @@ private fun CompactHeaderIconButton(
                         .padding(top = 9.dp, end = 8.dp)
                         .size(6.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFEF4444))
+                        .background(SemanticColors.NegativeMain)
                 )
             }
         }

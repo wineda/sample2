@@ -194,7 +194,7 @@ fun MessageBubble(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = (-0.16).sp
                             ),
-                            color = Color(0xFF222222),
+                            color = AppColors.InkPrimary,
                             maxLines = if (state.isSingleLineMode) 1 else 2,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -272,7 +272,7 @@ fun EmotionResponseChildBubble(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = Color(0xFF222222),
+                    color = AppColors.InkPrimary,
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -352,7 +352,7 @@ fun DateLabel(timestamp: Long) {
             modifier = Modifier
                 .weight(1f)
                 .height(1.dp)
-                .background(Color(0xFFE8E4D8))
+                .background(AppColors.BorderBeige)
         )
     }
 }
@@ -468,7 +468,7 @@ fun MessageActionOverlay(
                         textStyle = TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 21.sp,
-                            color = Color(0xFF222222)
+                            color = AppColors.InkPrimary
                         ),
                         maxLines = 5,
                         modifier = Modifier
@@ -801,7 +801,7 @@ private fun AdditiveEmotionEditor(
                                     text = emotion.label,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF666666).copy(alpha = if (isAdded) 0.4f else 1f)
+                                    color = AppColors.InkSecondary.copy(alpha = if (isAdded) 0.4f else 1f)
                                 )
                             }
                         }
@@ -1107,7 +1107,7 @@ fun ActionFlagIconButton(
     val bgColor = if (checked) {
         activeColor.copy(alpha = 0.18f)
     } else {
-        Color(0xFFF3F3F3)
+        AppColors.SurfaceLight
     }
 
     val contentColor = if (checked) {

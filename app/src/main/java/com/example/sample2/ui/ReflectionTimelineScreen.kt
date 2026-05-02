@@ -108,7 +108,7 @@ fun ReflectionTimelineScreen(
                     Text(text = "Reflections", fontSize = 32.sp, fontWeight = FontWeight.Medium, color = AppColors.InkStrongAlt)
                     Text(text = "振 り 返 り", fontSize = 11.sp, letterSpacing = 2.sp, color = AppColors.InkTertiary)
                 }
-                Surface(shape = RoundedCornerShape(999.dp), color = Color(0xFF1F1D1A), modifier = Modifier.clickable(onClick = onCreateToday)) {
+                Surface(shape = RoundedCornerShape(999.dp), color = AppColors.InkStrongAlt, modifier = Modifier.clickable(onClick = onCreateToday)) {
                     Text("＋ 今日を入力", color = Color.White, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), fontSize = 12.sp)
                 }
             }
@@ -223,7 +223,7 @@ private fun ReflectionCompactBar(query: String, selectedFilters: Set<ReflectionF
             Box {
                 IconButton(onClick = onTapFilter, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.FilterList, contentDescription = "フィルター") }
                 if (selectedFilters.isNotEmpty()) {
-                    Badge(modifier = Modifier.align(Alignment.TopEnd).size(7.dp), containerColor = Color(0xFFD97757)) {}
+                    Badge(modifier = Modifier.align(Alignment.TopEnd).size(7.dp), containerColor = SemanticColors.AccentOrange) {}
                 }
             }
         }
