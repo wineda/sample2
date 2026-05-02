@@ -84,6 +84,7 @@ import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.theme.EmotionPalette
 import com.example.sample2.ui.theme.colorSpec
 import com.example.sample2.util.formatTime
+import com.example.sample2.ui.theme.AppColors
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -203,7 +204,7 @@ fun MessageBubble(
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace
                             ),
-                            color = Color(0xFF888888)
+                            color = AppColors.InkSecondary
                         )
                     }
                 }
@@ -235,13 +236,13 @@ fun EmotionResponseChildBubble(
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(2.dp)
-                    .background(Color(0xFFD1D5DB))
+                    .background(AppColors.DividerMid)
             )
             Box(
                 modifier = Modifier
                     .padding(top = 8.dp)
                     .size(8.dp)
-                    .background(color = Color(0xFF9CA3AF), shape = CircleShape)
+                    .background(color = AppColors.InkTertiary, shape = CircleShape)
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
@@ -281,7 +282,7 @@ fun EmotionResponseChildBubble(
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace
                     ),
-                    color = Color(0xFF9CA3AF)
+                    color = AppColors.InkTertiary
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
@@ -289,7 +290,7 @@ fun EmotionResponseChildBubble(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color(0xFFE5E7EB))
+                    .background(AppColors.DividerSoft)
             )
         }
     }
@@ -323,13 +324,13 @@ fun DateLabel(timestamp: Long) {
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.01).sp
             ),
-            color = Color(0xFF1A1A1A)
+            color = AppColors.InkPrimary
         )
 
         Spacer(modifier = Modifier.width(8.dp))
 
         Surface(
-            color = Color(0xFF1A1A1A),
+            color = AppColors.InkPrimary,
             shape = RoundedCornerShape(4.dp)
         ) {
             Text(
@@ -429,7 +430,7 @@ fun MessageActionOverlay(
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
-                border = BorderStroke(1.5.dp, if (isTextFocused) Color(0xFF1A1A1A) else Color(0xFFEFECE4)),
+                border = BorderStroke(1.5.dp, if (isTextFocused) AppColors.InkPrimary else AppColors.SurfaceBeigeDeep),
                 tonalElevation = 0.dp,
                 shadowElevation = 3.dp
             ) {
@@ -449,7 +450,7 @@ fun MessageActionOverlay(
                             fontSize = 9.sp,
                             fontFamily = FontFamily.Monospace,
                             letterSpacing = 0.15.sp,
-                            color = Color(0xFF888888)
+                            color = AppColors.InkSecondary
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
@@ -458,7 +459,7 @@ fun MessageActionOverlay(
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace,
                         letterSpacing = 0.12.sp,
-                        color = Color(0xFF999999)
+                        color = AppColors.InkTertiary
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     BasicTextField(
@@ -478,7 +479,7 @@ fun MessageActionOverlay(
                             if (editingText.text.isBlank()) {
                                 Text(
                                     text = "思ったことをひとこと…",
-                                    color = Color(0xFFB8B3A8),
+                                    color = AppColors.InkSecondary,
                                     fontSize = 14.sp
                                 )
                             }
@@ -511,17 +512,17 @@ fun MessageActionOverlay(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF5F2EA)),
+                            .background(AppColors.SurfaceBeige),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("🕒", color = Color(0xFF9CA3AF), fontSize = 12.sp)
+                        Text("🕒", color = AppColors.InkTertiary, fontSize = 12.sp)
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = "時刻",
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace,
-                        color = Color(0xFF999999),
+                        color = AppColors.InkTertiary,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
@@ -530,10 +531,10 @@ fun MessageActionOverlay(
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
                         letterSpacing = (-0.02).sp,
-                        color = Color(0xFF1A1A1A)
+                        color = AppColors.InkPrimary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("⌄", color = Color(0xFFCCCCCC), fontSize = 14.sp)
+                    Text("⌄", color = AppColors.InkDisabled, fontSize = 14.sp)
                 }
             }
 
@@ -621,7 +622,7 @@ fun MessageActionOverlay(
                 ) {
                     TextButton(
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF6B6660)),
+                        colors = ButtonDefaults.textButtonColors(contentColor = AppColors.InkSecondary),
                         onClick = {
                             onDismiss()
                         }
@@ -631,7 +632,7 @@ fun MessageActionOverlay(
 
                     Button(
                         modifier = Modifier.weight(1.6f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A1A)),
+                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.InkPrimary),
                         onClick = {
                             val payload = message.copy(
                                 text = editingText.text,
@@ -657,7 +658,7 @@ fun MessageActionOverlay(
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
                                 contentDescription = "more",
-                                tint = Color(0xFF888888)
+                                tint = AppColors.InkSecondary
                             )
                         }
                         DropdownMenu(
@@ -783,7 +784,7 @@ private fun AdditiveEmotionEditor(
                                     .weight(1f)
                                     .aspectRatio(1f)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFF5F2EA))
+                                    .background(AppColors.SurfaceBeige)
                                     .clickable(enabled = !isAdded) {
                                         onEmotionsChanged(emotions.withScore(emotion, 1))
                                         showPalette = false
@@ -819,15 +820,15 @@ private fun AddEmotionButton(text: String, onClick: () -> Unit) {
             .clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
         color = Color.White,
-        border = BorderStroke(1.5.dp, Color(0xFFC8C2B0))
+        border = BorderStroke(1.5.dp, AppColors.BorderBeige)
     ) {
         Row(
             modifier = Modifier.padding(vertical = 14.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "＋ ", fontWeight = FontWeight.Bold, color = Color(0xFF888888))
-            Text(text = text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF888888))
+            Text(text = "＋ ", fontWeight = FontWeight.Bold, color = AppColors.InkSecondary)
+            Text(text = text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AppColors.InkSecondary)
         }
     }
 }
@@ -878,12 +879,12 @@ private fun EmotionSegmentRow(
                             .clip(RoundedCornerShape(8.dp))
                             .clickable { onValueChanged(score) },
                         shape = RoundedCornerShape(8.dp),
-                        color = if (score == value) colorSpec.main else Color(0xFFF5F2EA)
+                        color = if (score == value) colorSpec.main else AppColors.SurfaceBeige
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = score.toString(),
-                                color = if (score == value) Color.White else Color(0xFF6B6660),
+                                color = if (score == value) Color.White else AppColors.InkSecondary,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -891,7 +892,7 @@ private fun EmotionSegmentRow(
                 }
             }
             IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
-                Text("×", color = Color(0xFFCCCCCC), fontSize = 18.sp)
+                Text("×", color = AppColors.InkDisabled, fontSize = 18.sp)
             }
         }
     }
@@ -943,20 +944,20 @@ private fun CollapsibleActionTypeEditor(
                 Text(
                     text = "種類",
                     fontSize = 9.sp,
-                    color = Color(0xFF999999),
+                    color = AppColors.InkTertiary,
                     letterSpacing = 1.2.sp
                 )
                 Text(
                     text = currentType.label,
                     fontSize = 14.sp,
-                    color = Color(0xFF1A1A1A),
+                    color = AppColors.InkPrimary,
                     fontWeight = FontWeight.Bold
                 )
             }
             if (!expanded) {
                 Text(
                     text = "×",
-                    color = Color(0xFFCCCCCC),
+                    color = AppColors.InkDisabled,
                     fontSize = 18.sp,
                     modifier = Modifier
                         .size(24.dp)
@@ -972,7 +973,7 @@ private fun CollapsibleActionTypeEditor(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color(0xFFF3F0E8))
+                    .background(AppColors.SurfaceBeigeAlt)
             )
             Spacer(modifier = Modifier.height(14.dp))
             ActionTypeGrid(selectedType = currentType, onSelected = onSelected)
@@ -1014,7 +1015,7 @@ private fun ActionTypeGrid(
                         .weight(1f)
                         .aspectRatio(1f)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (isSelected) uiSpec.color.copy(alpha = 0.18f) else Color(0xFFF5F2EA))
+                        .background(if (isSelected) uiSpec.color.copy(alpha = 0.18f) else AppColors.SurfaceBeige)
                         .border(
                             if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
                             RoundedCornerShape(12.dp)
@@ -1027,14 +1028,14 @@ private fun ActionTypeGrid(
                         painter = painterResource(id = uiSpec.iconRes),
                         contentDescription = type.label,
                         modifier = Modifier.size(18.dp),
-                        tint = if (isSelected) uiSpec.color else Color(0xFF6B6660)
+                        tint = if (isSelected) uiSpec.color else AppColors.InkSecondary
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = type.label,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF3D3A34),
+                        color = AppColors.InkPrimary,
                         textAlign = TextAlign.Center
                     )
                 }

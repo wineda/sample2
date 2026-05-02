@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import com.example.sample2.ui.theme.AppColors
 
 @Composable
 fun JournalDrawerContent(
@@ -61,7 +62,7 @@ fun JournalDrawerContent(
                     .align(Alignment.CenterHorizontally)
                     .size(width = 36.dp, height = 4.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(Color(0xFFE5E7EB))
+                    .background(AppColors.DividerSoft)
             )
 
             Spacer(modifier = Modifier.size(10.dp))
@@ -73,7 +74,7 @@ fun JournalDrawerContent(
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.66.sp,
-                color = Color(0xFF9CA3AF),
+                color = AppColors.InkTertiary,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
 
@@ -124,7 +125,7 @@ fun JournalDrawerContent(
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.66.sp,
-                color = Color(0xFF9CA3AF),
+                color = AppColors.InkTertiary,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
 
@@ -185,7 +186,7 @@ fun JournalDrawerContent(
                 Text(
                     text = "v1.2.3",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF9CA3AF)
+                    color = AppColors.InkTertiary
                 )
             }
         }
@@ -289,7 +290,7 @@ private fun SmartDrawerMenuItem(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = Color(0xFFD1D5DB)
+                tint = AppColors.DividerMid
             )
         }
     }
