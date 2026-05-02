@@ -485,7 +485,7 @@ private fun PeriodPresetRow(
 
 fun colorForCount(baseColor: Color, count: Double): Color {
     return when {
-        count == 0.0 -> Color.LightGray
+        count == 0.0 -> MaterialTheme.appColors.dividerSoft
         count == 1.0 -> baseColor.copy(alpha = 0.3f)
         count == 2.0 -> baseColor.copy(alpha = 0.6f)
         else -> baseColor.copy(alpha = 1.0f)

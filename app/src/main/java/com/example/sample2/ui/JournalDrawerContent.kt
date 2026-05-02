@@ -36,7 +36,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
-import com.example.sample2.ui.theme.AppColors
 import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.MenuIconPalette
 
@@ -64,7 +63,7 @@ fun JournalDrawerContent(
                     .align(Alignment.CenterHorizontally)
                     .size(width = 36.dp, height = 4.dp)
                     .clip(AppShapeTokens.Tech)
-                    .background(AppColors.DividerSoft)
+                    .background(MaterialTheme.appColors.dividerSoft)
             )
 
             Spacer(modifier = Modifier.size(10.dp))
@@ -76,7 +75,7 @@ fun JournalDrawerContent(
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.66.sp,
-                color = AppColors.InkTertiary,
+                color = MaterialTheme.appColors.inkTertiary,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
 
@@ -119,7 +118,7 @@ fun JournalDrawerContent(
                     .fillMaxWidth()
                     .padding(top = 10.dp, bottom = 8.dp)
                     .height(8.dp)
-                    .background(AppColors.SurfaceMuted)
+                    .background(MaterialTheme.appColors.surfaceMuted)
             )
 
             Text(
@@ -127,7 +126,7 @@ fun JournalDrawerContent(
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.66.sp,
-                color = AppColors.InkTertiary,
+                color = MaterialTheme.appColors.inkTertiary,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
 
@@ -168,13 +167,13 @@ fun JournalDrawerContent(
             Spacer(modifier = Modifier.weight(1f))
 
             HorizontalDivider(
-                color = AppColors.DividerSoft
+                color = MaterialTheme.appColors.dividerSoft
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(AppColors.SurfaceMuted)
+                    .background(MaterialTheme.appColors.surfaceMuted)
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -183,12 +182,12 @@ fun JournalDrawerContent(
                     text = "Journal",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = AppColors.InkSecondary
+                    color = MaterialTheme.appColors.inkSecondary
                 )
                 Text(
                     text = "v1.2.3",
                     style = MaterialTheme.typography.labelSmall,
-                    color = AppColors.InkTertiary
+                    color = MaterialTheme.appColors.inkTertiary
                 )
             }
         }
@@ -210,7 +209,7 @@ private fun SmartDrawerHeader(
             text = "メニュー",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = AppColors.InkPrimary
+            color = MaterialTheme.appColors.inkPrimary
         )
         Box(
             modifier = Modifier
@@ -227,7 +226,7 @@ private fun SmartDrawerHeader(
         }
     }
 
-    HorizontalDivider(color = AppColors.DividerSoft)
+    HorizontalDivider(color = MaterialTheme.appColors.dividerSoft)
 }
 
 @Composable
@@ -292,7 +291,7 @@ private fun SmartDrawerMenuItem(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = AppColors.DividerMid
+                tint = MaterialTheme.appColors.dividerMid
             )
         }
     }
