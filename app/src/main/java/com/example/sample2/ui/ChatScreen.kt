@@ -88,8 +88,8 @@ import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.analytics.AnalyticsDisplayMode
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.util.formatDate
-import com.example.sample2.ui.theme.AppColors
 import com.example.sample2.ui.theme.SemanticColors
+import com.example.sample2.ui.theme.appColors
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -341,7 +341,7 @@ fun ChatRoute() {
 
     if (state.deleteTarget != null) {
         AlertDialog(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.background,
             onDismissRequest = { state.deleteTarget = null },
             title = { Text("削除") },
             text = { Text("このメッセージを削除しますか？") },
@@ -432,8 +432,8 @@ fun ChatRoute() {
                                         text = ""
                                     )
                                 },
-                                containerColor = AppColors.InkPrimary,
-                                contentColor = Color.White,
+                                containerColor = MaterialTheme.appColors.inkPrimary,
+                                contentColor = MaterialTheme.colorScheme.surface,
                                 shape = CircleShape,
                                 modifier = Modifier
                                     .size(56.dp)
@@ -562,7 +562,7 @@ fun ChatRoute() {
 
                                 HorizontalDivider(
                                     thickness = 1.dp,
-                                    color = AppColors.DividerSoft
+                                    color = MaterialTheme.appColors.dividerSoft
                                 )
 
                                 AnimatedVisibility(
@@ -734,9 +734,9 @@ private fun JournalBottomModeBar(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
     ) {
-        HorizontalDivider(thickness = 1.dp, color = AppColors.SurfaceBeigeDeep)
+        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.appColors.surfaceSubtleDeep)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -795,13 +795,13 @@ private fun JournalBottomTab(
                 Icon(
                     imageVector = icon,
                     contentDescription = text,
-                    tint = if (selected) AppColors.InkPrimary else AppColors.InkTertiary,
+                    tint = if (selected) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.inkTertiary,
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
                     text = text,
                     fontSize = 11.sp,
-                    color = if (selected) AppColors.InkPrimary else AppColors.InkTertiary,
+                    color = if (selected) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.inkTertiary,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                 )
             }
@@ -848,14 +848,14 @@ private fun JournalCompactMetaRow(
                 text = dateLabel.substringBefore('・'),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = AppColors.InkPrimary
+                color = MaterialTheme.appColors.inkPrimary
             )
             if (dateLabel.contains("今日")) {
                 Text(
                     text = "今日",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = AppColors.InkTertiary
+                    color = MaterialTheme.appColors.inkTertiary
                 )
             }
         }
