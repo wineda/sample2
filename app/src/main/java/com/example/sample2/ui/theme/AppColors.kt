@@ -17,6 +17,7 @@ object AppColors {
     val SurfaceCream = Color(0xFFFAF9F6)
     val SurfaceCool = Color(0xFFF1F3F7)
     val SurfaceMuted = Color(0xFFFAFAFA)
+    val SurfaceLight = Color(0xFFF3F3F3)
     val BorderBeige = Color(0xFFC8C2B0)
 
     // ボーダー・区切り線（ニュートラル）

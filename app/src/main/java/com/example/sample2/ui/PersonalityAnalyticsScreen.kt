@@ -94,6 +94,7 @@ import com.example.sample2.ui.EmotionHeatmapBlock
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
 import com.example.sample2.util.formatTime
+import com.example.sample2.ui.theme.ActionPalette
 import com.example.sample2.ui.theme.ScorePalette
 import java.time.Instant
 import java.time.DayOfWeek
@@ -325,7 +326,7 @@ fun PersonalityAnalyticsScreen(
         targetActionTypes.mapIndexed { index, type ->
             LineSeries(
                 label = type.label,
-                color = ActionChartColors[index % ActionChartColors.size],
+                color = ActionPalette.ChartCategories[index % ActionPalette.ChartCategories.size],
                 values = chartDates.map { date ->
                     messageCountByDate[date].orEmpty().count { message ->
                         type.matches(message.flags)
@@ -530,7 +531,7 @@ fun PersonalityAnalyticsScreen(
                             entries = stepGraphEntries,
                             title = "運動推移",
                             seriesLabel = "歩数(千歩)",
-                            color = StepsChartColor
+                            color = ScorePalette.Steps
                         )
                     }
                     item {
@@ -538,7 +539,7 @@ fun PersonalityAnalyticsScreen(
                             entries = sleepGraphEntries,
                             title = "睡眠推移",
                             seriesLabel = "睡眠時間(h)",
-                            color = SleepChartColor
+                            color = ScorePalette.Sleep
                         )
                     }
                 }
@@ -839,15 +840,6 @@ private fun StateBadge(
     }
 }
 
-private val ActionChartColors = listOf(
-    Color(0xFF1E88E5),
-    Color(0xFF43A047),
-    Color(0xFFFB8C00),
-    Color(0xFFE53935),
-    Color(0xFF8E24AA)
-)
-private val SleepChartColor = ScorePalette.Sleep
-private val StepsChartColor = ScorePalette.Steps
 private enum class ChartDrawStyle { LINE, BAR }
 
 @Composable

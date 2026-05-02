@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import com.example.sample2.R
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.EmotionType
+import com.example.sample2.ui.theme.ActionPalette
 import com.example.sample2.ui.theme.colorSpec
 
 data class EmotionUiSpec(
@@ -27,22 +28,18 @@ fun EmotionType.toUiSpec(): EmotionUiSpec {
 }
 
 fun ActionType.toUiSpec(): ActionUiSpec {
-    val orange = Color(0xFFFB8C00)
-    val green = Color(0xFF43A047)
-    val purple = Color(0xFF5E35B1)
-
     return when (this) {
-        ActionType.EXERCISED -> ActionUiSpec(R.drawable.ic_directions_run, orange)
-        ActionType.SOCIALIZED -> ActionUiSpec(R.drawable.ic_form, orange)
-        ActionType.DELEGATE -> ActionUiSpec(R.drawable.ic_scroll_down, green)
-        ActionType.CHALLENGE -> ActionUiSpec(R.drawable.ic_rocket, green)
-        ActionType.BREAKDOWN -> ActionUiSpec(android.R.drawable.ic_menu_sort_by_size, green)
-        ActionType.INSTRUCT -> ActionUiSpec(R.drawable.ic_wb_incandescent, green)
-        ActionType.QUICK_ACTION -> ActionUiSpec(R.drawable.ic_sprint, green)
-        ActionType.PENDING_TASK -> ActionUiSpec(R.drawable.ic_hourglass, purple)
-        ActionType.MEETING_STRESS -> ActionUiSpec(android.R.drawable.ic_dialog_alert, purple)
-        ActionType.SMARTPHONE_DRIFT -> ActionUiSpec(R.drawable.ic_clock_loader_40, purple)
-        ActionType.ALCOHOL -> ActionUiSpec(R.drawable.ic_beer_meal, purple)
-        ActionType.HANGOVER -> ActionUiSpec(android.R.drawable.ic_delete, purple)
+        ActionType.EXERCISED -> ActionUiSpec(R.drawable.ic_directions_run, ActionPalette.Positive)
+        ActionType.SOCIALIZED -> ActionUiSpec(R.drawable.ic_form, ActionPalette.Positive)
+        ActionType.DELEGATE -> ActionUiSpec(R.drawable.ic_scroll_down, ActionPalette.Execute)
+        ActionType.CHALLENGE -> ActionUiSpec(R.drawable.ic_rocket, ActionPalette.Execute)
+        ActionType.BREAKDOWN -> ActionUiSpec(android.R.drawable.ic_menu_sort_by_size, ActionPalette.Execute)
+        ActionType.INSTRUCT -> ActionUiSpec(R.drawable.ic_wb_incandescent, ActionPalette.Execute)
+        ActionType.QUICK_ACTION -> ActionUiSpec(R.drawable.ic_sprint, ActionPalette.Execute)
+        ActionType.PENDING_TASK -> ActionUiSpec(R.drawable.ic_hourglass, ActionPalette.Load)
+        ActionType.MEETING_STRESS -> ActionUiSpec(android.R.drawable.ic_dialog_alert, ActionPalette.Load)
+        ActionType.SMARTPHONE_DRIFT -> ActionUiSpec(R.drawable.ic_clock_loader_40, ActionPalette.Load)
+        ActionType.ALCOHOL -> ActionUiSpec(R.drawable.ic_beer_meal, ActionPalette.Load)
+        ActionType.HANGOVER -> ActionUiSpec(android.R.drawable.ic_delete, ActionPalette.Load)
     }
 }

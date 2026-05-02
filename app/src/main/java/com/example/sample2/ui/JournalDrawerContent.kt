@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.example.sample2.ui.theme.AppColors
+import com.example.sample2.ui.theme.MenuIconPalette
 
 @Composable
 fun JournalDrawerContent(
@@ -84,8 +85,8 @@ fun JournalDrawerContent(
                 SmartDrawerMenuItem(
                     title = "コピー",
                     subtitle = "内容をクリップボードへ",
-                    iconBackground = Color(0xFFE0E7FF),
-                    iconTint = Color(0xFF4F46E5),
+                    iconBackground = MenuIconPalette.Copy.background,
+                    iconTint = MenuIconPalette.Copy.tint,
                     icon = {
                         Icon(
                             imageVector = Icons.Default.ContentCopy,
@@ -99,8 +100,8 @@ fun JournalDrawerContent(
                 SmartDrawerMenuItem(
                     title = "共有",
                     subtitle = "他のアプリへ共有",
-                    iconBackground = Color(0xFFDCFCE7),
-                    iconTint = Color(0xFF16A34A),
+                    iconBackground = MenuIconPalette.Share.background,
+                    iconTint = MenuIconPalette.Share.tint,
                     icon = {
                         Icon(
                             imageVector = Icons.Default.Share,
@@ -117,7 +118,7 @@ fun JournalDrawerContent(
                     .fillMaxWidth()
                     .padding(top = 10.dp, bottom = 8.dp)
                     .height(8.dp)
-                    .background(Color(0xFFF9FAFB))
+                    .background(AppColors.SurfaceMuted)
             )
 
             Text(
@@ -135,8 +136,8 @@ fun JournalDrawerContent(
                 SmartDrawerMenuItem(
                     title = "バックアップを作成",
                     subtitle = "データを保存して退避",
-                    iconBackground = Color(0xFFDBEAFE),
-                    iconTint = Color(0xFF2563EB),
+                    iconBackground = MenuIconPalette.Backup.background,
+                    iconTint = MenuIconPalette.Backup.tint,
                     icon = {
                         Icon(
                             imageVector = Icons.Default.Backup,
@@ -150,8 +151,8 @@ fun JournalDrawerContent(
                 SmartDrawerMenuItem(
                     title = "リストア",
                     subtitle = "バックアップから復元",
-                    iconBackground = Color(0xFFFEF3C7),
-                    iconTint = Color(0xFFD97706),
+                    iconBackground = MenuIconPalette.Restore.background,
+                    iconTint = MenuIconPalette.Restore.tint,
                     icon = {
                         Icon(
                             imageVector = Icons.Default.Restore,
@@ -166,13 +167,13 @@ fun JournalDrawerContent(
             Spacer(modifier = Modifier.weight(1f))
 
             HorizontalDivider(
-                color = Color(0xFFF3F4F6)
+                color = AppColors.DividerSoft
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFFFAFAFA))
+                    .background(AppColors.SurfaceMuted)
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -181,7 +182,7 @@ fun JournalDrawerContent(
                     text = "Journal",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF374151)
+                    color = AppColors.InkSecondary
                 )
                 Text(
                     text = "v1.2.3",
@@ -208,7 +209,7 @@ private fun SmartDrawerHeader(
             text = "メニュー",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF111827)
+            color = AppColors.InkPrimary
         )
         Box(
             modifier = Modifier
@@ -225,7 +226,7 @@ private fun SmartDrawerHeader(
         }
     }
 
-    HorizontalDivider(color = Color(0xFFF3F4F6))
+    HorizontalDivider(color = AppColors.DividerSoft)
 }
 
 @Composable

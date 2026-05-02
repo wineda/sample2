@@ -23,4 +23,10 @@ object SemanticColors {
     // 情報・アクセント（青）
     val InfoMain = Color(0xFF4A6FA5)
     val InfoSoft = Color(0xFFE8EEF7)
+
+    // 選択状態などのアクセント
+    val AccentRed = Color(0xFFC44536)
+
+    // 注意を引くオレンジ系アクセント
+    val AccentOrange = Color(0xFFD97757)
 }
