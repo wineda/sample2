@@ -1,8 +1,13 @@
 package com.example.sample2.ui
 
-import android.app.TimePickerDialog
+import android.app.AlertDialog
 import android.content.Context
-import com.example.sample2.R
+import android.text.InputFilter
+import android.text.InputType
+import android.view.Gravity
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
 import java.util.Calendar
 
 private const val AppTimePickerTitle = "時刻の設定"
@@ -13,18 +18,46 @@ fun showAppTimePickerDialog(
     initialMinute: Int,
     onSelected: (hour: Int, minute: Int) -> Unit
 ) {
-    TimePickerDialog(
-        context,
-        R.style.AppTimePickerDialog,
-        { _, hourOfDay, minute ->
-            onSelected(hourOfDay, minute)
-        },
-        initialHour,
-        initialMinute,
-        true
-    ).apply {
-        setTitle(AppTimePickerTitle)
-    }.show()
+    val hourInput = EditText(context).apply {
+        inputType = InputType.TYPE_CLASS_NUMBER
+        filters = arrayOf(InputFilter.LengthFilter(2))
+        setText(initialHour.toString().padStart(2, '0'))
+        gravity = Gravity.CENTER
+        textSize = 28f
+        minEms = 2
+    }
+    val minuteInput = EditText(context).apply {
+        inputType = InputType.TYPE_CLASS_NUMBER
+        filters = arrayOf(InputFilter.LengthFilter(2))
+        setText(initialMinute.toString().padStart(2, '0'))
+        gravity = Gravity.CENTER
+        textSize = 28f
+        minEms = 2
+    }
+
+    val content = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER
+        setPadding(48, 32, 48, 8)
+        addView(hourInput)
+        addView(TextView(context).apply {
+            text = " : "
+            textSize = 28f
+            gravity = Gravity.CENTER
+        })
+        addView(minuteInput)
+    }
+
+    AlertDialog.Builder(context)
+        .setTitle(AppTimePickerTitle)
+        .setView(content)
+        .setNegativeButton("キャンセル", null)
+        .setPositiveButton("OK") { _, _ ->
+            val hour = hourInput.text.toString().toIntOrNull()?.coerceIn(0, 23) ?: initialHour
+            val minute = minuteInput.text.toString().toIntOrNull()?.coerceIn(0, 59) ?: initialMinute
+            onSelected(hour, minute)
+        }
+        .show()
 }
 
 fun showAppTimePickerDialog(

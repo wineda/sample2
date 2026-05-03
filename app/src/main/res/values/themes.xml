@@ -3,8 +3,5 @@
 
     <style name="Theme.Sample2" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <style name="AppTimePickerDialog" parent="android:Theme.Material.Light.Dialog.Alert">
-        <item name="android:timePickerMode">spinner</item>
-    </style>
 
 </resources>
