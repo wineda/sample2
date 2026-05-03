@@ -82,6 +82,12 @@ enum class JournalHeaderTitleStyle { Default, Medium }
 
 @Composable
 fun HeaderProgressStack(current: Int, total: Int, label: String, large: Boolean = false) {
+    val borderColor = if (strongBottomBorder) {
+        MaterialTheme.appColors.inkStrongAlt
+    } else {
+        MaterialTheme.appColors.dividerCool
+    }
+
     Column(horizontalAlignment = Alignment.End) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(text = "$current", fontFamily = FontFamily.Monospace, fontSize = if (large) 24.sp else 18.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.appColors.inkPrimary)
@@ -120,13 +126,19 @@ fun JournalTopHeader(
     strongBottomBorder: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val borderColor = if (strongBottomBorder) {
+        MaterialTheme.appColors.inkStrongAlt
+    } else {
+        MaterialTheme.appColors.dividerCool
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .drawBehind {
                 drawLine(
-                    color = if (strongBottomBorder) MaterialTheme.appColors.inkStrongAlt else MaterialTheme.appColors.dividerCool,
+                    color = borderColor,
                     start = androidx.compose.ui.geometry.Offset(0f, size.height),
                     end = androidx.compose.ui.geometry.Offset(size.width, size.height),
                     strokeWidth = 1.dp.toPx()
