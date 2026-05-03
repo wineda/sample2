@@ -1,5 +1,32 @@
 package com.example.sample2.ui
 
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.util.Locale
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -205,4 +232,100 @@ fun CompactHeaderIconButton(
             }
         }
     }
+}
+
+
+data class DateQuickOption(
+    val label: String,
+    val resolveDate: (current: LocalDate) -> LocalDate
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun JournalDatePickerDialog(
+    initialDate: LocalDate,
+    minDate: LocalDate? = null,
+    maxDate: LocalDate? = LocalDate.now(),
+    datesWithRecord: Set<LocalDate> = emptySet(),
+    onDismiss: () -> Unit,
+    onConfirm: (LocalDate) -> Unit
+) {
+    val zoneId = remember { ZoneId.systemDefault() }
+    val _unused = datesWithRecord
+    val selectableDates = remember(minDate, maxDate, zoneId) {
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val date = Instant.ofEpochMilli(utcTimeMillis).atZone(zoneId).toLocalDate()
+                val afterMin = minDate?.let { !date.isBefore(it) } ?: true
+                val beforeMax = maxDate?.let { !date.isAfter(it) } ?: true
+                return afterMin && beforeMax
+            }
+        }
+    }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDate.atStartOfDay(zoneId).toInstant().toEpochMilli(),
+        selectableDates = selectableDates,
+    )
+    DatePickerDialog(onDismissRequest = onDismiss, confirmButton = {
+        TextButton(onClick = {
+            val ms = datePickerState.selectedDateMillis ?: return@TextButton
+            onConfirm(Instant.ofEpochMilli(ms).atZone(zoneId).toLocalDate())
+        }, enabled = datePickerState.selectedDateMillis != null) { Text("選択") }
+    }, dismissButton = { TextButton(onClick = onDismiss) { Text("キャンセル") } }) {
+        DatePicker(state = datePickerState)
+    }
+}
+
+@Composable
+private fun StepperCircleNav(icon: androidx.compose.ui.graphics.vector.ImageVector, cd: String, onClick: () -> Unit, enabled: Boolean = true) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(36.dp),
+        shape = CircleShape,
+        color = MaterialTheme.appColors.surfaceCool,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(icon, cd, tint = MaterialTheme.appColors.inkPrimary)
+        }
+    }
+}
+
+@Composable
+fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDate: LocalDate? = null,maxDate: LocalDate = LocalDate.now(),datesWithRecord: Set<LocalDate> = emptySet(),quickOptions: List<DateQuickOption> = emptyList(),modifier: Modifier = Modifier) {
+    var showDialog by remember { mutableStateOf(false) }
+    val today = remember { LocalDate.now() }
+    val showQuick = quickOptions.isNotEmpty()
+    val dividerColor = MaterialTheme.appColors.dividerCool
+    Column(modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
+        Row(Modifier.fillMaxWidth().then(if(!showQuick) Modifier.drawBehind { drawLine(dividerColor, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) } else Modifier).padding(horizontal=14.dp, vertical=10.dp), verticalAlignment = Alignment.CenterVertically) {
+            StepperCircleNav(Icons.Rounded.ChevronLeft, "前日", { onDateChange(selectedDate.minusDays(1)) }, enabled = minDate?.let { selectedDate>it } ?: true)
+            Column(Modifier.weight(1f).clickable { showDialog=true }.semantics { contentDescription = "日付選択" }, horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.JAPAN)), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkPrimary)
+                    if (selectedDate==today) Surface(shape=RoundedCornerShape(3.dp), color=SemanticColors.InfoMain){ Text("TODAY", color=Color.White, fontFamily=FontFamily.Monospace, fontSize=9.sp, letterSpacing=1.sp, modifier=Modifier.padding(horizontal=5.dp, vertical=1.dp)) }
+                    else if (selectedDate<today) Surface(shape=RoundedCornerShape(3.dp), color=MaterialTheme.appColors.surfaceCool){ Text("${ChronoUnit.DAYS.between(selectedDate,today)}日前", color=MaterialTheme.appColors.inkTertiary, fontFamily=FontFamily.Monospace, fontSize=9.sp, modifier=Modifier.padding(horizontal=5.dp, vertical=1.dp)) }
+                }
+                Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(Icons.Default.CalendarMonth, null, modifier=Modifier.size(14.dp), tint=MaterialTheme.appColors.inkTertiary)
+                    Text(selectedDate.format(DateTimeFormatter.ofPattern("E曜日", Locale.JAPAN)), fontSize=12.sp, color=MaterialTheme.appColors.inkTertiary)
+                }
+            }
+            StepperCircleNav(Icons.Rounded.ChevronRight, "翌日", { onDateChange(selectedDate.plusDays(1)) }, enabled = selectedDate < maxDate)
+        }
+        if (showQuick) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).drawBehind { drawLine(dividerColor, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) }.padding(horizontal=14.dp, vertical=8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                quickOptions.forEach { opt ->
+                    val target = opt.resolveDate(selectedDate)
+                    val selected = target == selectedDate
+                    Surface(onClick = { onDateChange(target) }, shape = RoundedCornerShape(999.dp), color = if(selected) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.surfaceCool, contentColor = if(selected) Color.White else MaterialTheme.appColors.inkSecondary) {
+                        Text(opt.label, modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp), fontSize=11.sp, fontWeight=FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+    if (showDialog) JournalDatePickerDialog(selectedDate, minDate, maxDate, datesWithRecord, { showDialog=false }) { onDateChange(it); showDialog=false }
 }

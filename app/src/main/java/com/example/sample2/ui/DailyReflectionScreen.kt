@@ -61,6 +61,9 @@ import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.appColors
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
 
@@ -127,6 +130,11 @@ fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDa
                 navigationContentDescription = "戻る",
                 onNavigationClick = onClose,
                 trailing = { HeaderProgressStack(current = filled, total = 5, label = "FILLED") }
+            )
+            DateStepper(
+                selectedDate = LocalDate.parse(selectedDate),
+                onDateChange = { selectedDate = it.toString() },
+                datesWithRecord = state.messages.map { Instant.ofEpochMilli(it.timestamp).atZone(ZoneId.of("Asia/Tokyo")).toLocalDate() }.toSet()
             )
             Column(
                 Modifier

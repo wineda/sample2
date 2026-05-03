@@ -30,18 +30,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -49,12 +47,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -95,6 +90,7 @@ import com.example.sample2.ui.ActionHeatmapBlock
 import com.example.sample2.ui.CompactHeaderIconButton
 import com.example.sample2.ui.EmotionHeatmapBlock
 import com.example.sample2.ui.JournalTopHeader
+import com.example.sample2.ui.DateStepper
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
 import androidx.compose.material.icons.outlined.Menu
@@ -518,10 +514,10 @@ fun PersonalityAnalyticsScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
-                        SelectedDateSelectorRow(
-                            dates = allRawScoresDesc.map { it.date },
-                            selectedDate = selectedDate,
-                            onSelectDate = { selectedDateText = it.toString() }
+                        DateStepper(
+                            selectedDate = selectedDate ?: LocalDate.now(),
+                            onDateChange = { selectedDateText = it.toString() },
+                            datesWithRecord = allRawScoresDesc.map { it.date }.toSet()
                         )
                     }
 
@@ -1443,102 +1439,6 @@ private fun ToggleChipLikeButton(
                 fontWeight = FontWeight.Medium
             )
         }
-    }
-}
-
-@Composable
-private fun SelectedDateSelectorRow(
-    dates: List<LocalDate>,
-    selectedDate: LocalDate?,
-    onSelectDate: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var showCalendarDialog by rememberSaveable(dates, selectedDate) { mutableStateOf(false) }
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = selectedDate?.let {
-                DateTimeFormatter.ofPattern("M月d日(E)", Locale.JAPAN).format(it)
-            } ?: "日付未選択",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f)
-        )
-
-        AssistChip(
-            onClick = { showCalendarDialog = true },
-            label = { Text("カレンダー") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = null
-                )
-            }
-        )
-    }
-
-    if (showCalendarDialog) {
-        AvailableDatePickerDialog(
-            initialDate = selectedDate,
-            onDismiss = { showCalendarDialog = false },
-            onConfirm = { pickedDate ->
-                onSelectDate(pickedDate)
-                showCalendarDialog = false
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AvailableDatePickerDialog(
-    initialDate: LocalDate?,
-    onDismiss: () -> Unit,
-    onConfirm: (LocalDate) -> Unit
-) {
-    val zoneId = remember { ZoneId.systemDefault() }
-    val today = remember(zoneId) { LocalDate.now(zoneId) }
-    val selectableDates = remember(today, zoneId) {
-        object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                val date = Instant.ofEpochMilli(utcTimeMillis).atZone(zoneId).toLocalDate()
-                return !date.isAfter(today)
-            }
-        }
-    }
-    val initialSelectedDateMillis = remember(initialDate, zoneId) {
-        initialDate?.atStartOfDay(zoneId)?.toInstant()?.toEpochMilli()
-    }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialSelectedDateMillis,
-        selectableDates = selectableDates
-    )
-
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val selectedMillis = datePickerState.selectedDateMillis ?: return@TextButton
-                    val selectedDate = Instant.ofEpochMilli(selectedMillis).atZone(zoneId).toLocalDate()
-                    onConfirm(selectedDate)
-                },
-                enabled = datePickerState.selectedDateMillis != null
-            ) {
-                Text("選択")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("キャンセル")
-            }
-        }
-    ) {
-        DatePicker(state = datePickerState)
     }
 }
 

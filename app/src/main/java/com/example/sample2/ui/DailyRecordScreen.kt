@@ -1,6 +1,5 @@
 package com.example.sample2.ui
 
-import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -20,15 +19,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.DirectionsWalk
-import androidx.compose.material.icons.rounded.ChevronLeft
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -110,6 +106,8 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
     val duration = if (bedTime != null && wakeTime != null) computeDurationMinutes(bedTime!!, wakeTime!!) else null
     val enabled = bedTime != null || wakeTime != null || quality != null || steps > 0
     val filledCount = listOf(bedTime != null || wakeTime != null, quality != null, steps > 0).count { it }
+    val dailyRecords = remember { JournalJsonStorage.loadDailyRecords(context) }
+    val recordedDates = remember(dailyRecords) { dailyRecords.mapNotNull { runCatching { LocalDate.parse(it.date) }.getOrNull() }.toSet() }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background, contentWindowInsets = WindowInsets(0, 0, 0, 0), bottomBar = {
         FooterActions(onCancel = onClose, onSave = {
@@ -118,7 +116,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
             Toast.makeText(context, "日次記録を保存しました", Toast.LENGTH_SHORT).show(); onClose()
         }, enabled = enabled)
     }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxSize().padding(padding)) {
             JournalTopHeader(
                 title = "日次記録",
                 titleStyle = JournalHeaderTitleStyle.Medium,
@@ -128,31 +126,26 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
                 onNavigationClick = onClose,
                 trailing = { HeaderProgressStack(current = filledCount, total = 3, label = "FILLED") }
             )
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                DateHeaderCard(selectedDate, today, { if (selectedDate > LocalDate.MIN) selectedDate = selectedDate.minusDays(1) }, { if (selectedDate < today) selectedDate = selectedDate.plusDays(1) }, { selectedDate = today.minusDays(1) }, { selectedDate = today }, { onOpenReflection(selectedDate.toString()) }) { showDatePicker(context, selectedDate) { picked -> selectedDate = picked } }
-                SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it }
-                StepCard(steps, onSetSteps = { steps = it.coerceIn(0, 999_999) }, onDelta = { steps = applyStepDelta(steps, it) })
+            LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    DateStepper(
+                        selectedDate = selectedDate,
+                        onDateChange = { selectedDate = it },
+                        maxDate = today,
+                        datesWithRecord = recordedDates,
+                    )
+                }
+                item { TextButton(onClick = { onOpenReflection(selectedDate.toString()) }) { Text("振り返りを書く") } }
+                item { SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it } }
+                item { StepCard(steps, onSetSteps = { steps = it.coerceIn(0, 999_999) }, onDelta = { steps = applyStepDelta(steps, it) }) }
             }
         }
     }
 }
-
-@Composable private fun DateHeaderCard(selectedDate: LocalDate, today: LocalDate, onPrev: () -> Unit, onNext: () -> Unit, onYesterday: () -> Unit, onToday: () -> Unit, onReflection: () -> Unit, onDatePick: (LocalDate) -> Unit) { /* simplified */
-    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                CircleNav(Icons.Rounded.ChevronLeft, "前日", onPrev)
-                Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd (E)", Locale.JAPANESE)), modifier = Modifier.weight(1f).clickable { onDatePick(selectedDate) }.semantics { contentDescription = "日付選択" }, fontWeight = FontWeight.SemiBold)
-                CircleNav(Icons.Rounded.ChevronRight, "翌日", onNext, enabled = selectedDate < today)
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                QuickChip("昨日", false, Modifier.weight(1f), onYesterday); QuickChip("今日", selectedDate == today, Modifier.weight(1f), onToday); QuickChip("振り返り", false, Modifier.weight(1f), onReflection)
-            }
-        }
-    }
-}
-@Composable private fun CircleNav(icon: androidx.compose.ui.graphics.vector.ImageVector, cd: String, onClick: () -> Unit, enabled: Boolean = true) { Surface(onClick = onClick, enabled = enabled, modifier = Modifier.size(36.dp), shape = CircleShape, color = MaterialTheme.appColors.surfaceCool) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, cd) } } }
-@Composable private fun QuickChip(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) { Surface(onClick = onClick, modifier = modifier.height(42.dp), shape = MaterialTheme.shapes.small, color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.appColors.surfaceCool, contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.appColors.inkSecondary) { Box(contentAlignment = Alignment.Center) { Text(label, fontWeight = FontWeight.SemiBold) } } }
 
 @Composable private fun SleepCard(bed: LocalTime?, wake: LocalTime?, quality: SleepQuality?, duration: Int?, onBed: () -> Unit, onWake: () -> Unit, onQuality: (SleepQuality) -> Unit) {
     Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)) { Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -188,4 +181,3 @@ private fun Int.toUiQuality(): SleepQuality? = when (this) { 1 -> SleepQuality.B
 private fun formatDuration(minutes: Int): String = if (minutes / 60 == 0) "${minutes % 60}分" else "${minutes / 60}時間${minutes % 60}分"
 private fun todayDateString(): String = LocalDate.now(TokyoZone).toString()
 private fun showTimePicker(context: android.content.Context, initial: LocalTime?, onSelected: (LocalTime) -> Unit) { TimePickerDialog(context, { _, h, m -> onSelected(LocalTime.of(h, m)) }, initial?.hour ?: 23, initial?.minute ?: 0, true).show() }
-private fun showDatePicker(context: android.content.Context, initial: LocalDate, onSelected: (LocalDate) -> Unit) { DatePickerDialog(context, { _, y, mo, d -> onSelected(LocalDate.of(y, mo + 1, d)) }, initial.year, initial.monthValue - 1, initial.dayOfMonth).show() }
