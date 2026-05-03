@@ -12,16 +12,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -50,20 +51,16 @@ import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.appColors
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeParseException
-import java.time.format.TextStyle
 import java.util.Locale
 
-
-private enum class ReflectionFieldFilter(
-    val label: String,
-    val timelineLabel: String
-) {
+private enum class ReflectionFieldFilter(val label: String, val timelineLabel: String) {
     SUMMARY("Note", "NOTE"),
     WINS("Good", "GOOD"),
     DIFFICULTIES("気づき", "気づき"),
-    INSIGHTS("気づき", "気づき"),
-    TOMORROW_FIRST_ACTION("Next", "NEXT")
+    INSIGHTS("内省", "内省"),
+    TOMORROW_FIRST_ACTION("改善", "改善")
 }
 
 private data class ReflectionListUiState(
@@ -71,10 +68,16 @@ private data class ReflectionListUiState(
     val fieldFilters: Set<ReflectionFieldFilter> = emptySet()
 )
 
-private sealed interface ReflectionTimelineItem {
-    data class MonthHeader(val label: String) : ReflectionTimelineItem
-    data class ReflectionCard(val reflection: DailyReflection) : ReflectionTimelineItem
-}
+private data class ReflectionDayGroup(
+    val date: LocalDate,
+    val entries: List<Pair<ReflectionFieldFilter, String>>,
+    val reflectionDateKey: String
+)
+
+private data class ReflectionMonthGroup(
+    val yearMonth: YearMonth,
+    val days: List<ReflectionDayGroup>
+)
 
 @Composable
 fun ReflectionTimelineScreen(
@@ -89,11 +92,11 @@ fun ReflectionTimelineScreen(
     var isFilterSheetOpen by rememberSaveable { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
 
-    val timelineItems = remember(reflections, uiState) {
-        buildTimelineItems(reflections = reflections, uiState = uiState)
+    val monthGroups = remember(reflections, uiState) {
+        buildMonthGroups(reflections = reflections, uiState = uiState)
     }
 
-    Scaffold(modifier = modifier) { padding ->
+    Scaffold(modifier = modifier, containerColor = MaterialTheme.colorScheme.background) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -108,9 +111,9 @@ fun ReflectionTimelineScreen(
                 navigationContentDescription = "メニュー",
                 onNavigationClick = onMenuClick,
                 actions = {
-                    CompactHeaderIconButton(selected = false, onClick = { isSearchExpanded = true }, icon = Icons.Default.Search, contentDescription = "検索")
-                    CompactHeaderIconButton(selected = uiState.fieldFilters.isNotEmpty(), onClick = { isFilterSheetOpen = true }, icon = Icons.Default.FilterList, contentDescription = "フィルター", showNotificationDot = uiState.fieldFilters.isNotEmpty())
-                    CompactHeaderIconButton(selected = false, onClick = onCreateToday, icon = Icons.Default.Add, contentDescription = "今日を入力")
+                    CompactHeaderIconButton(selected = false, onClick = { isSearchExpanded = true }, icon = Icons.Outlined.Search, contentDescription = "検索")
+                    CompactHeaderIconButton(selected = uiState.fieldFilters.isNotEmpty(), onClick = { isFilterSheetOpen = true }, icon = Icons.Outlined.FilterList, contentDescription = "フィルター", showNotificationDot = uiState.fieldFilters.isNotEmpty())
+                    CompactHeaderIconButton(selected = false, onClick = onCreateToday, icon = Icons.Outlined.Add, contentDescription = "追加")
                 }
             )
 
@@ -128,16 +131,23 @@ fun ReflectionTimelineScreen(
                 LaunchedEffect(Unit) { searchFocusRequester.requestFocus() }
             }
 
-            if (timelineItems.isEmpty()) {
+            if (monthGroups.isEmpty()) {
                 Surface(modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.appColors.dividerSubtle, MaterialTheme.shapes.large), color = MaterialTheme.appColors.surfaceElevated, shape = MaterialTheme.shapes.large) {
-                    Text("まだ振り返りがありません", modifier = Modifier.padding(16.dp), color = MaterialTheme.appColors.inkTertiary)
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("まだ振り返りがありません", color = MaterialTheme.appColors.inkTertiary)
+                        Text("今日の気づきや良かったことを追加してみましょう", color = MaterialTheme.appColors.inkTertiary, style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 12.dp)) {
-                    items(timelineItems) { item ->
-                        when (item) {
-                            is ReflectionTimelineItem.MonthHeader -> MonthHeader(item.label)
-                            is ReflectionTimelineItem.ReflectionCard -> TimelineRow(item.reflection, uiState.fieldFilters) { onOpenReflection(item.reflection.date) }
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    monthGroups.forEach { group ->
+                        item { ReflectionMonthHeader(group.yearMonth) }
+                        items(group.days) { day ->
+                            ReflectionDayCard(day = day, onClick = { onOpenReflection(day.reflectionDateKey) })
                         }
                     }
                 }
@@ -157,43 +167,61 @@ fun ReflectionTimelineScreen(
 }
 
 @Composable
-private fun MonthHeader(label: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text = label.uppercase(Locale.US), style = MaterialTheme.typography.titleSmall.copy(letterSpacing = 2.sp), color = MaterialTheme.appColors.inkTertiary)
-        Box(modifier = Modifier.padding(start = 10.dp).weight(1f).height(1.dp).background(MaterialTheme.appColors.dividerSubtle))
+private fun ReflectionMonthHeader(yearMonth: YearMonth, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = "%04d ・ %s".format(yearMonth.year, yearMonth.month.name),
+            style = MaterialTheme.typography.labelMedium,
+            letterSpacing = 4.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold
+        )
+        HorizontalDivider(modifier = Modifier.padding(start = 12.dp).weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
 @Composable
-private fun TimelineRow(reflection: DailyReflection, fieldFilters: Set<ReflectionFieldFilter>, onClick: () -> Unit) {
-    val date = reflection.date.toLocalDateOrNull()
-    val isToday = date == LocalDate.now()
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.width(56.dp), horizontalAlignment = Alignment.End) {
-            Text(text = date?.dayOfMonth?.toString() ?: "-", style = MaterialTheme.typography.displayMedium, color = if (isToday) SemanticColors.InfoMain else MaterialTheme.appColors.inkStrongAlt)
-            Text(text = date?.dayOfWeekLabel() ?: "", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.appColors.inkTertiary)
-            if (isToday) {
-                Text(text = "TODAY", style = MonoTypography.Micro.copy(color = SemanticColors.InfoMain, letterSpacing = 1.sp), modifier = Modifier.padding(top = 2.dp))
+private fun ReflectionDayCard(day: ReflectionDayGroup, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(Modifier.fillMaxWidth().padding(16.dp)) {
+            ReflectionDateColumn(date = day.date)
+            Column(modifier = Modifier.weight(1f).padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                day.entries.forEachIndexed { index, entry ->
+                    ReflectionEntryItem(filter = entry.first, text = entry.second)
+                    if (index < day.entries.lastIndex) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+                }
             }
         }
-        Box(modifier = Modifier.width(16.dp))
-        ReflectionTimelineEntries(reflection, fieldFilters, onClick)
     }
 }
 
 @Composable
-private fun ReflectionTimelineEntries(reflection: DailyReflection, fieldFilters: Set<ReflectionFieldFilter>, onClick: () -> Unit) {
-    val contentItems = listOf(
-        ReflectionFieldFilter.SUMMARY to reflection.summary,
-        ReflectionFieldFilter.WINS to reflection.wins,
-        ReflectionFieldFilter.DIFFICULTIES to reflection.difficulties,
-        ReflectionFieldFilter.INSIGHTS to reflection.insights,
-        ReflectionFieldFilter.TOMORROW_FIRST_ACTION to reflection.tomorrowFirstAction
-    ).filter { (filter, text) -> text.isNotBlank() && (fieldFilters.isEmpty() || filter in fieldFilters) }
+private fun ReflectionDateColumn(date: LocalDate) {
+    Column(
+        modifier = Modifier.width(88.dp).padding(end = 12.dp).border(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant, shape = RoundedCornerShape(0.dp)).padding(end = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = date.dayOfMonth.toString(), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkStrongAlt)
+        Text(text = date.dayOfWeekLabel(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.appColors.inkTertiary)
+    }
+}
 
-    Column(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        contentItems.forEachIndexed { index, (filter, text) ->
-            TimelineEntry(filter, text, showDivider = index < contentItems.lastIndex)
+@Composable
+private fun ReflectionEntryItem(filter: ReflectionFieldFilter, text: String) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+        Box(modifier = Modifier.width(4.dp).height(58.dp).clip(AppShapeTokens.Tech).background(filterColor(filter)))
+        Column(modifier = Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(text = filter.timelineLabel, color = filterColor(filter), style = MonoTypography.Micro.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp))
+            Text(text = text, color = MaterialTheme.appColors.inkStrongAlt, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
@@ -202,20 +230,9 @@ private fun ReflectionTimelineEntries(reflection: DailyReflection, fieldFilters:
 private fun filterColor(filter: ReflectionFieldFilter) = when (filter) {
     ReflectionFieldFilter.SUMMARY -> MaterialTheme.appColors.inkTertiary
     ReflectionFieldFilter.WINS -> SemanticColors.PositiveMain
-    ReflectionFieldFilter.DIFFICULTIES, ReflectionFieldFilter.INSIGHTS -> SemanticColors.WarningMain
-    ReflectionFieldFilter.TOMORROW_FIRST_ACTION -> SemanticColors.InfoMain
-}
-
-@Composable
-private fun TimelineEntry(filter: ReflectionFieldFilter, text: String, showDivider: Boolean) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Box(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp).width(3.dp).height(88.dp).clip(AppShapeTokens.Tech).background(filterColor(filter)))
-        Column(modifier = Modifier.weight(1f).padding(start = 14.dp, top = 18.dp, bottom = 18.dp)) {
-            Text(text = filter.timelineLabel, color = filterColor(filter), style = MonoTypography.Micro.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.8.sp))
-            Text(text = text, color = if (filter == ReflectionFieldFilter.TOMORROW_FIRST_ACTION) SemanticColors.InfoMain else if (filter == ReflectionFieldFilter.SUMMARY) MaterialTheme.appColors.inkTertiary else MaterialTheme.appColors.inkStrongAlt, style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 25.sp), fontStyle = if (filter == ReflectionFieldFilter.SUMMARY) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal, modifier = Modifier.padding(top = 8.dp))
-        }
-    }
-    if (showDivider) Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.appColors.dividerSubtle))
+    ReflectionFieldFilter.DIFFICULTIES -> SemanticColors.WarningMain
+    ReflectionFieldFilter.INSIGHTS -> SemanticColors.InfoMain
+    ReflectionFieldFilter.TOMORROW_FIRST_ACTION -> SemanticColors.NegativeMain
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -242,40 +259,40 @@ private fun FilterOptionChip(label: String, selected: Boolean, onClick: () -> Un
     }
 }
 
-private fun buildTimelineItems(reflections: List<DailyReflection>, uiState: ReflectionListUiState): List<ReflectionTimelineItem> {
-    val filtered = reflections.asSequence().filter { it.hasAnyContent() }.sortedByDescending { it.date }.filter { it.date.toLocalDateOrNull() != null }
+private fun buildMonthGroups(reflections: List<DailyReflection>, uiState: ReflectionListUiState): List<ReflectionMonthGroup> {
+    val filteredByReflection = reflections.asSequence()
+        .filter { it.hasAnyContent() }
         .filter { reflection -> if (uiState.query.isBlank()) true else reflection.searchableText().contains(uiState.query.trim().lowercase(Locale.JAPAN)) }
-        .filter { reflection ->
-            val selected = uiState.fieldFilters
-            if (selected.isEmpty()) true else selected.any { filter ->
-                when (filter) {
-                    ReflectionFieldFilter.SUMMARY -> reflection.summary.isNotBlank()
-                    ReflectionFieldFilter.WINS -> reflection.wins.isNotBlank()
-                    ReflectionFieldFilter.DIFFICULTIES -> reflection.difficulties.isNotBlank() || reflection.insights.isNotBlank()
-                    ReflectionFieldFilter.INSIGHTS -> reflection.insights.isNotBlank() || reflection.difficulties.isNotBlank()
-                    ReflectionFieldFilter.TOMORROW_FIRST_ACTION -> reflection.tomorrowFirstAction.isNotBlank()
-                }
-            }
-        }.toList()
-    if (filtered.isEmpty()) return emptyList()
-    val items = mutableListOf<ReflectionTimelineItem>()
-    var currentHeader: String? = null
-    filtered.forEach { reflection ->
-        val header = monthHeaderLabel(reflection.date)
-        if (header != currentHeader) {
-            currentHeader = header
-            items += ReflectionTimelineItem.MonthHeader(header)
+        .mapNotNull { reflection ->
+            val date = reflection.date.toLocalDateOrNull() ?: return@mapNotNull null
+            val entries = reflection.entries(uiState.fieldFilters)
+            if (entries.isEmpty()) null else date to ReflectionDayGroup(date = date, entries = entries, reflectionDateKey = reflection.date)
         }
-        items += ReflectionTimelineItem.ReflectionCard(reflection)
-    }
-    return items
+        .toList()
+
+    return filteredByReflection
+        .groupBy { YearMonth.from(it.first) }
+        .toSortedMap(compareByDescending { it })
+        .map { (yearMonth, dayPairs) ->
+            ReflectionMonthGroup(
+                yearMonth = yearMonth,
+                days = dayPairs.map { it.second }.sortedByDescending { it.date }
+            )
+        }
+}
+
+private fun DailyReflection.entries(selectedFilters: Set<ReflectionFieldFilter>): List<Pair<ReflectionFieldFilter, String>> {
+    val all = listOf(
+        ReflectionFieldFilter.WINS to wins,
+        ReflectionFieldFilter.DIFFICULTIES to difficulties,
+        ReflectionFieldFilter.INSIGHTS to insights,
+        ReflectionFieldFilter.TOMORROW_FIRST_ACTION to tomorrowFirstAction,
+        ReflectionFieldFilter.SUMMARY to summary
+    )
+    return all.filter { (filter, text) -> text.isNotBlank() && (selectedFilters.isEmpty() || filter in selectedFilters) }
 }
 
 private fun DailyReflection.hasAnyContent(): Boolean = wins.isNotBlank() || difficulties.isNotBlank() || insights.isNotBlank() || tomorrowFirstAction.isNotBlank() || summary.isNotBlank()
 private fun DailyReflection.searchableText(): String = listOf(date, wins, difficulties, insights, tomorrowFirstAction, summary).joinToString("\n").lowercase(Locale.JAPAN)
-private fun monthHeaderLabel(dateText: String): String {
-    val date = dateText.toLocalDateOrNull() ?: return dateText
-    return "${date.year} · ${date.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}"
-}
 private fun LocalDate.dayOfWeekLabel(): String = when (dayOfWeek.value) { 1 -> "月"; 2 -> "火"; 3 -> "水"; 4 -> "木"; 5 -> "金"; 6 -> "土"; else -> "日" }
 private fun String.toLocalDateOrNull(): LocalDate? = try { LocalDate.parse(this) } catch (_: DateTimeParseException) { null }
