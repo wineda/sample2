@@ -109,7 +109,6 @@ private val ChildBubbleRightPadding = 20.dp
 private val ChildTimelineHeight = 36.dp
 private val ChildBubbleVerticalPadding = 2.dp
 private val ChildDividerTopSpacing = 2.dp
-private val ChildIconTopPadding = 0.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -253,13 +252,6 @@ fun EmotionResponseChildBubble(
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
-        StatusIconBox(
-            message = message,
-            modifier = Modifier
-                .padding(top = ChildIconTopPadding)
-                .size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
 
         Column(
             modifier = Modifier
@@ -275,8 +267,13 @@ fun EmotionResponseChildBubble(
                     .fillMaxWidth()
                     .combinedClickable(onClick = {}, onLongClick = { onLongClick(message) }),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                StatusIconBox(
+                    message = message,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = message.text,
                     style = MaterialTheme.typography.bodyMedium.copy(
