@@ -116,11 +116,7 @@ fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDa
         contentWindowInsets = WindowInsets.safeDrawing,
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            SaveBar(
-                filled = filled,
-                onCancel = onClose,
-                onSave = { saveReflection() }
-            )
+            SaveBar(onCancel = onClose, onSave = { saveReflection() })
         }
     ) { p ->
         Column(Modifier.fillMaxSize().padding(p)) {
@@ -273,14 +269,15 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
 }
 
 @Composable
-private fun SaveBar(filled: Int, onCancel: () -> Unit, onSave: () -> Unit) {
+private fun SaveBar(onCancel: () -> Unit, onSave: () -> Unit) {
+    val dividerColor = MaterialTheme.appColors.dividerCool
     Surface(
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
             .drawBehind {
                 drawLine(
-                    color = MaterialTheme.appColors.dividerCool,
+                    color = dividerColor,
                     start = Offset(0f, 0f),
                     end = Offset(size.width, 0f),
                     strokeWidth = 1.dp.toPx()
