@@ -380,6 +380,7 @@ fun ChatRoute() {
             ) {
                 ModalNavigationDrawer(
                     drawerState = drawerState,
+                    gesturesEnabled = false,
                     drawerContent = {
                         JournalDrawerContent(
                             onClose = {
