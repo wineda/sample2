@@ -133,11 +133,6 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
                     onDateChange = { selectedDate = it },
                     maxDate = today,
                     datesWithRecord = recordedDates,
-                    quickOptions = listOf(
-                        DateQuickOption("7日前") { LocalDate.now(TokyoZone).minusDays(7) },
-                        DateQuickOption("昨日") { LocalDate.now(TokyoZone).minusDays(1) },
-                        DateQuickOption("今日") { LocalDate.now(TokyoZone) }
-                    )
                 )
                 TextButton(onClick = { onOpenReflection(selectedDate.toString()) }) { Text("振り返りを書く") }
                 SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it }
