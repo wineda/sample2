@@ -91,6 +91,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.example.sample2.ui.theme.Spacing
+import com.example.sample2.ui.theme.AppShapeTokens
 
 private val MessageRowHorizontalPadding = 16.dp
 
@@ -150,7 +151,7 @@ fun MessageBubble(
         ) {
             Surface(
                 color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(18.dp),
+                shape = AppShapeTokens.Bubble,
                 border = androidx.compose.foundation.BorderStroke(
                     width = 1.5.dp,
                     color = (message.emotions.maxEmotionOrNull()?.colorSpec() ?: EmotionPalette.Neutral).main
@@ -333,7 +334,7 @@ fun DateLabel(timestamp: Long) {
 
         Surface(
             color = MaterialTheme.appColors.inkPrimary,
-            shape = RoundedCornerShape(4.dp)
+            shape = MaterialTheme.shapes.extraSmall
         ) {
             Text(
                 text = relative,
@@ -430,7 +431,7 @@ fun MessageActionOverlay(
             Spacer(modifier = Modifier.height(16.dp))
 
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(1.5.dp, if (isTextFocused) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.surfaceSubtleDeep),
                 tonalElevation = 0.dp,
@@ -503,7 +504,7 @@ fun MessageActionOverlay(
                             onSelected = { editingTimestamp = it }
                         )
                     },
-                shape = RoundedCornerShape(14.dp),
+                shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surface
             ) {
                 Row(
@@ -513,7 +514,7 @@ fun MessageActionOverlay(
                     Box(
                         modifier = Modifier
                             .size(28.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(MaterialTheme.shapes.small)
                             .background(MaterialTheme.appColors.surfaceSubtle),
                         contentAlignment = Alignment.Center
                     ) {
@@ -543,7 +544,7 @@ fun MessageActionOverlay(
             Spacer(modifier = Modifier.height(18.dp))
 
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
                 tonalElevation = 2.dp,
                 shadowElevation = 6.dp
@@ -596,7 +597,7 @@ fun MessageActionOverlay(
             Spacer(modifier = Modifier.height(8.dp))
 
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
                 tonalElevation = 2.dp,
                 shadowElevation = 6.dp
@@ -610,7 +611,7 @@ fun MessageActionOverlay(
             Spacer(modifier = Modifier.height(8.dp))
 
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
                 tonalElevation = 2.dp,
                 shadowElevation = 6.dp
@@ -763,7 +764,7 @@ private fun AdditiveEmotionEditor(
 
         if (showPalette && remainingEmotions.isNotEmpty()) {
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface
             ) {
                 Column(
@@ -785,7 +786,7 @@ private fun AdditiveEmotionEditor(
                                 modifier = Modifier
                                     .weight(1f)
                                     .aspectRatio(1f)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(MaterialTheme.shapes.medium)
                                     .background(MaterialTheme.appColors.surfaceSubtle)
                                     .clickable(enabled = !isAdded) {
                                         onEmotionsChanged(emotions.withScore(emotion, 1))
@@ -820,7 +821,7 @@ private fun AddEmotionButton(text: String, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(14.dp),
+        shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.5.dp, MaterialTheme.appColors.borderStrong)
     ) {
@@ -844,7 +845,7 @@ private fun EmotionSegmentRow(
 ) {
     val colorSpec = emotion.colorSpec()
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface
     ) {
         Row(
@@ -878,9 +879,9 @@ private fun EmotionSegmentRow(
                         modifier = Modifier
                             .weight(1f)
                             .height(28.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(MaterialTheme.shapes.small)
                             .clickable { onValueChanged(score) },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = MaterialTheme.shapes.small,
                         color = if (score == value) colorSpec.main else MaterialTheme.appColors.surfaceSubtle
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -926,7 +927,7 @@ private fun CollapsibleActionTypeEditor(
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(MaterialTheme.shapes.small)
                     .background(selectedSpec.color.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center
             ) {
@@ -1024,11 +1025,11 @@ private fun ActionTypeGrid(
                             .weight(1f)
                             .aspectRatio(1f)
                             .heightIn(min = 92.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(MaterialTheme.shapes.medium)
                             .background(if (isSelected) uiSpec.color.copy(alpha = 0.18f) else MaterialTheme.appColors.surfaceSubtle)
                             .border(
                                 if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
-                                RoundedCornerShape(12.dp)
+                                MaterialTheme.shapes.medium
                             )
                             .clickable { onSelected(type) }
                             .padding(horizontal = 6.dp, vertical = 8.dp),
@@ -1133,7 +1134,7 @@ fun ActionFlagIconButton(
     }
 
     Surface(
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         color = bgColor,
         modifier = modifier.clickable { onClick() }
     ) {
@@ -1179,7 +1180,7 @@ private fun StatusIconBox(
         if (display != null) {
             Surface(
                 color = display.color.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(10.dp)
+                shape = MaterialTheme.shapes.small
             ) {
                 Box(
                     modifier = Modifier.size(28.dp),
@@ -1212,7 +1213,7 @@ private fun ChildStatusIconBox(
         if (display != null) {
             Surface(
                 color = display.color.copy(alpha = 0.12f),
-                shape = RoundedCornerShape(8.dp)
+                shape = MaterialTheme.shapes.small
             ) {
                 Box(
                     modifier = Modifier.size(24.dp),
@@ -1296,7 +1297,7 @@ private fun EmotionCircleBadge(
     Box(
         modifier = Modifier
             .size(size)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(MaterialTheme.shapes.small)
             .background(ui.color.copy(alpha = 0.16f * alpha)),
         contentAlignment = Alignment.Center
     ) {

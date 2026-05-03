@@ -206,7 +206,7 @@ fun CompactHeaderIconButton(
     Surface(
         modifier = modifier.size(40.dp),
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         color = Color.Transparent,
         contentColor = contentColor,
         tonalElevation = 0.dp,
@@ -306,8 +306,8 @@ fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDat
             Column(Modifier.weight(1f).clickable { showDialog=true }.semantics { contentDescription = "日付選択" }, horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.JAPAN)), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkPrimary)
-                    if (selectedDate==today) Surface(shape=RoundedCornerShape(3.dp), color=SemanticColors.InfoMain){ Text("TODAY", color=Color.White, fontFamily=FontFamily.Monospace, fontSize=9.sp, letterSpacing=1.sp, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
-                    else if (selectedDate<today) Surface(shape=RoundedCornerShape(3.dp), color=MaterialTheme.appColors.surfaceCool){ Text("${ChronoUnit.DAYS.between(selectedDate,today)}日前", color=MaterialTheme.appColors.inkTertiary, fontFamily=FontFamily.Monospace, fontSize=9.sp, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
+                    if (selectedDate==today) Surface(shape=AppShapeTokens.Tech, color=SemanticColors.InfoMain){ Text("TODAY", color=Color.White, fontFamily=FontFamily.Monospace, fontSize=9.sp, letterSpacing=1.sp, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
+                    else if (selectedDate<today) Surface(shape=AppShapeTokens.Tech, color=MaterialTheme.appColors.surfaceCool){ Text("${ChronoUnit.DAYS.between(selectedDate,today)}日前", color=MaterialTheme.appColors.inkTertiary, fontFamily=FontFamily.Monospace, fontSize=9.sp, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
                 }
                 Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(Icons.Default.CalendarMonth, null, modifier=Modifier.size(14.dp), tint=MaterialTheme.appColors.inkTertiary)
@@ -321,7 +321,7 @@ fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDat
                 quickOptions.forEach { opt ->
                     val target = opt.resolveDate(selectedDate)
                     val selected = target == selectedDate
-                    Surface(onClick = { onDateChange(target) }, shape = RoundedCornerShape(999.dp), color = if(selected) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.surfaceCool, contentColor = if(selected) Color.White else MaterialTheme.appColors.inkSecondary) {
+                    Surface(onClick = { onDateChange(target) }, shape = AppShapeTokens.Pill, color = if(selected) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.surfaceCool, contentColor = if(selected) Color.White else MaterialTheme.appColors.inkSecondary) {
                         Text(opt.label, modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp), fontSize=11.sp, fontWeight=FontWeight.Bold)
                     }
                 }

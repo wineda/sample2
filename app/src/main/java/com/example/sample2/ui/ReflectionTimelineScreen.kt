@@ -186,7 +186,7 @@ private fun ReflectionMonthHeader(yearMonth: YearMonth, modifier: Modifier = Mod
 private fun ReflectionDayCard(day: ReflectionDayGroup, onClick: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
         shadowElevation = 1.dp,

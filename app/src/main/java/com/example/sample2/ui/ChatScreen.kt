@@ -97,6 +97,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.example.sample2.ui.theme.Spacing
+import com.example.sample2.ui.theme.AppShapeTokens
 
 private enum class JournalScreenMode {
     Journal,
@@ -807,7 +808,7 @@ private fun JournalBottomTab(
             modifier = Modifier
                 .height(2.dp)
                 .size(width = 14.dp, height = 2.dp)
-                .clip(RoundedCornerShape(2.dp))
+                .clip(AppShapeTokens.Tech)
                 .background(if (selected) SemanticColors.AccentRed else Color.Transparent)
         )
     }
@@ -997,7 +998,7 @@ private fun CompactActionChip(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         color = containerColor,
         contentColor = contentColor,
         tonalElevation = 0.dp,

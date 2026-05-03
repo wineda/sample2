@@ -106,6 +106,7 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.example.sample2.ui.theme.Spacing
+import com.example.sample2.ui.theme.AppShapeTokens
 
 private const val AnalyticsLogTag = "PersonalityAnalytics"
 
@@ -629,7 +630,7 @@ fun PersonalityAnalyticsScreen(
                         items(EmotionType.values().toList()) { emotion ->
                             Surface(
                                 tonalElevation = 2.dp,
-                                shape = RoundedCornerShape(12.dp),
+                                shape = MaterialTheme.shapes.medium,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 EmotionHeatmapBlock(
@@ -643,7 +644,7 @@ fun PersonalityAnalyticsScreen(
                         items(ActionType.values().toList()) { action ->
                             Surface(
                                 tonalElevation = 2.dp,
-                                shape = RoundedCornerShape(12.dp),
+                                shape = MaterialTheme.shapes.medium,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 ActionHeatmapBlock(
@@ -882,7 +883,7 @@ private fun StateBadge(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(999.dp),
+        shape = AppShapeTokens.Pill,
         color = containerColor,
         contentColor = contentColor
     ) {
@@ -990,7 +991,7 @@ private fun MultiLineChart(
                                     } else {
                                         item.color
                                     },
-                                    RoundedCornerShape(999.dp)
+                                    AppShapeTokens.Pill
                                 )
                         )
                         Text(
@@ -1415,7 +1416,7 @@ private fun ToggleChipLikeButton(
     Surface(
         modifier = modifier,
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
+        shape = MaterialTheme.shapes.small,
         color = if (selected) {
             MaterialTheme.colorScheme.primaryContainer
         } else {
@@ -2196,7 +2197,7 @@ private fun SimpleLineChart(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(6.dp),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     Text(
