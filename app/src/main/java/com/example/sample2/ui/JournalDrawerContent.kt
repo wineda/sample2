@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.MenuIconPalette
 import com.example.sample2.ui.theme.appColors
+import com.example.sample2.ui.theme.Spacing
 
 @Composable
 fun JournalDrawerContent(
@@ -77,7 +78,7 @@ fun JournalDrawerContent(
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.66.sp,
                 color = MaterialTheme.appColors.inkTertiary,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                modifier = Modifier.padding(horizontal = Spacing.xl, vertical = 12.dp)
             )
 
             Column(
@@ -117,7 +118,7 @@ fun JournalDrawerContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp, bottom = 8.dp)
+                    .padding(top = Spacing.md, bottom = 8.dp)
                     .height(8.dp)
                     .background(MaterialTheme.appColors.surfaceMuted)
             )
@@ -128,7 +129,7 @@ fun JournalDrawerContent(
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.66.sp,
                 color = MaterialTheme.appColors.inkTertiary,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                modifier = Modifier.padding(horizontal = Spacing.xl, vertical = 12.dp)
             )
 
             Column(
@@ -175,7 +176,7 @@ fun JournalDrawerContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.appColors.surfaceMuted)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = Spacing.xl, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -202,7 +203,7 @@ private fun SmartDrawerHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 16.dp, top = 2.dp, bottom = 10.dp),
+            .padding(start = Spacing.xl, end = 16.dp, top = 2.dp, bottom = Spacing.md),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -252,7 +253,7 @@ private fun SmartDrawerMenuItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 14.dp),
+                .padding(horizontal = Spacing.xl, vertical = Spacing.md),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(

@@ -140,7 +140,7 @@ fun HeatmapScreen(
                         items(EmotionType.values().toList()) { emotion ->
                             Surface(
                                 tonalElevation = 2.dp,
-                                shape = RoundedCornerShape(12.dp),
+                                shape = MaterialTheme.shapes.medium,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 EmotionHeatmapBlock(
@@ -165,7 +165,7 @@ fun HeatmapScreen(
                         items(ActionType.values().toList()) { action ->
                             Surface(
                                 tonalElevation = 2.dp,
-                                shape = RoundedCornerShape(12.dp),
+                                shape = MaterialTheme.shapes.medium,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 ActionHeatmapBlock(

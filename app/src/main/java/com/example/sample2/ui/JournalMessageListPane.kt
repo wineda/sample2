@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sample2.util.getDateKey
 import kotlinx.coroutines.launch
+import com.example.sample2.ui.theme.AppShapeTokens
 
 @Composable
 fun <T> JournalMessageListPane(
@@ -117,7 +118,7 @@ private fun ScrollToBottomButton(
             .size(48.dp)
             .background(
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(50)
+                shape = AppShapeTokens.Pill
             )
     ) {
         Icon(

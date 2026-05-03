@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.example.sample2.ui.theme.Spacing
 
 @Composable
 fun SmartInputBar(
@@ -92,7 +93,7 @@ fun SmartInputBar(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 6.dp, vertical = 10.dp),
+                            .padding(horizontal = 6.dp, vertical = Spacing.md),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         if (inputText.isBlank()) {

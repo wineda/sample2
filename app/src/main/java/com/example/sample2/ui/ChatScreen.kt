@@ -96,6 +96,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import com.example.sample2.ui.theme.Spacing
+import com.example.sample2.ui.theme.AppShapeTokens
 
 private enum class JournalScreenMode {
     Journal,
@@ -736,7 +738,7 @@ private fun JournalBottomModeBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp, bottom = 18.dp)
+                .padding(top = 12.dp, bottom = Spacing.lg)
                 .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
@@ -806,7 +808,7 @@ private fun JournalBottomTab(
             modifier = Modifier
                 .height(2.dp)
                 .size(width = 14.dp, height = 2.dp)
-                .clip(RoundedCornerShape(2.dp))
+                .clip(AppShapeTokens.Tech)
                 .background(if (selected) SemanticColors.AccentRed else Color.Transparent)
         )
     }
@@ -902,7 +904,7 @@ private fun WorkActionSummaryRow(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
         WorkActionSummaryItem(
@@ -996,7 +998,7 @@ private fun CompactActionChip(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         color = containerColor,
         contentColor = contentColor,
         tonalElevation = 0.dp,
@@ -1006,7 +1008,7 @@ private fun CompactActionChip(
         Row(
             modifier = Modifier
                 .height(30.dp)
-                .padding(horizontal = 10.dp),
+                .padding(horizontal = Spacing.md),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

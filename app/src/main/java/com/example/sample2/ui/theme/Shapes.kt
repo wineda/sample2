@@ -21,4 +21,7 @@ object AppShapeTokens {
     val Pill = RoundedCornerShape(999.dp)
     /** Reflection 系のテクニカル/レポート風の角（極小） */
     val Tech = RoundedCornerShape(2.dp)
+    /** チャット吹き出し・主要カード等の「やや大きい角丸」。
+     *  Material shapes.large (16dp) と被るため、bubble だけは別名で残す */
+    val Bubble = RoundedCornerShape(18.dp)
 }

@@ -55,6 +55,9 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeParseException
 import java.util.Locale
+import com.example.sample2.ui.components.AppCard
+import com.example.sample2.ui.components.AppCardVariant
+import com.example.sample2.ui.theme.Spacing
 
 private enum class ReflectionFieldFilter(val label: String, val timelineLabel: String) {
     SUMMARY("ひとことまとめ", "ひとことまとめ"),
@@ -183,17 +186,15 @@ private fun ReflectionMonthHeader(yearMonth: YearMonth, modifier: Modifier = Mod
 
 @Composable
 private fun ReflectionDayCard(day: ReflectionDayGroup, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
-        shadowElevation = 1.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    AppCard(
+        modifier = Modifier.clickable(onClick = onClick),
+        variant = AppCardVariant.Outlined,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(Spacing.lg),
+        verticalSpacing = 0.dp
     ) {
-        Row(Modifier.fillMaxWidth().padding(16.dp)) {
+        Row(Modifier.fillMaxWidth()) {
             ReflectionDateColumn(date = day.date)
-            Column(modifier = Modifier.weight(1f).padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(modifier = Modifier.weight(1f).padding(start = Spacing.md), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 day.entries.forEachIndexed { index, entry ->
                     ReflectionEntryItem(filter = entry.first, text = entry.second)
                     if (index < day.entries.lastIndex) {
@@ -264,7 +265,7 @@ private fun ReflectionFilterSheet(selectedFilters: Set<ReflectionFieldFilter>, o
 @Composable
 private fun FilterOptionChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Surface(modifier = Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = onClick), color = if (selected) MaterialTheme.appColors.inkStrongAlt else MaterialTheme.colorScheme.surface) {
-        Text(text = label, color = if (selected) MaterialTheme.appColors.inkOnInk else MaterialTheme.appColors.inkPrimary, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), style = MaterialTheme.typography.bodySmall)
+        Text(text = label, color = if (selected) MaterialTheme.appColors.inkOnInk else MaterialTheme.appColors.inkPrimary, modifier = Modifier.padding(horizontal = Spacing.md, vertical = 8.dp), style = MaterialTheme.typography.bodySmall)
     }
 }
 

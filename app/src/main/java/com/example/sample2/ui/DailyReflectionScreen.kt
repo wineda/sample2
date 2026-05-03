@@ -3,7 +3,6 @@ package com.example.sample2.ui
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -29,8 +28,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -68,6 +65,9 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
+import com.example.sample2.ui.components.AppCard
+import com.example.sample2.ui.components.AppCardVariant
+import com.example.sample2.ui.theme.Spacing
 
 @Composable
 fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDateString(), onClose: () -> Unit, onSaved: () -> Unit = {}) {
@@ -142,8 +142,8 @@ fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDa
                 Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .padding(horizontal = 12.dp, vertical = Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
                 SummarySection(hints, score, state = score?.state, hasBreakdown = hasBreakdown)
                 InputHead(filled)
@@ -159,13 +159,7 @@ fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDa
 
 @Composable
 private fun SummarySection(h: ReflectionHints, s: com.example.sample2.analytics.DailyPersonalityScore?, state: PersonalityState?, hasBreakdown: Boolean) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)
-    ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    AppCard(variant = AppCardVariant.Outlined, verticalSpacing = Spacing.md) {
             Text("今日の状態", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.appColors.inkPrimary)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("ステータス", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
@@ -181,10 +175,9 @@ private fun SummarySection(h: ReflectionHints, s: com.example.sample2.analytics.
             Text("睡眠  ${h.dailyRecordText.substringBefore(" /")}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
             Text("感情傾向  ${h.emotionTrendText.removePrefix("感情傾向: ")}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
             Text("体調フラグ  ${if (hasBreakdown) "あり" else "なし"}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
-            Box(Modifier.fillMaxWidth().background(MaterialTheme.appColors.surfaceMuted).border(1.dp, MaterialTheme.appColors.dividerNeutral).padding(10.dp)) {
+            Box(Modifier.fillMaxWidth().background(MaterialTheme.appColors.surfaceMuted).border(1.dp, MaterialTheme.appColors.dividerNeutral).padding(Spacing.md)) {
                 Text(s?.summary ?: h.analysisSummaryText, style = MaterialTheme.typography.labelMedium.copy(lineHeight = 17.sp), color = MaterialTheme.appColors.inkSecondary)
             }
-        }
     }
 }
 
@@ -234,13 +227,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
         label = ""
     )
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)
-    ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AppCard(variant = AppCardVariant.Outlined, verticalSpacing = 8.dp) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
@@ -272,7 +259,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
                     .fillMaxWidth()
                     .background(if (done || focused) MaterialTheme.colorScheme.surface else MaterialTheme.appColors.surfaceMuted, AppShapeTokens.Tech)
                     .border(1.dp, border, AppShapeTokens.Tech)
-                    .padding(10.dp, 8.dp),
+                    .padding(Spacing.md, 8.dp),
                 decorationBox = { inner ->
                     if (value.text.isBlank()) Text(placeholder, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.appColors.inkDisabled)
                     inner()
@@ -281,7 +268,6 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
             if (!sub.isNullOrBlank()) {
                 Text(sub, fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, fontFamily = FontFamily.Monospace)
             }
-        }
     }
 }
 
@@ -310,10 +296,10 @@ private fun SaveBar(onCancel: () -> Unit, onSave: () -> Unit) {
                     strokeWidth = 1.dp.toPx()
                 )
             }
-            .padding(10.dp)
+            .padding(Spacing.md)
             .imePadding()
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), modifier = Modifier.fillMaxWidth()) {
             TextButton(
                 onClick = onCancel,
                 modifier = Modifier.weight(0.35f).height(52.dp),
