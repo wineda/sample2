@@ -90,6 +90,7 @@ import com.example.sample2.data.MessageV2
 import com.example.sample2.data.SleepData
 import com.example.sample2.data.EmotionType
 import com.example.sample2.ui.ActionHeatmapBlock
+import com.example.sample2.ui.CompactHeaderIconButton
 import com.example.sample2.ui.EmotionHeatmapBlock
 import com.example.sample2.ui.JournalTopHeader
 import com.example.sample2.ui.filter.PeriodPreset
