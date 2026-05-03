@@ -107,7 +107,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
     val duration = if (bedTime != null && wakeTime != null) computeDurationMinutes(bedTime!!, wakeTime!!) else null
     val enabled = bedTime != null || wakeTime != null || quality != null || steps > 0
     val filledCount = listOf(bedTime != null || wakeTime != null, quality != null, steps > 0).count { it }
-    val dailyRecords = remember { JournalJsonStorage.readJournalData(context).dailyRecords }
+    val dailyRecords = remember { JournalJsonStorage.loadDailyRecords(context) }
     val recordedDates = remember(dailyRecords) { dailyRecords.mapNotNull { runCatching { LocalDate.parse(it.date) }.getOrNull() }.toSet() }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background, contentWindowInsets = WindowInsets(0, 0, 0, 0), bottomBar = {

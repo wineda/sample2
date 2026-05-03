@@ -4,7 +4,6 @@ package com.example.sample2.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.rounded.ChevronLeft
@@ -266,7 +265,6 @@ fun JournalDatePickerDialog(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialDate.atStartOfDay(zoneId).toInstant().toEpochMilli(),
         selectableDates = selectableDates,
-        locale = Locale.JAPAN
     )
     DatePickerDialog(onDismissRequest = onDismiss, confirmButton = {
         TextButton(onClick = {
@@ -279,13 +277,30 @@ fun JournalDatePickerDialog(
 }
 
 @Composable
+private fun StepperCircleNav(icon: androidx.compose.ui.graphics.vector.ImageVector, cd: String, onClick: () -> Unit, enabled: Boolean = true) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(36.dp),
+        shape = CircleShape,
+        color = MaterialTheme.appColors.surfaceCool,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(icon, cd, tint = MaterialTheme.appColors.inkPrimary)
+        }
+    }
+}
+
+@Composable
 fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDate: LocalDate? = null,maxDate: LocalDate = LocalDate.now(),datesWithRecord: Set<LocalDate> = emptySet(),quickOptions: List<DateQuickOption> = emptyList(),modifier: Modifier = Modifier) {
     var showDialog by remember { mutableStateOf(false) }
     val today = remember { LocalDate.now() }
     val showQuick = quickOptions.isNotEmpty()
     Column(modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
         Row(Modifier.fillMaxWidth().then(if(!showQuick) Modifier.drawBehind { drawLine(MaterialTheme.appColors.dividerCool, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) } else Modifier).padding(horizontal=14.dp, vertical=10.dp), verticalAlignment = Alignment.CenterVertically) {
-            CircleNav(Icons.Rounded.ChevronLeft, "前日", { onDateChange(selectedDate.minusDays(1)) }, enabled = minDate?.let { selectedDate>it } ?: true)
+            StepperCircleNav(Icons.Rounded.ChevronLeft, "前日", { onDateChange(selectedDate.minusDays(1)) }, enabled = minDate?.let { selectedDate>it } ?: true)
             Column(Modifier.weight(1f).clickable { showDialog=true }.semantics { contentDescription = "日付選択" }, horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.JAPAN)), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkPrimary)
@@ -297,7 +312,7 @@ fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDat
                     Text(selectedDate.format(DateTimeFormatter.ofPattern("E曜日", Locale.JAPAN)), fontSize=12.sp, color=MaterialTheme.appColors.inkTertiary)
                 }
             }
-            CircleNav(Icons.Rounded.ChevronRight, "翌日", { onDateChange(selectedDate.plusDays(1)) }, enabled = selectedDate < maxDate)
+            StepperCircleNav(Icons.Rounded.ChevronRight, "翌日", { onDateChange(selectedDate.plusDays(1)) }, enabled = selectedDate < maxDate)
         }
         if (showQuick) {
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).drawBehind { drawLine(MaterialTheme.appColors.dividerCool, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) }.padding(horizontal=14.dp, vertical=8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
