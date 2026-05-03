@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -986,6 +987,7 @@ private fun ActionTypeGrid(
     selectedType: ActionType?,
     onSelected: (ActionType) -> Unit
 ) {
+    val columnsPerRow = 3
     val allActionTypes = listOf(
         ActionType.EXERCISED,
         ActionType.SOCIALIZED,
@@ -1000,48 +1002,61 @@ private fun ActionTypeGrid(
         ActionType.ALCOHOL,
         ActionType.HANGOVER
     )
-    allActionTypes.chunked(4).forEach { rowTypes ->
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            rowTypes.forEach { type ->
-                val uiSpec = type.toUiSpec()
-                val isSelected = type == selectedType
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (isSelected) uiSpec.color.copy(alpha = 0.18f) else MaterialTheme.appColors.surfaceSubtle)
-                        .border(
-                            if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
-                            RoundedCornerShape(12.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        allActionTypes.chunked(columnsPerRow).forEach { rowTypes ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                rowTypes.forEach { type ->
+                    val uiSpec = type.toUiSpec()
+                    val isSelected = type == selectedType
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .heightIn(min = 92.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isSelected) uiSpec.color.copy(alpha = 0.18f) else MaterialTheme.appColors.surfaceSubtle)
+                            .border(
+                                if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .clickable { onSelected(type) }
+                            .padding(horizontal = 6.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = uiSpec.iconRes),
+                            contentDescription = type.label,
+                            modifier = Modifier.size(18.dp),
+                            tint = if (isSelected) uiSpec.color else MaterialTheme.appColors.inkSecondary
                         )
-                        .clickable { onSelected(type) },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = uiSpec.iconRes),
-                        contentDescription = type.label,
-                        modifier = Modifier.size(18.dp),
-                        tint = if (isSelected) uiSpec.color else MaterialTheme.appColors.inkSecondary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = type.label,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.appColors.inkPrimary,
-                        textAlign = TextAlign.Center
-                    )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = type.label,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.appColors.inkPrimary,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                repeat(columnsPerRow - rowTypes.size) {
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
