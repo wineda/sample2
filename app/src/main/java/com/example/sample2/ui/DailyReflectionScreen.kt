@@ -178,7 +178,6 @@ private fun SummarySection(h: ReflectionHints, s: com.example.sample2.analytics.
             Box(Modifier.fillMaxWidth().background(MaterialTheme.appColors.surfaceMuted).border(1.dp, MaterialTheme.appColors.dividerNeutral).padding(Spacing.md)) {
                 Text(s?.summary ?: h.analysisSummaryText, style = MaterialTheme.typography.labelMedium.copy(lineHeight = 17.sp), color = MaterialTheme.appColors.inkSecondary)
             }
-        }
     }
 }
 
@@ -269,7 +268,6 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
             if (!sub.isNullOrBlank()) {
                 Text(sub, fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, fontFamily = FontFamily.Monospace)
             }
-        }
     }
 }
 
