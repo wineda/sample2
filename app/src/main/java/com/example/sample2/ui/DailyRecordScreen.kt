@@ -19,9 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bedtime
@@ -117,7 +116,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
             Toast.makeText(context, "日次記録を保存しました", Toast.LENGTH_SHORT).show(); onClose()
         }, enabled = enabled)
     }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxSize().padding(padding)) {
             JournalTopHeader(
                 title = "日次記録",
                 titleStyle = JournalHeaderTitleStyle.Medium,
@@ -127,16 +126,22 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
                 onNavigationClick = onClose,
                 trailing = { HeaderProgressStack(current = filledCount, total = 3, label = "FILLED") }
             )
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                DateStepper(
-                    selectedDate = selectedDate,
-                    onDateChange = { selectedDate = it },
-                    maxDate = today,
-                    datesWithRecord = recordedDates,
-                )
-                TextButton(onClick = { onOpenReflection(selectedDate.toString()) }) { Text("振り返りを書く") }
-                SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it }
-                StepCard(steps, onSetSteps = { steps = it.coerceIn(0, 999_999) }, onDelta = { steps = applyStepDelta(steps, it) })
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    DateStepper(
+                        selectedDate = selectedDate,
+                        onDateChange = { selectedDate = it },
+                        maxDate = today,
+                        datesWithRecord = recordedDates,
+                    )
+                }
+                item { TextButton(onClick = { onOpenReflection(selectedDate.toString()) }) { Text("振り返りを書く") } }
+                item { SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it } }
+                item { StepCard(steps, onSetSteps = { steps = it.coerceIn(0, 999_999) }, onDelta = { steps = applyStepDelta(steps, it) }) }
             }
         }
     }
