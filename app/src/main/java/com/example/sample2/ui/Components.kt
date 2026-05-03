@@ -298,8 +298,9 @@ fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDat
     var showDialog by remember { mutableStateOf(false) }
     val today = remember { LocalDate.now() }
     val showQuick = quickOptions.isNotEmpty()
+    val dividerColor = MaterialTheme.appColors.dividerCool
     Column(modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
-        Row(Modifier.fillMaxWidth().then(if(!showQuick) Modifier.drawBehind { drawLine(MaterialTheme.appColors.dividerCool, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) } else Modifier).padding(horizontal=14.dp, vertical=10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().then(if(!showQuick) Modifier.drawBehind { drawLine(dividerColor, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) } else Modifier).padding(horizontal=14.dp, vertical=10.dp), verticalAlignment = Alignment.CenterVertically) {
             StepperCircleNav(Icons.Rounded.ChevronLeft, "前日", { onDateChange(selectedDate.minusDays(1)) }, enabled = minDate?.let { selectedDate>it } ?: true)
             Column(Modifier.weight(1f).clickable { showDialog=true }.semantics { contentDescription = "日付選択" }, horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -315,7 +316,7 @@ fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDat
             StepperCircleNav(Icons.Rounded.ChevronRight, "翌日", { onDateChange(selectedDate.plusDays(1)) }, enabled = selectedDate < maxDate)
         }
         if (showQuick) {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).drawBehind { drawLine(MaterialTheme.appColors.dividerCool, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) }.padding(horizontal=14.dp, vertical=8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).drawBehind { drawLine(dividerColor, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) }.padding(horizontal=14.dp, vertical=8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 quickOptions.forEach { opt ->
                     val target = opt.resolveDate(selectedDate)
                     val selected = target == selectedDate
