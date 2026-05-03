@@ -73,6 +73,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -81,6 +82,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.util.Log
+import android.graphics.Paint
 import com.example.sample2.analytics.DailyPersonalityScore
 import com.example.sample2.analytics.PersonalityScoreModel
 import com.example.sample2.analytics.PersonalityState
@@ -158,6 +160,27 @@ private data class TimedLineSeries(
     val values: List<Float>,
     val xValues: List<Float>
 )
+
+private data class ChartLayout(
+    val chartLeft: Float,
+    val chartRight: Float,
+    val chartTop: Float,
+    val chartBottom: Float
+) {
+    val width: Float get() = chartRight - chartLeft
+    val height: Float get() = chartBottom - chartTop
+
+    fun xForIndex(index: Int, count: Int): Float {
+        if (count <= 1) return chartLeft + width / 2f
+        return chartLeft + width * index / (count - 1).toFloat()
+    }
+
+    fun yForValue(value: Float, minValue: Float, maxValue: Float): Float {
+        if (abs(maxValue - minValue) < 0.0001f) return chartTop + height / 2f
+        val rate = ((value - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
+        return chartBottom - height * rate
+    }
+}
 
 private data class GraphEntry(
     val date: LocalDate,
@@ -985,13 +1008,21 @@ private fun MultiLineChart(
                     }
                 }
             }
+            val pointCount = remember(labels, displayedSeries) {
+                minOf(
+                    labels.size,
+                    displayedSeries.minOfOrNull { it.values.size } ?: labels.size
+                )
+            }
+            val normalizedLabels = remember(labels, pointCount) { labels.take(pointCount) }
             SimpleMultiLineChart(
-                series = displayedSeries,
+                labels = normalizedLabels,
+                series = displayedSeries.map { it.copy(values = it.values.take(pointCount)) },
                 comparisonSeries = comparisonSeries.orEmpty().filter { compared ->
                     compared.label !in hiddenSeriesLabels
-                },
-                seriesXValues = seriesXValues,
-                comparisonSeriesXValues = comparisonSeriesXValues,
+                }.map { it.copy(values = it.values.take(pointCount)) },
+                seriesXValues = seriesXValues.mapValues { (_, xs) -> xs.take(pointCount) },
+                comparisonSeriesXValues = comparisonSeriesXValues.mapValues { (_, xs) -> xs.take(pointCount) },
                 selectedXAxisValue = selectedXAxisValue,
                 onSelectedXAxisValueChange = onSelectedXAxisValueChange,
                 xAxisMin = xAxisMin,
@@ -1005,11 +1036,10 @@ private fun MultiLineChart(
                     .weight(1f)
                     .fillMaxWidth()
             )
-            CompactChartTickLabelRow(
-                labels = labels,
-                startPadding = 34.dp + 4.dp + 6.dp,
-                endPadding = 6.dp,
-                centerAllLabels = drawStyle == ChartDrawStyle.BAR
+            ChartXAxisLabels(
+                labels = normalizedLabels,
+                startPadding = 34.dp + 4.dp,
+                endPadding = 0.dp
             )
         }
     }
@@ -1017,6 +1047,7 @@ private fun MultiLineChart(
 
 @Composable
 private fun SimpleMultiLineChart(
+    labels: List<String>,
     series: List<LineSeries>,
     comparisonSeries: List<LineSeries> = emptyList(),
     seriesXValues: Map<String, List<Float>> = emptyMap(),
@@ -1114,13 +1145,13 @@ private fun SimpleMultiLineChart(
                     }
                 }
         ) {
-            val leftPad = 6.dp.toPx()
-            val rightPad = 6.dp.toPx()
-            val topPad = 10.dp.toPx()
-            val bottomPad = 10.dp.toPx()
-            val chartWidth = size.width - leftPad - rightPad
-            val chartHeight = size.height - topPad - bottomPad
-            if (chartWidth <= 0f || chartHeight <= 0f) return@Canvas
+            val chartLayout = ChartLayout(
+                chartLeft = 6.dp.toPx(),
+                chartRight = size.width - 6.dp.toPx(),
+                chartTop = 10.dp.toPx(),
+                chartBottom = size.height - 10.dp.toPx()
+            )
+            if (chartLayout.width <= 0f || chartLayout.height <= 0f) return@Canvas
 
             val guideDenominator = (guideValues.lastIndex).coerceAtLeast(1).toFloat()
             val allMainAxisXs = buildList {
@@ -1136,55 +1167,33 @@ private fun SimpleMultiLineChart(
             val axisMinResolved = xAxisMin ?: allMainAxisXs.minOrNull() ?: 0f
             val axisMaxResolved = xAxisMax ?: allMainAxisXs.maxOrNull() ?: 1f
             repeat(guideValues.size) { i ->
-                val y = topPad + chartHeight * (i / guideDenominator)
+                val y = chartLayout.chartTop + chartLayout.height * (i / guideDenominator)
                 drawLine(
                     color = gridColor,
-                    start = Offset(leftPad, y),
-                    end = Offset(size.width - rightPad, y),
+                    start = Offset(chartLayout.chartLeft, y),
+                    end = Offset(chartLayout.chartRight, y),
                     strokeWidth = 1.dp.toPx()
                 )
             }
 
             fun buildPoints(values: List<Float>): List<Offset> {
-                if (values.isEmpty()) return emptyList()
-                return values.mapIndexed { index, value ->
-                    val xValue = index.toFloat()
-                    val denominator = (values.lastIndex).coerceAtLeast(1).toFloat()
-                    val xRatio = if (abs(axisMaxResolved - axisMinResolved) >= 0.0001f) {
-                        ((xValue - axisMinResolved) / (axisMaxResolved - axisMinResolved)).coerceIn(0f, 1f)
-                    } else {
-                        index / denominator
-                    }
-                    val yRatio = if (abs(maxValue - minValue) < 0.0001f) {
-                        0.5f
-                    } else {
-                        1f - ((value - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
-                    }
+                val count = minOf(values.size, labels.size)
+                if (count == 0) return emptyList()
+                return values.take(count).mapIndexed { index, value ->
                     Offset(
-                        x = leftPad + chartWidth * xRatio,
-                        y = topPad + chartHeight * yRatio
+                        x = chartLayout.xForIndex(index, count),
+                        y = chartLayout.yForValue(value, minValue, maxValue)
                     )
                 }
             }
 
             fun buildPoints(values: List<Float>, xValues: List<Float>): List<Offset> {
+                if (xValues.size != values.size || labels.size != values.size) return buildPoints(values)
                 if (values.isEmpty()) return emptyList()
-                val denominator = (values.lastIndex).coerceAtLeast(1).toFloat()
                 return values.mapIndexed { index, value ->
-                    val xValue = xValues.getOrElse(index) { index.toFloat() }
-                    val xRatio = if (abs(axisMaxResolved - axisMinResolved) >= 0.0001f) {
-                        ((xValue - axisMinResolved) / (axisMaxResolved - axisMinResolved)).coerceIn(0f, 1f)
-                    } else {
-                        index / denominator
-                    }
-                    val yRatio = if (abs(maxValue - minValue) < 0.0001f) {
-                        0.5f
-                    } else {
-                        1f - ((value - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
-                    }
                     Offset(
-                        x = leftPad + chartWidth * xRatio,
-                        y = topPad + chartHeight * yRatio
+                        x = chartLayout.xForIndex(index, values.size),
+                        y = chartLayout.yForValue(value, minValue, maxValue)
                     )
                 }
             }
@@ -1218,12 +1227,12 @@ private fun SimpleMultiLineChart(
                     buildPoints(item.values)
                 }
                 if (drawStyle == ChartDrawStyle.BAR) {
-                    val barWidth = (chartWidth / (points.size.coerceAtLeast(1) * 1.6f)).coerceAtLeast(3.dp.toPx())
+                    val barWidth = (chartLayout.width / (points.size.coerceAtLeast(1) * 1.6f)).coerceAtLeast(3.dp.toPx())
                     points.forEach { point ->
                         drawRect(
                             color = item.color,
                             topLeft = Offset(point.x - barWidth / 2f, point.y),
-                            size = androidx.compose.ui.geometry.Size(barWidth, size.height - bottomPad - point.y)
+                            size = androidx.compose.ui.geometry.Size(barWidth, chartLayout.chartBottom - point.y)
                         )
                     }
                 } else if (points.size >= 2) {
@@ -1261,11 +1270,11 @@ private fun SimpleMultiLineChart(
             if (selectedXAxisValue != null && abs(axisMaxResolved - axisMinResolved) >= 0.0001f) {
                 val selectedXRatio = ((selectedXAxisValue - axisMinResolved) / (axisMaxResolved - axisMinResolved))
                     .coerceIn(0f, 1f)
-                val selectedX = leftPad + chartWidth * selectedXRatio
+                val selectedX = chartLayout.chartLeft + chartLayout.width * selectedXRatio
                 drawLine(
                     color = selectionLineColor,
-                    start = Offset(selectedX, topPad),
-                    end = Offset(selectedX, size.height - bottomPad),
+                    start = Offset(selectedX, chartLayout.chartTop),
+                    end = Offset(selectedX, chartLayout.chartBottom),
                     strokeWidth = 1.5.dp.toPx()
                 )
             }
@@ -2295,6 +2304,36 @@ private fun SimpleLineChart(
                         fontWeight = FontWeight.Bold
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChartXAxisLabels(
+    labels: List<String>,
+    startPadding: Dp,
+    endPadding: Dp,
+    modifier: Modifier = Modifier
+) {
+    if (labels.isEmpty()) return
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(18.dp)
+            .padding(start = startPadding, end = endPadding)
+    ) {
+        val chartLayout = ChartLayout(0f, size.width, 0f, size.height)
+        val paint = Paint().apply {
+            color = android.graphics.Color.GRAY
+            textSize = 10.sp.toPx()
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+        }
+        labels.forEachIndexed { index, label ->
+            if (label.isNotEmpty()) {
+                val x = chartLayout.xForIndex(index, labels.size)
+                drawContext.canvas.nativeCanvas.drawText(label, x, size.height - 2.dp.toPx(), paint)
             }
         }
     }
