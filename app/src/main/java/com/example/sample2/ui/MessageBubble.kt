@@ -1,9 +1,6 @@
 package com.example.sample2.ui
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.content.Context
-import android.text.format.DateFormat
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -503,7 +500,7 @@ fun MessageActionOverlay(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        showTimestampPicker(
+                        showAppTimePickerDialog(
                             context = context,
                             initialTimestamp = editingTimestamp,
                             onSelected = { editingTimestamp = it }
@@ -1315,45 +1312,3 @@ private fun EmotionCircleBadge(
     }
 }
 
-private fun showTimestampPicker(
-    context: Context,
-    initialTimestamp: Long,
-    onSelected: (Long) -> Unit
-) {
-    val initialCal = Calendar.getInstance().apply {
-        timeInMillis = initialTimestamp
-    }
-
-    val originalSecond = initialCal.get(Calendar.SECOND)
-    val originalMillis = initialCal.get(Calendar.MILLISECOND)
-
-    DatePickerDialog(
-        context,
-        { _, year, month, dayOfMonth ->
-            val resultCal = Calendar.getInstance().apply {
-                timeInMillis = initialTimestamp
-                set(Calendar.YEAR, year)
-                set(Calendar.MONTH, month)
-                set(Calendar.DAY_OF_MONTH, dayOfMonth)
-            }
-
-            TimePickerDialog(
-                context,
-                { _, hourOfDay, minute ->
-                    resultCal.set(Calendar.HOUR_OF_DAY, hourOfDay)
-                    resultCal.set(Calendar.MINUTE, minute)
-                    resultCal.set(Calendar.SECOND, originalSecond)
-                    resultCal.set(Calendar.MILLISECOND, originalMillis)
-
-                    onSelected(resultCal.timeInMillis)
-                },
-                initialCal.get(Calendar.HOUR_OF_DAY),
-                initialCal.get(Calendar.MINUTE),
-                DateFormat.is24HourFormat(context)
-            ).show()
-        },
-        initialCal.get(Calendar.YEAR),
-        initialCal.get(Calendar.MONTH),
-        initialCal.get(Calendar.DAY_OF_MONTH)
-    ).show()
-}
