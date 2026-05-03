@@ -553,12 +553,6 @@ fun ChatRoute() {
                                     onToggleSingleLine = {
                                         state.isSingleLineMode = !state.isSingleLineMode
                                     },
-                                    modifier = Modifier.padding(
-                                        start = 20.dp,
-                                        end = 20.dp,
-                                        top = 18.dp,
-                                        bottom = 14.dp
-                                    )
                                 )
 
                                 HorizontalDivider(
@@ -826,8 +820,7 @@ private fun JournalCompactMetaRow(
     onMenuClick: () -> Unit,
     onFilterClick: () -> Unit,
     onToggleWorkMode: () -> Unit,
-    onToggleSingleLine: () -> Unit,
-    modifier: Modifier = Modifier
+    onToggleSingleLine: () -> Unit
 ) {
     val effectiveSingleLineMode = isSingleLineMode || isWorkMode
     JournalTopHeader(
@@ -867,8 +860,7 @@ private fun JournalCompactMetaRow(
                 },
                 showNotificationDot = effectiveSingleLineMode
             )
-        },
-        modifier = modifier
+        }
     )
 }
 

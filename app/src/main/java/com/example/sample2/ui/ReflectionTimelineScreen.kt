@@ -98,8 +98,7 @@ fun ReflectionTimelineScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(padding)
-                .padding(horizontal = 24.dp, vertical = 8.dp),
+                .padding(padding),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             val totalCount = reflections.count { it.hasAnyContent() }
@@ -299,8 +298,3 @@ private fun monthHeaderLabel(dateText: String): String {
 }
 private fun LocalDate.dayOfWeekLabel(): String = when (dayOfWeek.value) { 1 -> "月"; 2 -> "火"; 3 -> "水"; 4 -> "木"; 5 -> "金"; 6 -> "土"; else -> "日" }
 private fun String.toLocalDateOrNull(): LocalDate? = try { LocalDate.parse(this) } catch (_: DateTimeParseException) { null }
-private fun compactLabel(query: String, selectedFilters: Set<ReflectionFieldFilter>): String {
-    if (query.isNotBlank()) return "「${query.trim()}」で絞り込み中"
-    if (selectedFilters.isEmpty()) return "すべて表示中"
-    return selectedFilters.joinToString("・", postfix = " のみ表示中") { it.label }
-}

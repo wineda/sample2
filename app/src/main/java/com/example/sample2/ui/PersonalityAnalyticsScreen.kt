@@ -441,14 +441,11 @@ fun PersonalityAnalyticsScreen(
             onNavigationClick = {},
             bottomSlot = {
                 Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                    HeaderStatCell(value = moodAvgText, label = "MOOD AVG")
-                    HeaderStatCell(value = sleepAvgText, label = "SLEEP")
-                    HeaderStatCell(value = entriesCountText, label = "ENTRIES")
+                    HeaderStatCell(value = moodAvgText, label = "MOOD AVG", delta = null)
+                    HeaderStatCell(value = sleepAvgText, label = "SLEEP", delta = null)
+                    HeaderStatCell(value = entriesCountText, label = "ENTRIES", delta = null)
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+            }
         )
 
         if (availableDisplayModes.size > 1) {
