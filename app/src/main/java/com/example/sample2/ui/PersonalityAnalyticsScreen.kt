@@ -115,6 +115,19 @@ enum class AnalyticsDisplayMode {
     MAP
 }
 
+
+
+private fun AnalyticsDisplayMode.label(): String = when (this) {
+    AnalyticsDisplayMode.DETAIL -> "詳細"
+    AnalyticsDisplayMode.CHARTS -> "グラフ"
+    AnalyticsDisplayMode.MAP -> "マップ"
+}
+
+private fun AnalyticsDisplayMode.icon() = when (this) {
+    AnalyticsDisplayMode.DETAIL -> Icons.Default.Today
+    AnalyticsDisplayMode.CHARTS -> Icons.Default.ShowChart
+    AnalyticsDisplayMode.MAP -> Icons.Default.GridView
+}
 private enum class AnalyticsPeriod(
     val label: String
 ) {
@@ -437,19 +450,18 @@ fun PersonalityAnalyticsScreen(
             subtitle = if (initialDisplayMode == AnalyticsDisplayMode.DETAIL) "1日単位の内訳" else "感情・行動の推移",
             navigationIcon = Icons.Outlined.Menu,
             navigationContentDescription = "メニュー",
-            onNavigationClick = {}
+            onNavigationClick = {},
+            actions = {
+                availableDisplayModes.forEach { mode ->
+                    CompactHeaderIconButton(
+                        selected = displayMode == mode,
+                        onClick = { displayModeName = mode.name },
+                        icon = mode.icon(),
+                        contentDescription = mode.label()
+                    )
+                }
+            }
         )
-
-        if (availableDisplayModes.size > 1) {
-            AnalyticsDisplayModeToggle(
-                current = displayMode,
-                modes = availableDisplayModes,
-                onChange = { displayModeName = it.name },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            )
-        }
 
         if (displayMode == AnalyticsDisplayMode.CHARTS) {
             AnalyticsPeriodSelector(
@@ -1336,56 +1348,6 @@ private fun CompactMetricChartCard(
                     axisEndLabel ?: labels.lastOrNull().orEmpty()
                 )
             )
-        }
-    }
-}
-
-@Composable
-private fun AnalyticsDisplayModeToggle(
-    current: AnalyticsDisplayMode,
-    modes: List<AnalyticsDisplayMode>,
-    onChange: (AnalyticsDisplayMode) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            modes.forEach { mode ->
-                val label = when (mode) {
-                    AnalyticsDisplayMode.DETAIL -> "詳細"
-                    AnalyticsDisplayMode.CHARTS -> "グラフ"
-                    AnalyticsDisplayMode.MAP -> "マップ"
-                }
-                val icon: @Composable () -> Unit = {
-                    when (mode) {
-                        AnalyticsDisplayMode.DETAIL -> {
-                            Icon(Icons.Default.Today, contentDescription = null)
-                        }
-                        AnalyticsDisplayMode.CHARTS -> {
-                            Icon(Icons.Default.ShowChart, contentDescription = null)
-                        }
-                        AnalyticsDisplayMode.MAP -> {
-                            Icon(Icons.Default.GridView, contentDescription = null)
-                        }
-                    }
-                }
-
-                ToggleChipLikeButton(
-                    modifier = Modifier.weight(1f),
-                    selected = current == mode,
-                    label = label,
-                    icon = icon,
-                    onClick = { onChange(mode) }
-                )
-            }
         }
     }
 }
