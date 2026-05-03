@@ -127,7 +127,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
                 trailing = { HeaderProgressStack(current = filledCount, total = 3, label = "FILLED") }
             )
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
