@@ -445,7 +445,8 @@ fun PersonalityAnalyticsScreen(
                     HeaderStatCell(value = sleepAvgText, label = "SLEEP", delta = null)
                     HeaderStatCell(value = entriesCountText, label = "ENTRIES", delta = null)
                 }
-            }        )
+            }
+        )
 
         if (availableDisplayModes.size > 1) {
             AnalyticsDisplayModeToggle(

@@ -99,7 +99,6 @@ fun ReflectionTimelineScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
-                ,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             val totalCount = reflections.count { it.hasAnyContent() }
