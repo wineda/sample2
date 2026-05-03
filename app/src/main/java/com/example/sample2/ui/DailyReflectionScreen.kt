@@ -248,6 +248,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
             BasicTextField(
                 value = value,
                 onValueChange = onValue,
+                minLines = 2,
                 textStyle = MaterialTheme.typography.titleSmall.copy(color = MaterialTheme.appColors.inkPrimary, lineHeight = 22.sp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -259,7 +260,9 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
                     inner()
                 }
             )
-            Text(sub.orEmpty(), fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, fontFamily = FontFamily.Monospace)
+            if (!sub.isNullOrBlank()) {
+                Text(sub, fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, fontFamily = FontFamily.Monospace)
+            }
         }
     }
 }
