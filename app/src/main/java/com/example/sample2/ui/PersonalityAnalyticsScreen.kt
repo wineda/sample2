@@ -91,7 +91,6 @@ import com.example.sample2.data.SleepData
 import com.example.sample2.data.EmotionType
 import com.example.sample2.ui.ActionHeatmapBlock
 import com.example.sample2.ui.EmotionHeatmapBlock
-import com.example.sample2.ui.HeaderStatCell
 import com.example.sample2.ui.JournalTopHeader
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
@@ -438,14 +437,7 @@ fun PersonalityAnalyticsScreen(
             subtitle = if (initialDisplayMode == AnalyticsDisplayMode.DETAIL) "1日単位の内訳" else "感情・行動の推移",
             navigationIcon = Icons.Outlined.Menu,
             navigationContentDescription = "メニュー",
-            onNavigationClick = {},
-            bottomSlot = {
-                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                    HeaderStatCell(value = moodAvgText, label = "MOOD AVG", delta = null)
-                    HeaderStatCell(value = sleepAvgText, label = "SLEEP", delta = null)
-                    HeaderStatCell(value = entriesCountText, label = "ENTRIES", delta = null)
-                }
-            }
+            onNavigationClick = {}
         )
 
         if (availableDisplayModes.size > 1) {

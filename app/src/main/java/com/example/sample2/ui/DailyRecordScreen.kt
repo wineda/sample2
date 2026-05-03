@@ -118,7 +118,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
             Toast.makeText(context, "日次記録を保存しました", Toast.LENGTH_SHORT).show(); onClose()
         }, enabled = enabled)
     }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             JournalTopHeader(
                 title = "日次記録",
                 titleStyle = JournalHeaderTitleStyle.Medium,
@@ -128,9 +128,11 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
                 onNavigationClick = onClose,
                 trailing = { HeaderProgressStack(current = filledCount, total = 3, label = "FILLED") }
             )
-            DateHeaderCard(selectedDate, today, { if (selectedDate > LocalDate.MIN) selectedDate = selectedDate.minusDays(1) }, { if (selectedDate < today) selectedDate = selectedDate.plusDays(1) }, { selectedDate = today.minusDays(1) }, { selectedDate = today }, { onOpenReflection(selectedDate.toString()) }) { showDatePicker(context, selectedDate) { picked -> selectedDate = picked } }
-            SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it }
-            StepCard(steps, onSetSteps = { steps = it.coerceIn(0, 999_999) }, onDelta = { steps = applyStepDelta(steps, it) })
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                DateHeaderCard(selectedDate, today, { if (selectedDate > LocalDate.MIN) selectedDate = selectedDate.minusDays(1) }, { if (selectedDate < today) selectedDate = selectedDate.plusDays(1) }, { selectedDate = today.minusDays(1) }, { selectedDate = today }, { onOpenReflection(selectedDate.toString()) }) { showDatePicker(context, selectedDate) { picked -> selectedDate = picked } }
+                SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it }
+                StepCard(steps, onSetSteps = { steps = it.coerceIn(0, 999_999) }, onDelta = { steps = applyStepDelta(steps, it) })
+            }
         }
     }
 }
