@@ -1,6 +1,5 @@
 package com.example.sample2.ui
 
-import android.app.TimePickerDialog
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -142,7 +141,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
                     )
                 }
                 item { TextButton(onClick = { onOpenReflection(selectedDate.toString()) }) { Text("振り返りを書く") } }
-                item { SleepCard(bedTime, wakeTime, quality, duration, { showTimePicker(context, bedTime) { bedTime = it } }, { showTimePicker(context, wakeTime) { wakeTime = it } }) { quality = if (quality == it) null else it } }
+                item { SleepCard(bedTime, wakeTime, quality, duration, { showAppTimePickerDialog(context, bedTime?.hour ?: 23, bedTime?.minute ?: 0) { h, m -> bedTime = LocalTime.of(h, m) } }, { showAppTimePickerDialog(context, wakeTime?.hour ?: 23, wakeTime?.minute ?: 0) { h, m -> wakeTime = LocalTime.of(h, m) } }) { quality = if (quality == it) null else it } }
                 item { StepCard(steps, onSetSteps = { steps = it.coerceIn(0, 999_999) }, onDelta = { steps = applyStepDelta(steps, it) }) }
             }
         }
@@ -182,4 +181,3 @@ private fun SleepQuality?.toModelQuality(): Int = when (this) { SleepQuality.BAD
 private fun Int.toUiQuality(): SleepQuality? = when (this) { 1 -> SleepQuality.BAD; 2 -> SleepQuality.SLIGHTLY_BAD; 3 -> SleepQuality.NORMAL; 4 -> SleepQuality.GOOD; 5 -> SleepQuality.VERY_GOOD; else -> null }
 private fun formatDuration(minutes: Int): String = if (minutes / 60 == 0) "${minutes % 60}分" else "${minutes / 60}時間${minutes % 60}分"
 private fun todayDateString(): String = LocalDate.now(TokyoZone).toString()
-private fun showTimePicker(context: android.content.Context, initial: LocalTime?, onSelected: (LocalTime) -> Unit) { TimePickerDialog(context, { _, h, m -> onSelected(LocalTime.of(h, m)) }, initial?.hour ?: 23, initial?.minute ?: 0, true).show() }
