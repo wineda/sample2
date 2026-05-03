@@ -168,7 +168,8 @@ private data class ChartLayout(
 
     fun xForIndex(index: Int, count: Int): Float {
         if (count <= 1) return chartLeft + width / 2f
-        return chartLeft + width * index / (count - 1).toFloat()
+        val slotWidth = width / count.toFloat()
+        return chartLeft + slotWidth * index + slotWidth / 2f
     }
 
     fun yForValue(value: Float, minValue: Float, maxValue: Float): Float {
