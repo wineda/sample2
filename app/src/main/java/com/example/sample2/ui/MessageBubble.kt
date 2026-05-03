@@ -106,6 +106,9 @@ private val BubbleTextVerticalPaddingCompact = 4.dp
 private val MessageRowVerticalPadding = 4.dp
 private val MessageRowVerticalPaddingCompact = 1.5.dp
 private val ChildBubbleRightPadding = 20.dp
+private val ChildTimelineHeight = 36.dp
+private val ChildBubbleVerticalPadding = 2.dp
+private val ChildDividerTopSpacing = 2.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -232,7 +235,7 @@ fun EmotionResponseChildBubble(
         Box(
             modifier = Modifier
                 .width(18.dp)
-                .height(54.dp),
+                .height(ChildTimelineHeight),
             contentAlignment = Alignment.TopCenter
         ) {
             Box(
@@ -249,26 +252,28 @@ fun EmotionResponseChildBubble(
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
-        StatusIconBox(
-            message = message,
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
 
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = ChildBubbleRightPadding, top = 4.dp, bottom = 4.dp)
+                .padding(
+                    end = ChildBubbleRightPadding,
+                    top = ChildBubbleVerticalPadding,
+                    bottom = ChildBubbleVerticalPadding
+                )
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .combinedClickable(onClick = {}, onLongClick = { onLongClick(message) }),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                StatusIconBox(
+                    message = message,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = message.text,
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -288,7 +293,7 @@ fun EmotionResponseChildBubble(
                     color = MaterialTheme.appColors.inkTertiary
                 )
             }
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(ChildDividerTopSpacing))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -614,8 +614,9 @@ fun ChatRoute() {
                                         .fillMaxWidth()
                                 ) { msg, isConnectedToPreviousInDay, isConnectedToNextInDay ->
                                     val childEntries = childEntriesByParentId[msg.id].orEmpty()
+                                    val blockBottomPadding = if (childEntries.isNotEmpty()) 10.dp else 16.dp
                                     Column(
-                                        modifier = Modifier.padding(bottom = 16.dp)
+                                        modifier = Modifier.padding(bottom = blockBottomPadding)
                                     ) {
                                         MessageBubble(
                                             message = msg,
@@ -637,15 +638,15 @@ fun ChatRoute() {
                                         )
 
                                         if (childEntries.isNotEmpty()) {
-                                            Spacer(modifier = Modifier.height(6.dp))
-                                        }
+                                            Spacer(modifier = Modifier.height(4.dp))
 
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            childEntries.forEach { child ->
-                                                EmotionResponseChildBubble(
-                                                    message = child,
-                                                    onLongClick = { state.selectedMessage = it }
-                                                )
+                                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                childEntries.forEach { child ->
+                                                    EmotionResponseChildBubble(
+                                                        message = child,
+                                                        onLongClick = { state.selectedMessage = it }
+                                                    )
+                                                }
                                             }
                                         }
                                     }
