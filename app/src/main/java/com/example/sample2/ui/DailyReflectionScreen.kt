@@ -53,12 +53,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
 import com.example.sample2.analytics.PersonalityScoreModel
 import com.example.sample2.analytics.PersonalityState
 import com.example.sample2.data.DailyReflection
 import com.example.sample2.ui.theme.AppShapeTokens
 import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.SemanticColors
+import com.example.sample2.ui.theme.ScorePalette
 import com.example.sample2.ui.theme.appColors
 import java.text.SimpleDateFormat
 import java.time.Instant
@@ -225,6 +227,7 @@ private fun InputHead(filled: Int) {
 @Composable
 private fun ReflectionItem(number: String, title: String, placeholder: String, value: TextFieldValue, onValue: (TextFieldValue) -> Unit, priority: Boolean, sub: String?, hint: String? = null) {
     val done = value.text.isNotBlank()
+    val accentColor = reflectionItemAccentColor(number)
     var focused by remember { mutableStateOf(false) }
     val border by animateColorAsState(
         if (focused) SemanticColors.InfoMain else MaterialTheme.appColors.dividerNeutral,
@@ -239,6 +242,13 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .height(22.dp)
+                        .background(accentColor, AppShapeTokens.Tech)
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(number, fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, modifier = Modifier.widthIn(min = 24.dp))
                 Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
                 val label = if (done) "入力済" else if (priority) "優先" else "未入力"
@@ -275,6 +285,16 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
     }
 }
 
+
+
+private fun reflectionItemAccentColor(number: String): Color = when (number) {
+    "01" -> ScorePalette.Control
+    "02" -> ScorePalette.Anxiety
+    "03" -> ScorePalette.Energy
+    "04" -> SemanticColors.NegativeMain
+    "05" -> SemanticColors.AccentOrange
+    else -> SemanticColors.InfoMain
+}
 @Composable
 private fun SaveBar(onCancel: () -> Unit, onSave: () -> Unit) {
     val dividerColor = MaterialTheme.appColors.dividerCool
