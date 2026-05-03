@@ -64,6 +64,7 @@ import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.appColors
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sample2.ui.theme.Spacing
 
 
 
@@ -224,7 +225,7 @@ fun CompactHeaderIconButton(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 9.dp, end = 8.dp)
+                        .padding(top = Spacing.sm, end = 8.dp)
                         .size(6.dp)
                         .clip(CircleShape)
                         .background(SemanticColors.NegativeMain)
@@ -300,13 +301,13 @@ fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDat
     val showQuick = quickOptions.isNotEmpty()
     val dividerColor = MaterialTheme.appColors.dividerCool
     Column(modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
-        Row(Modifier.fillMaxWidth().then(if(!showQuick) Modifier.drawBehind { drawLine(dividerColor, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) } else Modifier).padding(horizontal=14.dp, vertical=10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().then(if(!showQuick) Modifier.drawBehind { drawLine(dividerColor, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) } else Modifier).padding(horizontal=Spacing.md, vertical=Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
             StepperCircleNav(Icons.Rounded.ChevronLeft, "前日", { onDateChange(selectedDate.minusDays(1)) }, enabled = minDate?.let { selectedDate>it } ?: true)
             Column(Modifier.weight(1f).clickable { showDialog=true }.semantics { contentDescription = "日付選択" }, horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.JAPAN)), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkPrimary)
-                    if (selectedDate==today) Surface(shape=RoundedCornerShape(3.dp), color=SemanticColors.InfoMain){ Text("TODAY", color=Color.White, fontFamily=FontFamily.Monospace, fontSize=9.sp, letterSpacing=1.sp, modifier=Modifier.padding(horizontal=5.dp, vertical=1.dp)) }
-                    else if (selectedDate<today) Surface(shape=RoundedCornerShape(3.dp), color=MaterialTheme.appColors.surfaceCool){ Text("${ChronoUnit.DAYS.between(selectedDate,today)}日前", color=MaterialTheme.appColors.inkTertiary, fontFamily=FontFamily.Monospace, fontSize=9.sp, modifier=Modifier.padding(horizontal=5.dp, vertical=1.dp)) }
+                    if (selectedDate==today) Surface(shape=RoundedCornerShape(3.dp), color=SemanticColors.InfoMain){ Text("TODAY", color=Color.White, fontFamily=FontFamily.Monospace, fontSize=9.sp, letterSpacing=1.sp, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
+                    else if (selectedDate<today) Surface(shape=RoundedCornerShape(3.dp), color=MaterialTheme.appColors.surfaceCool){ Text("${ChronoUnit.DAYS.between(selectedDate,today)}日前", color=MaterialTheme.appColors.inkTertiary, fontFamily=FontFamily.Monospace, fontSize=9.sp, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
                 }
                 Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(Icons.Default.CalendarMonth, null, modifier=Modifier.size(14.dp), tint=MaterialTheme.appColors.inkTertiary)
@@ -316,7 +317,7 @@ fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDat
             StepperCircleNav(Icons.Rounded.ChevronRight, "翌日", { onDateChange(selectedDate.plusDays(1)) }, enabled = selectedDate < maxDate)
         }
         if (showQuick) {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).drawBehind { drawLine(dividerColor, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) }.padding(horizontal=14.dp, vertical=8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).drawBehind { drawLine(dividerColor, androidx.compose.ui.geometry.Offset(0f,size.height), androidx.compose.ui.geometry.Offset(size.width,size.height),1.dp.toPx()) }.padding(horizontal=Spacing.md, vertical=8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 quickOptions.forEach { opt ->
                     val target = opt.resolveDate(selectedDate)
                     val selected = target == selectedDate

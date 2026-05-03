@@ -105,6 +105,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import com.example.sample2.ui.theme.Spacing
 
 private const val AnalyticsLogTag = "PersonalityAnalytics"
 
@@ -678,8 +679,8 @@ private fun ActionFlagCountChartCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(horizontal = Spacing.md, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Text(
                 text = "仕事推移",
@@ -722,8 +723,8 @@ private fun MetricBarChartCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(horizontal = Spacing.md, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Text(
                 text = title,
@@ -816,7 +817,7 @@ private fun OverallTrendChartCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(14.dp)
+                .padding(Spacing.md)
                 .pointerInput(currentPeriod, scores.size) {
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { change, dragAmount ->
@@ -835,7 +836,7 @@ private fun OverallTrendChartCard(
                         }
                     )
                 },
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -887,7 +888,7 @@ private fun StateBadge(
     ) {
         Text(
             text = label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = Spacing.md, vertical = 6.dp),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold
         )
@@ -962,7 +963,7 @@ private fun MultiLineChart(
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 series.forEach { item ->
                     Row(
                         modifier = if (toggleableLegend) {
@@ -1077,7 +1078,7 @@ private fun SimpleMultiLineChart(
             modifier = Modifier
                 .fillMaxHeight()
                 .width(34.dp)
-                .padding(top = 10.dp, bottom = 10.dp, end = 4.dp),
+                .padding(top = Spacing.md, bottom = Spacing.md, end = 4.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.End
         ) {
@@ -1429,7 +1430,7 @@ private fun ToggleChipLikeButton(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 10.dp),
+                .padding(horizontal = Spacing.md, vertical = Spacing.md),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1488,7 +1489,7 @@ fun DailyPersonalityScoreCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                        .padding(horizontal = Spacing.md, vertical = Spacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
@@ -1742,8 +1743,8 @@ private fun DailyMessagePseudoTrendCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

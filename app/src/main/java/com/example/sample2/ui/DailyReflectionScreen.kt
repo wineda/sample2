@@ -68,6 +68,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
+import com.example.sample2.ui.theme.Spacing
 
 @Composable
 fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDateString(), onClose: () -> Unit, onSaved: () -> Unit = {}) {
@@ -142,8 +143,8 @@ fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDa
                 Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .padding(horizontal = 12.dp, vertical = Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
                 SummarySection(hints, score, state = score?.state, hasBreakdown = hasBreakdown)
                 InputHead(filled)
@@ -165,7 +166,7 @@ private fun SummarySection(h: ReflectionHints, s: com.example.sample2.analytics.
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier = Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             Text("今日の状態", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.appColors.inkPrimary)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("ステータス", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
@@ -181,7 +182,7 @@ private fun SummarySection(h: ReflectionHints, s: com.example.sample2.analytics.
             Text("睡眠  ${h.dailyRecordText.substringBefore(" /")}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
             Text("感情傾向  ${h.emotionTrendText.removePrefix("感情傾向: ")}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
             Text("体調フラグ  ${if (hasBreakdown) "あり" else "なし"}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
-            Box(Modifier.fillMaxWidth().background(MaterialTheme.appColors.surfaceMuted).border(1.dp, MaterialTheme.appColors.dividerNeutral).padding(10.dp)) {
+            Box(Modifier.fillMaxWidth().background(MaterialTheme.appColors.surfaceMuted).border(1.dp, MaterialTheme.appColors.dividerNeutral).padding(Spacing.md)) {
                 Text(s?.summary ?: h.analysisSummaryText, style = MaterialTheme.typography.labelMedium.copy(lineHeight = 17.sp), color = MaterialTheme.appColors.inkSecondary)
             }
         }
@@ -240,7 +241,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
@@ -272,7 +273,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
                     .fillMaxWidth()
                     .background(if (done || focused) MaterialTheme.colorScheme.surface else MaterialTheme.appColors.surfaceMuted, AppShapeTokens.Tech)
                     .border(1.dp, border, AppShapeTokens.Tech)
-                    .padding(10.dp, 8.dp),
+                    .padding(Spacing.md, 8.dp),
                 decorationBox = { inner ->
                     if (value.text.isBlank()) Text(placeholder, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.appColors.inkDisabled)
                     inner()
@@ -310,10 +311,10 @@ private fun SaveBar(onCancel: () -> Unit, onSave: () -> Unit) {
                     strokeWidth = 1.dp.toPx()
                 )
             }
-            .padding(10.dp)
+            .padding(Spacing.md)
             .imePadding()
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), modifier = Modifier.fillMaxWidth()) {
             TextButton(
                 onClick = onCancel,
                 modifier = Modifier.weight(0.35f).height(52.dp),

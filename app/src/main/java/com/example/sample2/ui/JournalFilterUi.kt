@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.example.sample2.data.EmotionType
 import com.example.sample2.data.MessageV2
 import java.util.Calendar
+import com.example.sample2.ui.theme.Spacing
 
 data class JournalFilterState(
     val weekday: WeekdayFilter = WeekdayFilter.ALL,
@@ -130,7 +131,7 @@ fun JournalFilterHeader(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onOpenSheet() }
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .padding(horizontal = Spacing.md, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -225,7 +226,7 @@ fun JournalFilterBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(horizontal = Spacing.xl, vertical = 8.dp)
         ) {
             Text(
                 text = "絞り込み",
@@ -235,7 +236,7 @@ fun JournalFilterBottomSheet(
             Text(
                 text = "曜日",
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 20.dp, bottom = 10.dp)
+                modifier = Modifier.padding(top = Spacing.xl, bottom = Spacing.md)
             )
 
             FlowRow(
@@ -256,7 +257,7 @@ fun JournalFilterBottomSheet(
             Text(
                 text = "感情",
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 10.dp)
+                modifier = Modifier.padding(bottom = Spacing.md)
             )
 
             FlowRow(
@@ -284,7 +285,7 @@ fun JournalFilterBottomSheet(
                 Text(
                     text = "一致条件",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 20.dp, bottom = 10.dp)
+                    modifier = Modifier.padding(top = Spacing.xl, bottom = Spacing.md)
                 )
 
                 Column {

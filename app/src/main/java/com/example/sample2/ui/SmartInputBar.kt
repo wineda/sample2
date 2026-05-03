@@ -92,7 +92,7 @@ fun SmartInputBar(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 6.dp, vertical = 10.dp),
+                            .padding(horizontal = 6.dp, vertical = Spacing.md),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         if (inputText.isBlank()) {

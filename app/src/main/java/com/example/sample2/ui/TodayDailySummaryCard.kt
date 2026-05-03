@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sample2.data.DailyRecord
+import com.example.sample2.ui.theme.Spacing
 
 @Composable
 fun TodayDailySummaryCard(
@@ -38,7 +39,7 @@ fun TodayDailySummaryCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -96,6 +96,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import com.example.sample2.ui.theme.Spacing
 
 private enum class JournalScreenMode {
     Journal,
@@ -736,7 +737,7 @@ private fun JournalBottomModeBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp, bottom = 18.dp)
+                .padding(top = 12.dp, bottom = Spacing.lg)
                 .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
@@ -902,7 +903,7 @@ private fun WorkActionSummaryRow(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
         WorkActionSummaryItem(
@@ -1006,7 +1007,7 @@ private fun CompactActionChip(
         Row(
             modifier = Modifier
                 .height(30.dp)
-                .padding(horizontal = 10.dp),
+                .padding(horizontal = Spacing.md),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

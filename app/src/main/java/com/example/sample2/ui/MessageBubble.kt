@@ -90,6 +90,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import com.example.sample2.ui.theme.Spacing
 
 private val MessageRowHorizontalPadding = 16.dp
 
@@ -435,7 +436,7 @@ fun MessageActionOverlay(
                 tonalElevation = 0.dp,
                 shadowElevation = 3.dp
             ) {
-                Column(modifier = Modifier.padding(vertical = 14.dp, horizontal = 16.dp)) {
+                Column(modifier = Modifier.padding(vertical = Spacing.md, horizontal = 16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -506,7 +507,7 @@ fun MessageActionOverlay(
                 color = MaterialTheme.colorScheme.surface
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
@@ -618,7 +619,7 @@ fun MessageActionOverlay(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
@@ -824,7 +825,7 @@ private fun AddEmotionButton(text: String, onClick: () -> Unit) {
         border = BorderStroke(1.5.dp, MaterialTheme.appColors.borderStrong)
     ) {
         Row(
-            modifier = Modifier.padding(vertical = 14.dp),
+            modifier = Modifier.padding(vertical = Spacing.md),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -847,7 +848,7 @@ private fun EmotionSegmentRow(
         color = MaterialTheme.colorScheme.surface
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = Spacing.md, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -914,7 +915,7 @@ private fun CollapsibleActionTypeEditor(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .padding(horizontal = 16.dp, vertical = Spacing.md)
     ) {
         Row(
             modifier = Modifier
@@ -1006,7 +1007,7 @@ private fun ActionTypeGrid(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(Spacing.md)
     ) {
         allActionTypes.chunked(columnsPerRow).forEach { rowTypes ->
             Row(
