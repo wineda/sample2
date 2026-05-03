@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
@@ -120,7 +121,18 @@ fun JournalTopHeader(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = 16.dp, vertical = 12.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .drawBehind {
+                drawLine(
+                    color = if (strongBottomBorder) MaterialTheme.appColors.inkStrongAlt else MaterialTheme.appColors.dividerCool,
+                    start = androidx.compose.ui.geometry.Offset(0f, size.height),
+                    end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             CompactHeaderIconButton(selected = false, onClick = onNavigationClick, icon = navigationIcon, contentDescription = navigationContentDescription)
@@ -139,7 +151,6 @@ fun JournalTopHeader(
             Column(content = it)
         }
     }
-    HorizontalDivider(color = if (strongBottomBorder) MaterialTheme.appColors.inkStrongAlt else MaterialTheme.appColors.dividerCool)
 }
 
 @Composable
