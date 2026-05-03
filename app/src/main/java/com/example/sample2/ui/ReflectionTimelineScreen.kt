@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -56,11 +57,11 @@ import java.time.format.DateTimeParseException
 import java.util.Locale
 
 private enum class ReflectionFieldFilter(val label: String, val timelineLabel: String) {
-    SUMMARY("Note", "NOTE"),
-    WINS("Good", "GOOD"),
-    DIFFICULTIES("気づき", "気づき"),
-    INSIGHTS("内省", "内省"),
-    TOMORROW_FIRST_ACTION("改善", "改善")
+    SUMMARY("ひとことまとめ", "ひとことまとめ"),
+    WINS("うまくいったこと", "うまくいったこと"),
+    DIFFICULTIES("しんどかったこと", "しんどかったこと"),
+    INSIGHTS("気づき", "気づき"),
+    TOMORROW_FIRST_ACTION("明日まずやること", "明日まずやること")
 }
 
 private data class ReflectionListUiState(
@@ -206,12 +207,20 @@ private fun ReflectionDayCard(day: ReflectionDayGroup, onClick: () -> Unit) {
 
 @Composable
 private fun ReflectionDateColumn(date: LocalDate) {
-    Column(
-        modifier = Modifier.width(88.dp).padding(end = 12.dp).border(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant, shape = RoundedCornerShape(0.dp)).padding(end = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = date.dayOfMonth.toString(), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkStrongAlt)
-        Text(text = date.dayOfWeekLabel(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.appColors.inkTertiary)
+    Row(modifier = Modifier.width(88.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            modifier = Modifier.weight(1f).padding(end = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = date.dayOfMonth.toString(), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkStrongAlt)
+            Text(text = date.dayOfWeekLabel(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.appColors.inkTertiary)
+        }
+        Box(
+            modifier = Modifier
+                .width(1.dp)
+                .fillMaxHeight()
+                .background(MaterialTheme.colorScheme.outlineVariant)
+        )
     }
 }
 
