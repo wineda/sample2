@@ -91,6 +91,7 @@ import com.example.sample2.data.SleepData
 import com.example.sample2.data.EmotionType
 import com.example.sample2.ui.ActionHeatmapBlock
 import com.example.sample2.ui.EmotionHeatmapBlock
+import com.example.sample2.ui.HeaderStatCell
 import com.example.sample2.ui.JournalTopHeader
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
@@ -383,6 +384,17 @@ fun PersonalityAnalyticsScreen(
         }
     }
 
+    val moodAvgText = remember(filteredRawScoresDesc) {
+        filteredRawScoresDesc.map { it.stability }.average().takeIf { !it.isNaN() }?.let { "%.1f".format(it) } ?: "--"
+    }
+    val sleepAvgText = remember(filteredDateSet, dailyRecordMap) {
+        val hours = filteredDateSet.mapNotNull { d -> dailyRecordMap[d.toString()]?.sleep?.durationMinutes?.takeIf { it > 0 }?.div(60f) }
+        if (hours.isEmpty()) "--" else "%.1fh".format(hours.average())
+    }
+    val entriesCountText = remember(filteredDateSet, messageMapByDate) {
+        filteredDateSet.sumOf { d -> messageMapByDate[d].orEmpty().size }.toString()
+    }
+
     val selectedDate = remember(allRawScoresDesc, selectedDateText) {
         val requested = selectedDateText?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
         requested ?: allRawScoresDesc.firstOrNull()?.date
@@ -427,7 +439,13 @@ fun PersonalityAnalyticsScreen(
             navigationIcon = Icons.Outlined.Menu,
             navigationContentDescription = "メニュー",
             onNavigationClick = {},
-            actions = {},
+            bottomSlot = {
+                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    HeaderStatCell(value = moodAvgText, label = "MOOD AVG")
+                    HeaderStatCell(value = sleepAvgText, label = "SLEEP")
+                    HeaderStatCell(value = entriesCountText, label = "ENTRIES")
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp)

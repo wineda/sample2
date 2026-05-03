@@ -16,14 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Badge
+import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -83,6 +81,7 @@ fun ReflectionTimelineScreen(
     reflections: List<DailyReflection>,
     onOpenReflection: (String) -> Unit,
     onCreateToday: () -> Unit,
+    onMenuClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var uiState by remember { mutableStateOf(ReflectionListUiState()) }
@@ -103,15 +102,37 @@ fun ReflectionTimelineScreen(
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text(text = "Reflections", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.appColors.inkStrongAlt)
-                    Text(text = "振 り 返 り", style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.sp), color = MaterialTheme.appColors.inkTertiary)
-                }
-                Surface(shape = AppShapeTokens.Pill, color = MaterialTheme.appColors.inkStrongAlt, modifier = Modifier.clickable(onClick = onCreateToday)) {
-                    Text("＋ 今日を入力", color = MaterialTheme.colorScheme.surface, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), style = MaterialTheme.typography.bodySmall)
-                }
+            val totalCount = reflections.count { it.hasAnyContent() }
+            val today = LocalDate.now()
+            val contentDates = reflections.filter { it.hasAnyContent() }.mapNotNull { it.date.toLocalDateOrNull() }.toSet()
+            var streakDays = 0
+            var cursor = today
+            while (contentDates.contains(cursor)) {
+                streakDays += 1
+                cursor = cursor.minusDays(1)
             }
+            val thisMonthCount = reflections.count {
+                it.hasAnyContent() && it.date.toLocalDateOrNull()?.let { d -> d.year == today.year && d.month == today.month } == true
+            }
+            JournalTopHeader(
+                title = "振り返り",
+                showLiveDot = reflections.any { it.date == LocalDate.now().toString() && it.hasAnyContent() },
+                navigationIcon = Icons.Outlined.Menu,
+                navigationContentDescription = "メニュー",
+                onNavigationClick = onMenuClick,
+                actions = {
+                    CompactHeaderIconButton(selected = false, onClick = { isSearchExpanded = true }, icon = Icons.Default.Search, contentDescription = "検索")
+                    CompactHeaderIconButton(selected = uiState.fieldFilters.isNotEmpty(), onClick = { isFilterSheetOpen = true }, icon = Icons.Default.FilterList, contentDescription = "フィルター", showNotificationDot = uiState.fieldFilters.isNotEmpty())
+                    CompactHeaderIconButton(selected = false, onClick = onCreateToday, icon = Icons.Default.Add, contentDescription = "今日を入力")
+                },
+                bottomSlot = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        HeaderStatCell(value = "$totalCount", label = "ENTRIES")
+                        HeaderStatCell(value = "$streakDays", label = "STREAK · DAYS", delta = if (streakDays > 0) "▲" else null)
+                        HeaderStatCell(value = "$thisMonthCount", label = "THIS MONTH")
+                    }
+                }
+            )
 
             if (isSearchExpanded) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -125,8 +146,6 @@ fun ReflectionTimelineScreen(
                     TextButton(onClick = { isSearchExpanded = false }) { Text("キャンセル") }
                 }
                 LaunchedEffect(Unit) { searchFocusRequester.requestFocus() }
-            } else {
-                ReflectionCompactBar(uiState.query, uiState.fieldFilters, { isSearchExpanded = true }, { isFilterSheetOpen = true })
             }
 
             if (timelineItems.isEmpty()) {
@@ -217,25 +236,6 @@ private fun TimelineEntry(filter: ReflectionFieldFilter, text: String, showDivid
         }
     }
     if (showDivider) Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.appColors.dividerSubtle))
-}
-
-@Composable
-private fun ReflectionCompactBar(query: String, selectedFilters: Set<ReflectionFieldFilter>, onTapSearch: () -> Unit, onTapFilter: () -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(SemanticColors.PositiveMain))
-            Text(text = compactLabel(query, selectedFilters), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.appColors.inkSecondary, modifier = Modifier.padding(start = 6.dp))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            IconButton(onClick = onTapSearch, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Search, contentDescription = "検索") }
-            Box {
-                IconButton(onClick = onTapFilter, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.FilterList, contentDescription = "フィルター") }
-                if (selectedFilters.isNotEmpty()) {
-                    Badge(modifier = Modifier.align(Alignment.TopEnd).size(7.dp), containerColor = SemanticColors.AccentOrange) {}
-                }
-            }
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
