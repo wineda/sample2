@@ -120,16 +120,47 @@ fun JournalTopHeader(
                     strokeWidth = 1.dp.toPx()
                 )
             }
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        CompactHeaderIconButton(selected = false, onClick = onNavigationClick, icon = navigationIcon, contentDescription = navigationContentDescription)
+        CompactHeaderIconButton(
+            selected = false,
+            onClick = onNavigationClick,
+            icon = navigationIcon,
+            contentDescription = navigationContentDescription
+        )
         Spacer(modifier = Modifier.size(8.dp))
         Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
-            if (showLiveDot) { Box(Modifier.size(6.dp).clip(CircleShape).background(SemanticColors.PositiveMain)); Spacer(Modifier.width(6.dp)) }
-            Text(text = title, fontSize = if (titleStyle == JournalHeaderTitleStyle.Default) 22.sp else 18.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp, color = MaterialTheme.appColors.inkStrongAlt)
-            subtitle?.let { Text(text = it, modifier = Modifier.padding(start = 6.dp), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.appColors.inkTertiary) }
+            if (showLiveDot) {
+                Box(Modifier.size(6.dp).clip(CircleShape).background(SemanticColors.PositiveMain))
+                Spacer(Modifier.width(6.dp))
+            }
+            Text(
+                text = title,
+                fontSize = if (titleStyle == JournalHeaderTitleStyle.Default) 22.sp else 18.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.4).sp,
+                color = MaterialTheme.appColors.inkStrongAlt
+            )
+            subtitle?.let {
+                Text(
+                    text = it,
+                    modifier = Modifier.padding(start = 6.dp),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.appColors.inkTertiary
+                )
+            }
         }
-        if (trailing != null) trailing() else Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
+        if (trailing != null) {
+            trailing()
+        } else {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                content = actions
+            )
+        }
     }
 }
 
