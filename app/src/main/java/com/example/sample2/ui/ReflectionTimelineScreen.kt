@@ -101,18 +101,6 @@ fun ReflectionTimelineScreen(
                 .padding(padding),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            val totalCount = reflections.count { it.hasAnyContent() }
-            val today = LocalDate.now()
-            val contentDates = reflections.filter { it.hasAnyContent() }.mapNotNull { it.date.toLocalDateOrNull() }.toSet()
-            var streakDays = 0
-            var cursor = today
-            while (contentDates.contains(cursor)) {
-                streakDays += 1
-                cursor = cursor.minusDays(1)
-            }
-            val thisMonthCount = reflections.count {
-                it.hasAnyContent() && it.date.toLocalDateOrNull()?.let { d -> d.year == today.year && d.month == today.month } == true
-            }
             JournalTopHeader(
                 title = "振り返り",
                 showLiveDot = reflections.any { it.date == LocalDate.now().toString() && it.hasAnyContent() },
@@ -123,13 +111,6 @@ fun ReflectionTimelineScreen(
                     CompactHeaderIconButton(selected = false, onClick = { isSearchExpanded = true }, icon = Icons.Default.Search, contentDescription = "検索")
                     CompactHeaderIconButton(selected = uiState.fieldFilters.isNotEmpty(), onClick = { isFilterSheetOpen = true }, icon = Icons.Default.FilterList, contentDescription = "フィルター", showNotificationDot = uiState.fieldFilters.isNotEmpty())
                     CompactHeaderIconButton(selected = false, onClick = onCreateToday, icon = Icons.Default.Add, contentDescription = "今日を入力")
-                },
-                bottomSlot = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                        HeaderStatCell(value = "$totalCount", label = "ENTRIES")
-                        HeaderStatCell(value = "$streakDays", label = "STREAK · DAYS", delta = if (streakDays > 0) "▲" else null)
-                        HeaderStatCell(value = "$thisMonthCount", label = "THIS MONTH")
-                    }
                 }
             )
 
