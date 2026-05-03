@@ -3,7 +3,6 @@ package com.example.sample2.ui
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -29,8 +28,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -68,6 +65,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
+import com.example.sample2.ui.components.AppCard
+import com.example.sample2.ui.components.AppCardVariant
 import com.example.sample2.ui.theme.Spacing
 
 @Composable
@@ -160,13 +159,7 @@ fun DailyReflectionScreen(state: JournalViewModel, initialDate: String = todayDa
 
 @Composable
 private fun SummarySection(h: ReflectionHints, s: com.example.sample2.analytics.DailyPersonalityScore?, state: PersonalityState?, hasBreakdown: Boolean) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)
-    ) {
-        Column(modifier = Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+    AppCard(variant = AppCardVariant.Outlined, verticalSpacing = Spacing.md) {
             Text("今日の状態", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.appColors.inkPrimary)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("ステータス", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
@@ -235,13 +228,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
         label = ""
     )
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)
-    ) {
-        Column(modifier = Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AppCard(variant = AppCardVariant.Outlined, verticalSpacing = 8.dp) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier

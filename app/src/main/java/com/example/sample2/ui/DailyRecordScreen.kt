@@ -27,7 +27,6 @@ import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.DirectionsWalk
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -68,6 +67,8 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.example.sample2.ui.components.AppCard
+import com.example.sample2.ui.components.AppCardVariant
 import com.example.sample2.ui.theme.Spacing
 
 private val TokyoZone: ZoneId = ZoneId.of("Asia/Tokyo")
@@ -149,7 +150,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
 }
 
 @Composable private fun SleepCard(bed: LocalTime?, wake: LocalTime?, quality: SleepQuality?, duration: Int?, onBed: () -> Unit, onWake: () -> Unit, onQuality: (SleepQuality) -> Unit) {
-    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)) { Column(Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+    AppCard(variant = AppCardVariant.Outlined, verticalSpacing = Spacing.md) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Bedtime, null); Spacer(Modifier.width(6.dp)); Text("睡眠", fontWeight = FontWeight.Bold); Spacer(Modifier.weight(1f)); StatusBadge(bed != null || wake != null || quality != null) }
         Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).background(Brush.linearGradient(listOf(MaterialTheme.appColors.sleepGradientStart, MaterialTheme.appColors.sleepGradientEnd))).padding(Spacing.md), verticalAlignment = Alignment.CenterVertically) { TimeCell("就寝", bed, Modifier.weight(1f), onBed); Text("→", color = MaterialTheme.appColors.inkTertiary); TimeCell("起床", wake, Modifier.weight(1f), onWake) }
         if (duration != null) { HorizontalDivider(color = MaterialTheme.appColors.dividerCool); Text("睡眠時間 ${formatDuration(duration)}") }
@@ -161,7 +162,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
 @Composable private fun TimeCell(label: String, time: LocalTime?, modifier: Modifier, onClick: () -> Unit) { Column(modifier.clickable(onClickLabel = "$label 時刻入力", onClick = onClick).padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text(label, color = MaterialTheme.appColors.inkTertiary, style = MaterialTheme.typography.labelMedium); Text(time?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "未設定", style = if (time == null) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.headlineLarge, color = if (time == null) MaterialTheme.appColors.inkTertiary else MaterialTheme.colorScheme.onSurface) } }
 @Composable private fun QualityButton(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) { Surface(onClick = onClick, modifier = modifier.height(72.dp), shape = MaterialTheme.shapes.small, color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface, border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.appColors.dividerCool), contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.appColors.inkSecondary) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(label, style = MaterialTheme.typography.labelMedium) } } }
 
-@Composable private fun StepCard(steps: Int, onSetSteps: (Int) -> Unit, onDelta: (Int) -> Unit) { Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)) { Column(Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.md)) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.DirectionsWalk, null); Spacer(Modifier.width(6.dp)); Text("歩数", fontWeight = FontWeight.Bold); Spacer(Modifier.weight(1f)); StatusBadge(steps > 0) }
+@Composable private fun StepCard(steps: Int, onSetSteps: (Int) -> Unit, onDelta: (Int) -> Unit) { AppCard(variant = AppCardVariant.Outlined, verticalSpacing = Spacing.md) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.DirectionsWalk, null); Spacer(Modifier.width(6.dp)); Text("歩数", fontWeight = FontWeight.Bold); Spacer(Modifier.weight(1f)); StatusBadge(steps > 0) }
     val progress = (steps.toFloat()/10000f).coerceIn(0f,1f)
     Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).background(Brush.linearGradient(listOf(MaterialTheme.appColors.sleepGradientStart, MaterialTheme.appColors.sleepGradientEnd))).padding(Spacing.md), horizontalAlignment = Alignment.CenterHorizontally) { Row(verticalAlignment = Alignment.Bottom) { Text(String.format("%,d", steps), style = MaterialTheme.typography.displayLarge.copy(letterSpacing = (-1).sp)); Text("歩", color = MaterialTheme.appColors.inkTertiary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)) }
     LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp), color = SemanticColors.PositiveMain, trackColor = MaterialTheme.appColors.dividerCool)

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -14,7 +13,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sample2.data.DailyRecord
+import com.example.sample2.ui.components.AppCard
+import com.example.sample2.ui.components.AppCardVariant
 import com.example.sample2.ui.theme.Spacing
 
 @Composable
@@ -32,10 +32,10 @@ fun TodayDailySummaryCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    ElevatedCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
+    AppCard(
+        modifier = modifier.clickable(onClick = onClick),
+        variant = AppCardVariant.Elevated,
+        verticalSpacing = Spacing.md
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
