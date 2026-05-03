@@ -93,9 +93,6 @@ import com.example.sample2.ui.theme.appColors
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -143,8 +140,6 @@ fun ChatRoute() {
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
     var createEditorMessage by remember { mutableStateOf<MessageV2?>(null) }
     var createEditorParentTarget by remember { mutableStateOf<MessageV2?>(null) }
-    val tokyoZone = remember { ZoneId.of("Asia/Tokyo") }
-    var selectedDate by remember { mutableStateOf(LocalDate.now(tokyoZone)) }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
@@ -228,11 +223,9 @@ fun ChatRoute() {
         derivedStateOf {
             state.messages
                 .filter {
-                    val date = Instant.ofEpochMilli(it.timestamp).atZone(tokyoZone).toLocalDate()
                     it.parentId == null &&
                             it.entryType == JournalEntryType.MEMO &&
-                            filterState.matches(it) &&
-                            date == selectedDate
+                            filterState.matches(it)
                 }
                 .sortedBy { it.timestamp }
         }
@@ -259,10 +252,9 @@ fun ChatRoute() {
         }
     }
 
-    val dateLabel = selectedDate.toString()
-    val datesWithRecord = remember(state.messages) {
-        state.messages.map { Instant.ofEpochMilli(it.timestamp).atZone(tokyoZone).toLocalDate() }.toSet()
-    }
+    val dateLabel = buildJournalDateLabel(
+        timestamp = parentEntries.lastOrNull()?.timestamp ?: System.currentTimeMillis()
+    )
 
     LaunchedEffect(parentEntries.size, currentMode) {
         if (
