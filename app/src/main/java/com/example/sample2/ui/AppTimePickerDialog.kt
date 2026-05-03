@@ -2,6 +2,7 @@ package com.example.sample2.ui
 
 import android.app.TimePickerDialog
 import android.content.Context
+import com.example.sample2.R
 import java.util.Calendar
 
 private const val AppTimePickerTitle = "時刻の設定"
@@ -14,6 +15,7 @@ fun showAppTimePickerDialog(
 ) {
     TimePickerDialog(
         context,
+        R.style.AppTimePickerDialog,
         { _, hourOfDay, minute ->
             onSelected(hourOfDay, minute)
         },
