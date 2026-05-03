@@ -51,7 +51,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sample2.analytics.PersonalityScoreModel
@@ -234,7 +233,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(number, fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, modifier = Modifier.widthIn(min = 24.dp))
                 Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-                val label = if (done) "DONE" else if (priority) "PRIORITY" else "EMPTY"
+                val label = if (done) "入力済" else if (priority) "優先" else "未入力"
                 val lBg = if (done) SemanticColors.InfoSoft else if (priority) SemanticColors.WarningSoft else MaterialTheme.appColors.surfaceMuted
                 val lColor = if (done) SemanticColors.InfoMain else if (priority) SemanticColors.WarningMain else MaterialTheme.appColors.inkTertiary
                 Text(label, style = MonoTypography.Micro.copy(color = lColor), modifier = Modifier.background(lBg, AppShapeTokens.Tech).padding(6.dp, 2.dp))
@@ -260,10 +259,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
                     inner()
                 }
             )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(sub.orEmpty(), fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, fontFamily = FontFamily.Monospace)
-                Text("${value.text.length} chars", fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, fontFamily = FontFamily.Monospace, textAlign = TextAlign.End)
-            }
+            Text(sub.orEmpty(), fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, fontFamily = FontFamily.Monospace)
         }
     }
 }
