@@ -13,6 +13,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,8 +74,11 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
@@ -88,6 +92,10 @@ import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.analytics.AnalyticsDisplayMode
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.util.formatDate
+import com.example.sample2.util.formatWeekRangeLabel
+import com.example.sample2.util.getMondayStartOfWeekMillis
+import com.example.sample2.util.isCurrentWeek
+import com.example.sample2.util.plusWeeks
 import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.appColors
 import kotlinx.coroutines.launch
@@ -96,6 +104,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 import com.example.sample2.ui.theme.Spacing
 import com.example.sample2.ui.theme.AppShapeTokens
 
@@ -142,6 +151,9 @@ fun ChatRoute() {
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
     var createEditorMessage by remember { mutableStateOf<MessageV2?>(null) }
     var createEditorParentTarget by remember { mutableStateOf<MessageV2?>(null) }
+    var selectedWeekStartMillis by remember {
+        mutableStateOf(getMondayStartOfWeekMillis(System.currentTimeMillis()))
+    }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
@@ -221,13 +233,19 @@ fun ChatRoute() {
         switchToJournal()
     }
 
+    val selectedWeekEndMillis = remember(selectedWeekStartMillis) {
+        plusWeeks(selectedWeekStartMillis, 1)
+    }
+
     val parentEntries by remember {
         derivedStateOf {
             state.messages
                 .filter {
                     it.parentId == null &&
                             it.entryType == JournalEntryType.MEMO &&
-                            filterState.matches(it)
+                            filterState.matches(it) &&
+                            it.timestamp >= selectedWeekStartMillis &&
+                            it.timestamp < selectedWeekEndMillis
                 }
                 .sortedBy { it.timestamp }
         }
@@ -254,11 +272,14 @@ fun ChatRoute() {
         }
     }
 
-    val dateLabel = buildJournalDateLabel(
-        timestamp = parentEntries.lastOrNull()?.timestamp ?: System.currentTimeMillis()
-    )
+    val weekTitle = remember(selectedWeekStartMillis) {
+        formatWeekRangeLabel(selectedWeekStartMillis)
+    }
+    val weekSubtitle = remember(selectedWeekStartMillis) {
+        if (isCurrentWeek(selectedWeekStartMillis)) "今週" else null
+    }
 
-    LaunchedEffect(parentEntries.size, currentMode) {
+    LaunchedEffect(parentEntries.size, currentMode, selectedWeekStartMillis) {
         if (
             currentMode == JournalScreenMode.Journal &&
             parentEntries.isNotEmpty()
@@ -541,8 +562,38 @@ fun ChatRoute() {
                                     .fillMaxSize()
                                     .padding(padding)
                             ) {
+                                val density = LocalDensity.current
+                                val weekSwipeThresholdPx = remember(density) {
+                                    with(density) { 96.dp.toPx() }
+                                }
+                                fun moveWeek(offset: Int) {
+                                    selectedWeekStartMillis =
+                                        getMondayStartOfWeekMillis(
+                                            plusWeeks(selectedWeekStartMillis, offset)
+                                        )
+                                }
+                                val weekSwipeModifier = Modifier.pointerInput(selectedWeekStartMillis) {
+                                    var dragAmountX = 0f
+                                    var consumed = false
+                                    detectHorizontalDragGestures(
+                                        onDragStart = {
+                                            dragAmountX = 0f
+                                            consumed = false
+                                        },
+                                        onHorizontalDrag = { change, dragAmount ->
+                                            dragAmountX += dragAmount
+                                            if (!consumed && abs(dragAmountX) > weekSwipeThresholdPx) {
+                                                moveWeek(if (dragAmountX < 0) 1 else -1)
+                                                consumed = true
+                                                change.consume()
+                                            }
+                                        }
+                                    )
+                                }
+
                                 JournalCompactMetaRow(
-                                    dateLabel = dateLabel,
+                                    title = weekTitle,
+                                    subtitle = weekSubtitle,
                                     hasActiveFilter = hasActiveFilter,
                                     isSingleLineMode = state.isSingleLineMode,
                                     isWorkMode = workModeEnabled,
@@ -561,6 +612,15 @@ fun ChatRoute() {
                                 HorizontalDivider(
                                     thickness = 1.dp,
                                     color = MaterialTheme.appColors.dividerSoft
+                                )
+                                Text(
+                                    text = "← 前の週 / 次の週 →",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 6.dp, bottom = 4.dp),
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.appColors.inkTertiary,
+                                    style = MaterialTheme.typography.labelSmall
                                 )
 
                                 AnimatedVisibility(
@@ -604,48 +664,75 @@ fun ChatRoute() {
                                     )
                                 }
 
-                                JournalMessageListPane(
-                                    messages = parentEntries,
-                                    listState = listState,
-                                    isSingleLineMode = state.isSingleLineMode,
-                                    timestampOf = { it.timestamp },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxWidth()
-                                ) { msg, isConnectedToPreviousInDay, isConnectedToNextInDay ->
-                                    val childEntries = childEntriesByParentId[msg.id].orEmpty()
-                                    val blockBottomPadding = if (childEntries.isNotEmpty()) 10.dp else 16.dp
-                                    Column(
-                                        modifier = Modifier.padding(bottom = blockBottomPadding)
+                                if (parentEntries.isEmpty()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth()
+                                            .then(weekSwipeModifier),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        MessageBubble(
-                                            message = msg,
-                                            state = state,
-                                            isConnectedToPreviousInDay = isConnectedToPreviousInDay,
-                                            isConnectedToNextInDay = isConnectedToNextInDay,
-                                            onDelete = { state.deleteMessage(msg) },
-                                            onUpdate = { updated ->
-                                                state.updateMessage(updated)
-                                            },
-                                            onDoubleClick = { parent ->
-                                                createEditorParentTarget = parent
-                                                createEditorMessage = MessageV2(
-                                                    id = "__new__",
-                                                    timestamp = System.currentTimeMillis(),
-                                                    text = ""
-                                                )
-                                            }
-                                        )
-
-                                        if (childEntries.isNotEmpty()) {
-                                            Spacer(modifier = Modifier.height(4.dp))
-
-                                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                                childEntries.forEach { child ->
-                                                    EmotionResponseChildBubble(
-                                                        message = child,
-                                                        onLongClick = { state.selectedMessage = it }
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text(
+                                                text = "この週の記録はまだありません",
+                                                color = MaterialTheme.appColors.inkSecondary,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Text(
+                                                text = "左右にスワイプして別の週へ移動できます",
+                                                color = MaterialTheme.appColors.inkTertiary,
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    JournalMessageListPane(
+                                        messages = parentEntries,
+                                        listState = listState,
+                                        isSingleLineMode = state.isSingleLineMode,
+                                        timestampOf = { it.timestamp },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth()
+                                            .then(weekSwipeModifier)
+                                    ) { msg, isConnectedToPreviousInDay, isConnectedToNextInDay ->
+                                        val childEntries = childEntriesByParentId[msg.id].orEmpty()
+                                        val blockBottomPadding = if (childEntries.isNotEmpty()) 10.dp else 16.dp
+                                        Column(
+                                            modifier = Modifier.padding(bottom = blockBottomPadding)
+                                        ) {
+                                            MessageBubble(
+                                                message = msg,
+                                                state = state,
+                                                isConnectedToPreviousInDay = isConnectedToPreviousInDay,
+                                                isConnectedToNextInDay = isConnectedToNextInDay,
+                                                onDelete = { state.deleteMessage(msg) },
+                                                onUpdate = { updated ->
+                                                    state.updateMessage(updated)
+                                                },
+                                                onDoubleClick = { parent ->
+                                                    createEditorParentTarget = parent
+                                                    createEditorMessage = MessageV2(
+                                                        id = "__new__",
+                                                        timestamp = System.currentTimeMillis(),
+                                                        text = ""
                                                     )
+                                                }
+                                            )
+
+                                            if (childEntries.isNotEmpty()) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+
+                                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                    childEntries.forEach { child ->
+                                                        EmotionResponseChildBubble(
+                                                            message = child,
+                                                            onLongClick = { state.selectedMessage = it }
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -817,7 +904,8 @@ private fun JournalBottomTab(
 
 @Composable
 private fun JournalCompactMetaRow(
-    dateLabel: String,
+    title: String,
+    subtitle: String?,
     hasActiveFilter: Boolean,
     isSingleLineMode: Boolean,
     isWorkMode: Boolean,
@@ -828,9 +916,9 @@ private fun JournalCompactMetaRow(
 ) {
     val effectiveSingleLineMode = isSingleLineMode || isWorkMode
     JournalTopHeader(
-        title = dateLabel.substringBefore('・'),
-        subtitle = if (dateLabel.contains("今日")) "今日" else null,
-        showLiveDot = dateLabel.contains("今日"),
+        title = title,
+        subtitle = subtitle,
+        showLiveDot = subtitle == "今週",
         navigationIcon = Icons.Outlined.Menu,
         navigationContentDescription = "メニュー",
         onNavigationClick = onMenuClick,
@@ -1059,23 +1147,4 @@ private fun shareJournalBackup(
     }
 
     context.startActivity(Intent.createChooser(intent, "バックアップを共有"))
-}
-
-private fun buildJournalDateLabel(timestamp: Long): String {
-    val dateText = SimpleDateFormat("M月d日(E)", Locale.JAPAN).format(Date(timestamp))
-
-    val target = Calendar.getInstance().apply {
-        timeInMillis = timestamp
-    }
-    val today = Calendar.getInstance()
-
-    val isToday =
-        target.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
-                target.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)
-
-    return if (isToday) {
-        "$dateText・今日"
-    } else {
-        dateText
-    }
 }
