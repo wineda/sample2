@@ -3,6 +3,7 @@ package com.example.sample2.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,6 +12,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.sample2.ui.theme.Spacing
@@ -24,7 +26,12 @@ fun AppCard(
     variant: AppCardVariant = AppCardVariant.Outlined,
     contentPadding: PaddingValues = PaddingValues(Spacing.md),
     verticalSpacing: Dp = Spacing.sm,
-    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
+    /**
+     * 背景色のオーバーライド。null の場合は MaterialTheme.colorScheme.surface を使う。
+     * 「選択状態のカード」「情報パネル風カード」など、surface 以外を使いたいケース用。
+     */
+    containerColor: Color? = null,
+    content: @Composable ColumnScope.() -> Unit
 ) {
     val border = if (variant == AppCardVariant.Outlined) {
         BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)
@@ -38,7 +45,9 @@ fun AppCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor ?: MaterialTheme.colorScheme.surface
+        ),
         border = border,
         elevation = elevation
     ) {
