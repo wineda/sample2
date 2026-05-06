@@ -20,13 +20,13 @@ object SemanticColors {
     val WarningMain = Color(0xFFC89232)
     val WarningSoft = Color(0xFFF7EFE0)
 
-    // 情報・アクセント（青）
+    // 情報・現在性・選択（青）
+    // 「TODAY」バッジ、フォーカス中入力枠、ボトムタブ選択下線などに使用。
+    // アプリ全体で「今/選択/フォーカスの中心」を表す色として統一されている。
     val InfoMain = Color(0xFF4A6FA5)
     val InfoSoft = Color(0xFFE8EEF7)
 
-    // 選択状態などのアクセント
-    val AccentRed = Color(0xFFC44536)
-
-    // 注意を引くオレンジ系アクセント
+    // カテゴリ識別用のオレンジ系アクセント
+    // (DailyReflection の番号別カラーマッピングで5番目の色として使用)
     val AccentOrange = Color(0xFFD97757)
 }
