@@ -32,7 +32,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -77,6 +76,7 @@ import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.firstEnabledActionOrNull
 import com.example.sample2.data.maxEmotionOrNull
+import com.example.sample2.ui.components.AppDestructiveDialog
 import com.example.sample2.ui.theme.EmotionPalette
 import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.colorSpec
@@ -662,26 +662,15 @@ fun MessageActionOverlay(
         }
     }
     if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("削除の確認") },
-            text = { Text("このメッセージを削除しますか？") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteConfirm = false
-                        onDelete()
-                        onDismiss()
-                    }
-                ) {
-                    Text("削除", color = MaterialTheme.colorScheme.error)
-                }
+        AppDestructiveDialog(
+            title = "削除の確認",
+            message = "このメッセージを削除しますか？",
+            onConfirm = {
+                showDeleteConfirm = false
+                onDelete()
+                onDismiss()
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("キャンセル")
-                }
-            }
+            onDismiss = { showDeleteConfirm = false }
         )
     }
 }

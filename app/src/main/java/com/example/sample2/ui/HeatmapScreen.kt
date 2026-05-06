@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -34,7 +33,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +51,9 @@ import com.example.sample2.analytics.getMessagesForEmotionSlot
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.EmotionType
 import com.example.sample2.data.MessageV2
+import com.example.sample2.ui.components.AppInfoDialog
 import com.example.sample2.ui.filter.PeriodPreset
+import com.example.sample2.ui.theme.Spacing
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -302,34 +302,26 @@ fun EmotionHeatmapBlock(
             toDate = toDate
         )
 
-        AlertDialog(
-            onDismissRequest = { selectedPair = null },
-            confirmButton = {
-                TextButton(onClick = { selectedPair = null }) {
-                    Text("閉じる")
-                }
-            },
-            title = {
-                Text("$day / $slot (${slotMessages.size}件)")
-            },
-            text = {
-                if (slotMessages.isEmpty()) {
-                    Text("データなし")
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .heightIn(max = 300.dp)
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        slotMessages.forEach {
-                            val sdf = SimpleDateFormat("MM/dd HH:mm", Locale.JAPAN)
-                            Text("${sdf.format(Date(it.timestamp))} ${it.text}")
-                            Spacer(modifier = Modifier.height(4.dp))
-                        }
+        AppInfoDialog(
+            title = "$day / $slot (${slotMessages.size}件)",
+            onDismiss = { selectedPair = null }
+        ) {
+            if (slotMessages.isEmpty()) {
+                Text("データなし")
+            } else {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 300.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    slotMessages.forEach {
+                        val sdf = SimpleDateFormat("MM/dd HH:mm", Locale.JAPAN)
+                        Text("${sdf.format(Date(it.timestamp))} ${it.text}")
+                        Spacer(modifier = Modifier.height(Spacing.xs))
                     }
                 }
             }
-        )
+        }
     }
 }
 
@@ -428,34 +420,26 @@ fun ActionHeatmapBlock(
             toDate = toDate
         )
 
-        AlertDialog(
-            onDismissRequest = { selectedPair = null },
-            confirmButton = {
-                TextButton(onClick = { selectedPair = null }) {
-                    Text("閉じる")
-                }
-            },
-            title = {
-                Text("$day / $slot (${slotMessages.size}件)")
-            },
-            text = {
-                if (slotMessages.isEmpty()) {
-                    Text("データなし")
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .heightIn(max = 300.dp)
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        slotMessages.forEach {
-                            val sdf = SimpleDateFormat("MM/dd HH:mm", Locale.JAPAN)
-                            Text("${sdf.format(Date(it.timestamp))} ${it.text}")
-                            Spacer(modifier = Modifier.height(4.dp))
-                        }
+        AppInfoDialog(
+            title = "$day / $slot (${slotMessages.size}件)",
+            onDismiss = { selectedPair = null }
+        ) {
+            if (slotMessages.isEmpty()) {
+                Text("データなし")
+            } else {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 300.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    slotMessages.forEach {
+                        val sdf = SimpleDateFormat("MM/dd HH:mm", Locale.JAPAN)
+                        Text("${sdf.format(Date(it.timestamp))} ${it.text}")
+                        Spacer(modifier = Modifier.height(Spacing.xs))
                     }
                 }
             }
-        )
+        }
     }
 }
 

@@ -33,11 +33,9 @@ import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -93,6 +91,7 @@ import com.example.sample2.ui.JournalTopHeader
 import com.example.sample2.ui.DateStepper
 import com.example.sample2.ui.components.AppCard
 import com.example.sample2.ui.components.AppCardVariant
+import com.example.sample2.ui.components.AppFormDialog
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
 import androidx.compose.material.icons.outlined.Menu
@@ -2286,75 +2285,62 @@ private fun SleepInputDialog(
         mutableStateOf(initialQuality.coerceIn(0, 3).toFloat())
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("${date.monthValue}月${date.dayOfMonth}日の睡眠入力") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = hoursText,
-                        onValueChange = { hoursText = it.filter(Char::isDigit).take(2) },
-                        label = { Text("時間") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    OutlinedTextField(
-                        value = minutesText,
-                        onValueChange = { minutesText = it.filter(Char::isDigit).take(2) },
-                        label = { Text("分") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                OutlinedTextField(
-                    value = stepsText,
-                    onValueChange = { stepsText = it.filter(Char::isDigit).take(6) },
-                    label = { Text("歩数") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Column {
-                    Text(
-                        text = "睡眠品質 ${qualityValue.toInt()} / 3",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Slider(
-                        value = qualityValue,
-                        onValueChange = {
-                            qualityValue = it.roundToInt().coerceIn(0, 3).toFloat()
-                        },
-                        valueRange = 0f..3f,
-                        steps = 2
-                    )
-                }
-            }
+    AppFormDialog(
+        title = "${date.monthValue}月${date.dayOfMonth}日の睡眠入力",
+        onConfirm = {
+            val hours = hoursText.toIntOrNull()?.coerceAtLeast(0) ?: 0
+            val minutes = minutesText.toIntOrNull()?.coerceIn(0, 59) ?: 0
+            val totalMinutes = hours * 60 + minutes
+            val steps = stepsText.toIntOrNull()?.coerceAtLeast(0) ?: 0
+            onSave(totalMinutes, qualityValue.toInt(), steps)
         },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val hours = hoursText.toIntOrNull()?.coerceAtLeast(0) ?: 0
-                    val minutes = minutesText.toIntOrNull()?.coerceIn(0, 59) ?: 0
-                    val totalMinutes = hours * 60 + minutes
-                    val steps = stepsText.toIntOrNull()?.coerceAtLeast(0) ?: 0
-                    onSave(totalMinutes, qualityValue.toInt(), steps)
-                }
-            ) {
-                Text("保存")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("キャンセル")
-            }
+        onDismiss = onDismiss,
+        confirmLabel = "保存"
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            OutlinedTextField(
+                value = hoursText,
+                onValueChange = { hoursText = it.filter(Char::isDigit).take(2) },
+                label = { Text("時間") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+
+            OutlinedTextField(
+                value = minutesText,
+                onValueChange = { minutesText = it.filter(Char::isDigit).take(2) },
+                label = { Text("分") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
         }
-    )
+
+        OutlinedTextField(
+            value = stepsText,
+            onValueChange = { stepsText = it.filter(Char::isDigit).take(6) },
+            label = { Text("歩数") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Column {
+            Text(
+                text = "睡眠品質 ${qualityValue.toInt()} / 3",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Slider(
+                value = qualityValue,
+                onValueChange = {
+                    qualityValue = it.roundToInt().coerceIn(0, 3).toFloat()
+                },
+                valueRange = 0f..3f,
+                steps = 2
+            )
+        }
+    }
 }
 
 @Composable
