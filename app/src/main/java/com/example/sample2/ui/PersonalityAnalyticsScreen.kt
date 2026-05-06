@@ -981,7 +981,6 @@ private fun MultiLineChart(
                         Text(
                             text = item.label,
                             style = MaterialTheme.typography.labelSmall,
-                            fontSize = 10.sp,
                             color = if (item.label in hiddenSeriesLabels) {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             } else {
@@ -1075,7 +1074,6 @@ private fun SimpleMultiLineChart(
                         String.format(Locale.JAPAN, "%.1f", value)
                     },
                     style = MaterialTheme.typography.labelSmall,
-                    fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

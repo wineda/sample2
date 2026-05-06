@@ -61,8 +61,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -80,6 +78,7 @@ import com.example.sample2.data.MessageV2
 import com.example.sample2.data.firstEnabledActionOrNull
 import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.theme.EmotionPalette
+import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.colorSpec
 import com.example.sample2.ui.theme.appColors
 import com.example.sample2.util.formatTime
@@ -185,15 +184,13 @@ fun MessageBubble(
                         Text(
                             text = categoryLabel,
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold
                             ),
                             color = categoryColorFor(message)
                         )
                         Text(
                             text = displayText,
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontSize = 15.sp,
+                            style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = (-0.16).sp
                             ),
@@ -203,10 +200,7 @@ fun MessageBubble(
                         )
                         Text(
                             text = formatTime(message.timestamp),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace
-                            ),
+                            style = MonoTypography.Body,
                             color = MaterialTheme.appColors.inkSecondary
                         )
                     }
@@ -273,8 +267,7 @@ fun EmotionResponseChildBubble(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = message.text,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 13.sp,
+                    style = MaterialTheme.typography.labelLarge.copy(
                         fontWeight = FontWeight.Medium
                     ),
                     color = MaterialTheme.appColors.inkPrimary,
@@ -283,10 +276,7 @@ fun EmotionResponseChildBubble(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = formatTime(message.timestamp),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 9.sp,
-                        fontFamily = FontFamily.Monospace
-                    ),
+                    style = MonoTypography.Micro,
                     color = MaterialTheme.appColors.inkTertiary
                 )
             }
@@ -324,8 +314,7 @@ fun DateLabel(timestamp: Long) {
     ) {
         Text(
             text = dateText,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 13.sp,
+            style = MaterialTheme.typography.labelLarge.copy(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.01).sp
             ),
@@ -341,12 +330,7 @@ fun DateLabel(timestamp: Long) {
             Text(
                 text = relative,
                 modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 9.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 0.1.sp
-                ),
+                style = MonoTypography.Micro,
                 color = MaterialTheme.colorScheme.surface
             )
         }
@@ -447,31 +431,26 @@ fun MessageActionOverlay(
                     ) {
                         Text(
                             text = if (mode == EditorMode.CREATE) "新しい記録" else "記録を編集",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = if (mode == EditorMode.CREATE) "NEW" else "EDIT",
-                            fontSize = 9.sp,
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = 0.15.sp,
+                            style = MonoTypography.Micro,
                             color = MaterialTheme.appColors.inkSecondary
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "本文",
-                        fontSize = 9.sp,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = 0.12.sp,
+                        style = MonoTypography.Micro,
                         color = MaterialTheme.appColors.inkTertiary
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     BasicTextField(
                         value = editingText,
                         onValueChange = { editingText = it },
-                        textStyle = TextStyle(
-                            fontSize = 14.sp,
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
                             lineHeight = 21.sp,
                             color = MaterialTheme.appColors.inkPrimary
                         ),
@@ -485,7 +464,7 @@ fun MessageActionOverlay(
                                 Text(
                                     text = "思ったことをひとこと…",
                                     color = MaterialTheme.appColors.inkSecondary,
-                                    fontSize = 14.sp
+                                    style = MaterialTheme.typography.bodyMedium
                                 )
                             }
                             innerTextField()
@@ -525,17 +504,16 @@ fun MessageActionOverlay(
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = "時刻",
-                        fontSize = 9.sp,
-                        fontFamily = FontFamily.Monospace,
+                        style = MonoTypography.Micro,
                         color = MaterialTheme.appColors.inkTertiary,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
                         text = formatEditorTime(editingTimestamp),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = (-0.02).sp,
+                        style = MonoTypography.Body.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.02).sp
+                        ),
                         color = MaterialTheme.appColors.inkPrimary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -632,7 +610,7 @@ fun MessageActionOverlay(
                             onDismiss()
                         }
                     ) {
-                        Text("閉じる", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text("閉じる", style = MaterialTheme.typography.titleSmall)
                     }
 
                     Button(
@@ -649,7 +627,7 @@ fun MessageActionOverlay(
                             onDismiss()
                         }
                     ) {
-                        Text("保存", color = MaterialTheme.colorScheme.surface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text("保存", color = MaterialTheme.colorScheme.surface, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                     }
 
                     if (mode == EditorMode.EDIT) Box {
@@ -775,7 +753,7 @@ private fun AdditiveEmotionEditor(
                 ) {
                     Text(
                         text = "どの感情がありましたか?",
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold
                     )
                     Row(
@@ -804,7 +782,7 @@ private fun AdditiveEmotionEditor(
                                 )
                                 Text(
                                     text = emotion.label,
-                                    fontSize = 9.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.appColors.inkSecondary.copy(alpha = if (isAdded) 0.4f else 1f)
                                 )
@@ -833,7 +811,7 @@ private fun AddEmotionButton(text: String, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = "＋ ", fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkSecondary)
-            Text(text = text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.appColors.inkSecondary)
+            Text(text = text, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.appColors.inkSecondary)
         }
     }
 }
@@ -867,7 +845,7 @@ private fun EmotionSegmentRow(
                 modifier = Modifier
                     .width(36.dp)
                     .padding(start = 8.dp),
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold
             )
             Row(
@@ -948,13 +926,13 @@ private fun CollapsibleActionTypeEditor(
             ) {
                 Text(
                     text = "種類",
-                    fontSize = 9.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.appColors.inkTertiary,
                     letterSpacing = 1.2.sp
                 )
                 Text(
                     text = currentType.label,
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.appColors.inkPrimary,
                     fontWeight = FontWeight.Bold
                 )
@@ -1047,7 +1025,7 @@ private fun ActionTypeGrid(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = type.label,
-                            fontSize = 9.5.sp,
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.appColors.inkPrimary,
                             textAlign = TextAlign.Center,
