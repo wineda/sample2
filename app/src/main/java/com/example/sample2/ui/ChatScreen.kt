@@ -41,8 +41,6 @@ import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.ViewAgenda
 import androidx.compose.material.icons.outlined.ViewStream
 import androidx.compose.material.icons.outlined.WorkOutline
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -78,6 +76,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import com.example.sample2.data.DefaultJournalRepository
+import com.example.sample2.ui.components.AppConfirmDialog
+import com.example.sample2.ui.components.AppDestructiveDialog
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.JournalBackupService
@@ -316,51 +316,26 @@ fun ChatRoute() {
     }
 
     if (state.showRestoreDialog) {
-        AlertDialog(
-            onDismissRequest = { state.showRestoreDialog = false },
-            title = { Text("リストア確認") },
-            text = { Text("現在のデータは上書きされます。\nよろしいですか？") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        state.showRestoreDialog = false
-                        restoreLauncher.launch(arrayOf("application/json"))
-                    }
-                ) {
-                    Text("OK")
-                }
+        AppConfirmDialog(
+            title = "リストア確認",
+            message = "現在のデータは上書きされます。\nよろしいですか？",
+            onConfirm = {
+                state.showRestoreDialog = false
+                restoreLauncher.launch(arrayOf("application/json"))
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { state.showRestoreDialog = false }
-                ) {
-                    Text("キャンセル")
-                }
-            }
+            onDismiss = { state.showRestoreDialog = false }
         )
     }
 
     if (state.deleteTarget != null) {
-        AlertDialog(
-            containerColor = MaterialTheme.colorScheme.background,
-            onDismissRequest = { state.deleteTarget = null },
-            title = { Text("削除") },
-            text = { Text("このメッセージを削除しますか？") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        state.deleteTarget?.let { state.deleteMessage(it) }
-                        state.deleteTarget = null
-                    }
-                ) {
-                    Text("削除")
-                }
+        AppDestructiveDialog(
+            title = "削除",
+            message = "このメッセージを削除しますか？",
+            onConfirm = {
+                state.deleteTarget?.let { state.deleteMessage(it) }
+                state.deleteTarget = null
             },
-            dismissButton = {
-                TextButton(onClick = { state.deleteTarget = null }) {
-                    Text("キャンセル")
-                }
-            }
+            onDismiss = { state.deleteTarget = null }
         )
     }
 
