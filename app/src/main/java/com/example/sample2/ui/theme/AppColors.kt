@@ -42,8 +42,6 @@ data class AppColorScheme(
 
     // 維持: 用途が明確で誤用がないトークン
     val borderStrong: Color,
-    val sleepGradientStart: Color,
-    val sleepGradientEnd: Color,
     val scrimDim: Color,
 )
 
@@ -62,8 +60,6 @@ val LightAppColors = AppColorScheme(
     dividerStrong = Color(0xFFD1D5DB),    // 旧 dividerMid (+ Neutral, surfaceSubtleDeep)
 
     borderStrong = Color(0xFFB8C0CC),
-    sleepGradientStart = Color(0xFFF8FAFD),
-    sleepGradientEnd = Color(0xFFF1F4F9),
     scrimDim = Color(0x52000000),
 )
 
@@ -82,8 +78,6 @@ val DarkAppColors = AppColorScheme(
     dividerStrong = Color(0xFF4A4E57),    // 旧 dividerMid 系
 
     borderStrong = Color(0xFF5A6068),
-    sleepGradientStart = Color(0xFF1F2128),
-    sleepGradientEnd = Color(0xFF181A1F),
     scrimDim = Color(0x7A000000),
 )
 

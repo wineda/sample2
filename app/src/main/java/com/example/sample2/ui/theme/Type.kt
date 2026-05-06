@@ -31,3 +31,38 @@ val Typography = Typography(
     labelMedium = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 15.sp),
     labelSmall = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Medium, fontSize = 10.sp, lineHeight = 14.sp)
 )
+
+
+/**
+ * セマンティックなタイポグラフィエイリアス。
+ *
+ * Material の標準トークン（titleLarge / headlineLarge 等）と完全一致しない
+ * 「アプリ独自のヘッダー表現」に名前を付けるためのもの。
+ *
+ * Material 標準トークンで足りる場合は MaterialTheme.typography.* を直接使うこと。
+ */
+object AppTextStyles {
+    /**
+     * 画面ヘッダーの大型タイトル（22sp Bold + 引き締まった letterSpacing）。
+     * JournalTopHeader の Default サイズで使用。
+     */
+    val ScreenTitleLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = (-0.4).sp,
+    )
+
+    /**
+     * 画面ヘッダーの中型タイトル（18sp Bold + 引き締まった letterSpacing）。
+     * JournalTopHeader の Medium サイズで使用。
+     */
+    val ScreenTitleMedium = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+        letterSpacing = (-0.4).sp,
+    )
+}

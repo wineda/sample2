@@ -57,14 +57,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.example.sample2.ui.theme.AppShapeTokens
+import com.example.sample2.ui.theme.AppTextStyles
 import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.appColors
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.sample2.ui.theme.Spacing
 
 
@@ -111,8 +110,8 @@ enum class JournalHeaderTitleStyle { Default, Medium }
 fun HeaderProgressStack(current: Int, total: Int, label: String, large: Boolean = false) {
     Column(horizontalAlignment = Alignment.End) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(text = "$current", fontFamily = FontFamily.Monospace, fontSize = if (large) 24.sp else 18.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.appColors.inkPrimary)
-            Text(text = " / $total", fontFamily = FontFamily.Monospace, fontSize = if (large) 14.sp else 12.sp, color = MaterialTheme.appColors.inkTertiary)
+            Text(text = "$current", style = if (large) MonoTypography.CounterLarge else MonoTypography.CounterMedium, color = MaterialTheme.appColors.inkPrimary)
+            Text(text = " / $total", style = if (large) MonoTypography.CounterTotalLarge else MonoTypography.CounterTotalMedium, color = MaterialTheme.appColors.inkTertiary)
         }
         Text(text = label.uppercase(), style = MonoTypography.Micro.copy(color = MaterialTheme.appColors.inkTertiary))
     }
@@ -150,7 +149,7 @@ fun JournalTopHeader(
                     strokeWidth = 1.dp.toPx()
                 )
             }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = Spacing.lg, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
         CompactHeaderIconButton(
@@ -159,7 +158,7 @@ fun JournalTopHeader(
             icon = navigationIcon,
             contentDescription = navigationContentDescription
         )
-        Spacer(modifier = Modifier.size(8.dp))
+        Spacer(modifier = Modifier.size(Spacing.sm))
         Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
             if (showLiveDot) {
                 Box(Modifier.size(6.dp).clip(CircleShape).background(SemanticColors.PositiveMain))
@@ -167,9 +166,11 @@ fun JournalTopHeader(
             }
             Text(
                 text = title,
-                fontSize = if (titleStyle == JournalHeaderTitleStyle.Default) 22.sp else 18.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.4).sp,
+                style = if (titleStyle == JournalHeaderTitleStyle.Default) {
+                    AppTextStyles.ScreenTitleLarge
+                } else {
+                    AppTextStyles.ScreenTitleMedium
+                },
                 color = MaterialTheme.appColors.inkStrongAlt
             )
             subtitle?.let {

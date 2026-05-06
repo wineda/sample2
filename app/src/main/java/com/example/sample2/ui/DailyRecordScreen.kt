@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -46,7 +47,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
@@ -129,7 +129,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
             )
             LazyColumn(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
                 item {
@@ -151,7 +151,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
 @Composable private fun SleepCard(bed: LocalTime?, wake: LocalTime?, quality: SleepQuality?, duration: Int?, onBed: () -> Unit, onWake: () -> Unit, onQuality: (SleepQuality) -> Unit) {
     AppCard(variant = AppCardVariant.Outlined, verticalSpacing = Spacing.md) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.Bedtime, null); Spacer(Modifier.width(6.dp)); Text("睡眠", fontWeight = FontWeight.Bold); Spacer(Modifier.weight(1f)); StatusBadge(bed != null || wake != null || quality != null) }
-        Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).background(Brush.linearGradient(listOf(MaterialTheme.appColors.sleepGradientStart, MaterialTheme.appColors.sleepGradientEnd))).padding(Spacing.md), verticalAlignment = Alignment.CenterVertically) { TimeCell("就寝", bed, Modifier.weight(1f), onBed); Text("→", color = MaterialTheme.appColors.inkTertiary); TimeCell("起床", wake, Modifier.weight(1f), onWake) }
+        Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).background(MaterialTheme.appColors.surfaceQuiet).padding(Spacing.md), verticalAlignment = Alignment.CenterVertically) { TimeCell("就寝", bed, Modifier.weight(1f), onBed); Text("→", color = MaterialTheme.appColors.inkTertiary); TimeCell("起床", wake, Modifier.weight(1f), onWake) }
         if (duration != null) { HorizontalDivider(color = MaterialTheme.appColors.dividerSoft); Text("睡眠時間 ${formatDuration(duration)}") }
         Text("睡眠の質", color = MaterialTheme.appColors.inkSecondary, style = MaterialTheme.typography.bodySmall)
         val labels = listOf("悪い", "やや悪", "普通", "良い", "とても")
@@ -163,7 +163,7 @@ fun DailyRecordScreen(onClose: () -> Unit, initialDate: String = todayDateString
 
 @Composable private fun StepCard(steps: Int, onSetSteps: (Int) -> Unit, onDelta: (Int) -> Unit) { AppCard(variant = AppCardVariant.Outlined, verticalSpacing = Spacing.md) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.DirectionsWalk, null); Spacer(Modifier.width(6.dp)); Text("歩数", fontWeight = FontWeight.Bold); Spacer(Modifier.weight(1f)); StatusBadge(steps > 0) }
     val progress = (steps.toFloat()/10000f).coerceIn(0f,1f)
-    Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).background(Brush.linearGradient(listOf(MaterialTheme.appColors.sleepGradientStart, MaterialTheme.appColors.sleepGradientEnd))).padding(Spacing.md), horizontalAlignment = Alignment.CenterHorizontally) { Row(verticalAlignment = Alignment.Bottom) { Text(String.format("%,d", steps), style = MaterialTheme.typography.displayLarge.copy(letterSpacing = (-1).sp)); Text("歩", color = MaterialTheme.appColors.inkTertiary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)) }
+    Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small).background(MaterialTheme.appColors.surfaceQuiet).padding(Spacing.md), horizontalAlignment = Alignment.CenterHorizontally) { Row(verticalAlignment = Alignment.Bottom) { Text(String.format("%,d", steps), style = MaterialTheme.typography.displayLarge.copy(letterSpacing = (-1).sp)); Text("歩", color = MaterialTheme.appColors.inkTertiary, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)) }
     LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp), color = SemanticColors.PositiveMain, trackColor = MaterialTheme.appColors.dividerSoft)
     Text(if (progress < 1f) "目標 10,000歩 まで あと ${String.format("%,d", 10_000-steps.coerceAtMost(10_000))}歩" else "目標達成！(${String.format("%,d", steps - 10_000)}歩)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.appColors.inkTertiary)
     }

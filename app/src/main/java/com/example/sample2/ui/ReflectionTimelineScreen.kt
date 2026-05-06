@@ -145,7 +145,7 @@ fun ReflectionTimelineScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                    contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     monthGroups.forEach { group ->
