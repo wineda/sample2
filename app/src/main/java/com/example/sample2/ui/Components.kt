@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.example.sample2.ui.theme.AppShapeTokens
+import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.appColors
 import androidx.compose.ui.unit.dp
@@ -113,7 +114,7 @@ fun HeaderProgressStack(current: Int, total: Int, label: String, large: Boolean 
             Text(text = "$current", fontFamily = FontFamily.Monospace, fontSize = if (large) 24.sp else 18.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.appColors.inkPrimary)
             Text(text = " / $total", fontFamily = FontFamily.Monospace, fontSize = if (large) 14.sp else 12.sp, color = MaterialTheme.appColors.inkTertiary)
         }
-        Text(text = label.uppercase(), fontFamily = FontFamily.Monospace, fontSize = 9.sp, letterSpacing = 1.5.sp, color = MaterialTheme.appColors.inkTertiary)
+        Text(text = label.uppercase(), style = MonoTypography.Micro.copy(color = MaterialTheme.appColors.inkTertiary))
     }
 }
 
@@ -175,7 +176,7 @@ fun JournalTopHeader(
                 Text(
                     text = it,
                     modifier = Modifier.padding(start = 6.dp),
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.appColors.inkTertiary
                 )
@@ -305,13 +306,13 @@ fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDat
             StepperCircleNav(Icons.Rounded.ChevronLeft, "前日", { onDateChange(selectedDate.minusDays(1)) }, enabled = minDate?.let { selectedDate>it } ?: true)
             Column(Modifier.weight(1f).clickable { showDialog=true }.semantics { contentDescription = "日付選択" }, horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.JAPAN)), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkPrimary)
-                    if (selectedDate==today) Surface(shape=AppShapeTokens.Tech, color=SemanticColors.InfoMain){ Text("TODAY", color=Color.White, fontFamily=FontFamily.Monospace, fontSize=9.sp, letterSpacing=1.sp, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
-                    else if (selectedDate<today) Surface(shape=AppShapeTokens.Tech, color=MaterialTheme.appColors.surfaceCool){ Text("${ChronoUnit.DAYS.between(selectedDate,today)}日前", color=MaterialTheme.appColors.inkTertiary, fontFamily=FontFamily.Monospace, fontSize=9.sp, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
+                    Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.JAPAN)), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkPrimary)
+                    if (selectedDate==today) Surface(shape=AppShapeTokens.Tech, color=SemanticColors.InfoMain){ Text("TODAY", color=Color.White, style=MonoTypography.Micro, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
+                    else if (selectedDate<today) Surface(shape=AppShapeTokens.Tech, color=MaterialTheme.appColors.surfaceCool){ Text("${ChronoUnit.DAYS.between(selectedDate,today)}日前", color=MaterialTheme.appColors.inkTertiary, style=MonoTypography.Micro, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
                 }
                 Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(Icons.Default.CalendarMonth, null, modifier=Modifier.size(14.dp), tint=MaterialTheme.appColors.inkTertiary)
-                    Text(selectedDate.format(DateTimeFormatter.ofPattern("E曜日", Locale.JAPAN)), fontSize=12.sp, color=MaterialTheme.appColors.inkTertiary)
+                    Text(selectedDate.format(DateTimeFormatter.ofPattern("E曜日", Locale.JAPAN)), style=MaterialTheme.typography.bodySmall, color=MaterialTheme.appColors.inkTertiary)
                 }
             }
             StepperCircleNav(Icons.Rounded.ChevronRight, "翌日", { onDateChange(selectedDate.plusDays(1)) }, enabled = selectedDate < maxDate)
@@ -322,7 +323,7 @@ fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDat
                     val target = opt.resolveDate(selectedDate)
                     val selected = target == selectedDate
                     Surface(onClick = { onDateChange(target) }, shape = AppShapeTokens.Pill, color = if(selected) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.surfaceCool, contentColor = if(selected) Color.White else MaterialTheme.appColors.inkSecondary) {
-                        Text(opt.label, modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp), fontSize=11.sp, fontWeight=FontWeight.Bold)
+                        Text(opt.label, modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp), style=MaterialTheme.typography.labelMedium, fontWeight=FontWeight.Bold)
                     }
                 }
             }

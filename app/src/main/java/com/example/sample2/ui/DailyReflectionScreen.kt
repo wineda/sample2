@@ -45,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -201,7 +200,7 @@ private fun StatusBadge(state: PersonalityState?) {
 private fun RowScope.MetricCell(label: String, value: String, divider: Boolean) {
     Column(Modifier.weight(1f).then(if (divider) Modifier.border(0.5.dp, MaterialTheme.appColors.dividerNeutral) else Modifier).padding(8.dp)) {
         Text(label, style = MonoTypography.Micro.copy(color = MaterialTheme.appColors.inkTertiary))
-        Text(value, fontFamily = FontFamily.Monospace, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.appColors.inkPrimary)
+        Text(value, style = MonoTypography.Numeric.copy(color = MaterialTheme.appColors.inkPrimary))
     }
 }
 
@@ -236,7 +235,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
                         .background(accentColor, AppShapeTokens.Tech)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(number, fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, modifier = Modifier.widthIn(min = 24.dp))
+                Text(number, style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary), modifier = Modifier.widthIn(min = 24.dp))
                 Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
                 val label = if (done) "入力済" else if (priority) "優先" else "未入力"
                 val lBg = if (done) SemanticColors.InfoSoft else if (priority) SemanticColors.WarningSoft else MaterialTheme.appColors.surfaceMuted
@@ -266,7 +265,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
                 }
             )
             if (!sub.isNullOrBlank()) {
-                Text(sub, fontSize = 10.sp, color = MaterialTheme.appColors.inkTertiary, fontFamily = FontFamily.Monospace)
+                Text(sub, style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
             }
     }
 }

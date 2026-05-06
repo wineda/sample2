@@ -76,7 +76,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import com.example.sample2.data.DefaultJournalRepository
 import com.example.sample2.data.ActionType
@@ -799,7 +798,7 @@ private fun JournalBottomTab(
                 )
                 Text(
                     text = text,
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelMedium,
                     color = if (selected) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.inkTertiary,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                 )

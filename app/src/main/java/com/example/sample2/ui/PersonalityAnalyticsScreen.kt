@@ -91,6 +91,8 @@ import com.example.sample2.ui.CompactHeaderIconButton
 import com.example.sample2.ui.EmotionHeatmapBlock
 import com.example.sample2.ui.JournalTopHeader
 import com.example.sample2.ui.DateStepper
+import com.example.sample2.ui.components.AppCard
+import com.example.sample2.ui.components.AppCardVariant
 import com.example.sample2.ui.filter.PeriodPreset
 import com.example.sample2.ui.formatDate
 import androidx.compose.material.icons.outlined.Menu
@@ -671,37 +673,30 @@ private fun ActionFlagCountChartCard(
     endPadding: Dp = 0.dp,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(start = startPadding, end = endPadding),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+    AppCard(
+        modifier = modifier.padding(start = startPadding, end = endPadding),
+        variant = AppCardVariant.Default,
+        contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.md),
+        verticalSpacing = Spacing.md
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = Spacing.md, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md)
-        ) {
-            Text(
-                text = "仕事推移",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+        Text(
+            text = "仕事推移",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
 
-            MultiLineChart(
-                labels = labels,
-                series = series,
-                minValue = 0f,
-                maxValue = 10f,
-                yAxisTicks = listOf(0f, 2f, 4f, 6f, 8f, 10f),
-                toggleableLegend = true,
-                smoothLine = smoothLine,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-            )
-        }
+        MultiLineChart(
+            labels = labels,
+            series = series,
+            minValue = 0f,
+            maxValue = 10f,
+            yAxisTicks = listOf(0f, 2f, 4f, 6f, 8f, 10f),
+            toggleableLegend = true,
+            smoothLine = smoothLine,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+        )
     }
 }
 
@@ -715,36 +710,29 @@ private fun MetricBarChartCard(
     endPadding: Dp = 0.dp,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(start = startPadding, end = endPadding),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+    AppCard(
+        modifier = modifier.padding(start = startPadding, end = endPadding),
+        variant = AppCardVariant.Default,
+        contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.md),
+        verticalSpacing = Spacing.md
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = Spacing.md, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
 
-            SimpleBarChart(
-                entries = entries,
-                seriesLabel = seriesLabel,
-                color = color,
-                minValue = 0f,
-                maxValue = 10f,
-                yAxisTicks = listOf(0f, 2f, 4f, 6f, 8f, 10f),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-            )
-        }
+        SimpleBarChart(
+            entries = entries,
+            seriesLabel = seriesLabel,
+            color = color,
+            minValue = 0f,
+            maxValue = 10f,
+            yAxisTicks = listOf(0f, 2f, 4f, 6f, 8f, 10f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+        )
     }
 }
 
@@ -808,35 +796,31 @@ private fun OverallTrendChartCard(
 ) {
     val swipeThresholdPx = with(LocalDensity.current) { 36.dp.toPx() }
     var accumulatedDrag by remember(currentPeriod) { mutableStateOf(0f) }
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(start = startPadding, end = endPadding),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+    AppCard(
+        modifier = modifier.padding(start = startPadding, end = endPadding),
+        variant = AppCardVariant.Default,
+        contentPadding = PaddingValues(Spacing.md),
+        verticalSpacing = Spacing.md
     ) {
         Column(
-            modifier = Modifier
-                .padding(Spacing.md)
-                .pointerInput(currentPeriod, scores.size) {
-                    detectHorizontalDragGestures(
-                        onHorizontalDrag = { change, dragAmount ->
-                            change.consume()
-                            accumulatedDrag += dragAmount
-                        },
-                        onDragEnd = {
-                            when {
-                                accumulatedDrag <= -swipeThresholdPx -> onSwipeToBroaderPeriod()
-                                accumulatedDrag >= swipeThresholdPx -> onSwipeToNarrowerPeriod()
-                            }
-                            accumulatedDrag = 0f
-                        },
-                        onDragCancel = {
-                            accumulatedDrag = 0f
+            modifier = Modifier.pointerInput(currentPeriod, scores.size) {
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consume()
+                        accumulatedDrag += dragAmount
+                    },
+                    onDragEnd = {
+                        when {
+                            accumulatedDrag <= -swipeThresholdPx -> onSwipeToBroaderPeriod()
+                            accumulatedDrag >= swipeThresholdPx -> onSwipeToNarrowerPeriod()
                         }
-                    )
-                },
+                        accumulatedDrag = 0f
+                    },
+                    onDragCancel = {
+                        accumulatedDrag = 0f
+                    }
+                )
+            },
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             Row(
@@ -997,7 +981,6 @@ private fun MultiLineChart(
                         Text(
                             text = item.label,
                             style = MaterialTheme.typography.labelSmall,
-                            fontSize = 10.sp,
                             color = if (item.label in hiddenSeriesLabels) {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             } else {
@@ -1091,7 +1074,6 @@ private fun SimpleMultiLineChart(
                         String.format(Locale.JAPAN, "%.1f", value)
                     },
                     style = MaterialTheme.typography.labelSmall,
-                    fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1461,113 +1443,110 @@ fun DailyPersonalityScoreCard(
 
     var showSleepDialog by rememberSaveable(score.date.toString()) { mutableStateOf(false) }
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .let { base -> if (onClick != null) base.clickable { onClick() } else base },
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        )
+    AppCard(
+        modifier = modifier.let { base -> if (onClick != null) base.clickable { onClick() } else base },
+        variant = AppCardVariant.Default,
+        contentPadding = PaddingValues(0.dp),
+        verticalSpacing = Spacing.md,
+        containerColor = if (selected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            null
+        }
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Surface(
-                color = if (selected) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
-                contentColor = if (selected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-                modifier = Modifier.fillMaxWidth()
+        Surface(
+            color = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            },
+            contentColor = if (selected) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.md, vertical = Spacing.md),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.md, vertical = Spacing.md),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = score.date.format(dateFormatter),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = score.date.format(dateFormatter),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                        val sleepText = score.features.sleepHours?.let {
-                            "睡眠 ${"%.1f".format(Locale.JAPAN, it)}h"
-                        } ?: "睡眠未入力"
+                    val sleepText = score.features.sleepHours?.let {
+                        "睡眠 ${"%.1f".format(Locale.JAPAN, it)}h"
+                    } ?: "睡眠未入力"
 
-                        Text(
-                            text = sleepText,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+                    Text(
+                        text = sleepText,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
 
-                    TextButton(onClick = { showSleepDialog = true }) {
-                        Icon(imageVector = Icons.Default.Bedtime, contentDescription = null)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("睡眠入力")
-                    }
+                TextButton(onClick = { showSleepDialog = true }) {
+                    Icon(imageVector = Icons.Default.Bedtime, contentDescription = null)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("睡眠入力")
                 }
             }
+        }
 
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            StateBadge(
+                label = "日単体: ${score.state.label}",
+                state = score.state
+            )
+
+            ScoreRow(
+                label = "安定度",
+                value = score.stability.roundToInt().toString(),
+                progress = (score.stability / 100.0).toFloat()
+            )
+
+            ScoreRow(
+                label = "不安",
+                value = "%.1f".format(Locale.JAPAN, score.anxiety),
+                progress = (score.anxiety / 10.0).toFloat()
+            )
+
+            ScoreRow(
+                label = "活力",
+                value = score.energy.roundToInt().toString(),
+                progress = (score.energy / 100.0).toFloat()
+            )
+
+            ScoreRow(
+                label = "制御感",
+                value = score.control.roundToInt().toString(),
+                progress = (score.control / 100.0).toFloat()
+            )
+
+            HorizontalDivider()
+
+            Text(
+                text = score.summary,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                StateBadge(
-                    label = "日単体: ${score.state.label}",
-                    state = score.state
-                )
-
-                ScoreRow(
-                    label = "安定度",
-                    value = score.stability.roundToInt().toString(),
-                    progress = (score.stability / 100.0).toFloat()
-                )
-
-                ScoreRow(
-                    label = "不安",
-                    value = "%.1f".format(Locale.JAPAN, score.anxiety),
-                    progress = (score.anxiety / 10.0).toFloat()
-                )
-
-                ScoreRow(
-                    label = "活力",
-                    value = score.energy.roundToInt().toString(),
-                    progress = (score.energy / 100.0).toFloat()
-                )
-
-                ScoreRow(
-                    label = "制御感",
-                    value = score.control.roundToInt().toString(),
-                    progress = (score.control / 100.0).toFloat()
-                )
-
-                HorizontalDivider()
-
-                Text(
-                    text = score.summary,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    scoreFeatureChips(score).forEach { label ->
-                        AssistChip(
-                            onClick = {},
-                            label = { Text(label) }
-                        )
-                    }
+                scoreFeatureChips(score).forEach { label ->
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(label) }
+                    )
                 }
             }
         }
@@ -1735,13 +1714,11 @@ private fun DailyMessagePseudoTrendCard(
     val swipeThresholdPx = with(LocalDensity.current) { 36.dp.toPx() }
     var accumulatedDrag by remember(date) { mutableStateOf(0f) }
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(start = startPadding, end = endPadding),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+    AppCard(
+        modifier = modifier.padding(start = startPadding, end = endPadding),
+        variant = AppCardVariant.Default,
+        contentPadding = PaddingValues(0.dp),
+        verticalSpacing = 0.dp
     ) {
         Column(
             modifier = Modifier.padding(Spacing.md),
@@ -1881,58 +1858,54 @@ private fun SelectedMessagesAtTimeCard(
     messages: List<MessageV2>,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    AppCard(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        variant = AppCardVariant.Default,
+        contentPadding = PaddingValues(Spacing.md),
+        verticalSpacing = Spacing.sm,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "$timeLabel のメッセージ",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
+        Text(
+            text = "$timeLabel のメッセージ",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
 
-            messages.forEachIndexed { index, message ->
-                if (index > 0) {
-                    HorizontalDivider()
-                }
+        messages.forEachIndexed { index, message ->
+            if (index > 0) {
+                HorizontalDivider()
+            }
 
-                Column(
-                    modifier = Modifier.padding(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
+            Column(
+                modifier = Modifier.padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = formatTime(message.timestamp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Text(
+                    text = message.extractDisplayText(),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                val enabledFlags = message.enabledActionFlagLabels()
+                val emotionDetails = message.emotionDetails()
+                if (enabledFlags.isNotEmpty()) {
                     Text(
-                        text = formatTime(message.timestamp),
-                        style = MaterialTheme.typography.labelSmall,
+                        text = "フラグ: ${enabledFlags.joinToString(" / ")}",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
+                }
+                if (emotionDetails.isNotEmpty()) {
                     Text(
-                        text = message.extractDisplayText(),
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "感情: ${emotionDetails.joinToString(" / ")}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    val enabledFlags = message.enabledActionFlagLabels()
-                    val emotionDetails = message.emotionDetails()
-                    if (enabledFlags.isNotEmpty()) {
-                        Text(
-                            text = "フラグ: ${enabledFlags.joinToString(" / ")}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    if (emotionDetails.isNotEmpty()) {
-                        Text(
-                            text = "感情: ${emotionDetails.joinToString(" / ")}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
         }
