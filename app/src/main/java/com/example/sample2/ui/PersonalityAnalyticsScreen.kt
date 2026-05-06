@@ -514,7 +514,7 @@ fun PersonalityAnalyticsScreen(
             AnalyticsDisplayMode.DETAIL -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
@@ -561,7 +561,7 @@ fun PersonalityAnalyticsScreen(
             AnalyticsDisplayMode.CHARTS -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {

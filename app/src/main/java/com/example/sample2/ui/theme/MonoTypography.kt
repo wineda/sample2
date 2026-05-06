@@ -19,4 +19,13 @@ object MonoTypography {
     val Numeric = TextStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium, fontSize = 18.sp, lineHeight = 22.sp)
     /** 通常本文サイズのモノスペース（INPUT 内の説明等） */
     val Body = TextStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 11.sp, lineHeight = 16.sp)
+
+    /** 進捗カウンタの主数値（大）24sp SemiBold Mono */
+    val CounterLarge = TextStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 28.sp)
+    /** 進捗カウンタの主数値（小）18sp SemiBold Mono */
+    val CounterMedium = TextStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 22.sp)
+    /** 進捗カウンタの分母数値（大）14sp Mono */
+    val CounterTotalLarge = TextStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 18.sp)
+    /** 進捗カウンタの分母数値（小）12sp Mono */
+    val CounterTotalMedium = TextStyle(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp)
 }
