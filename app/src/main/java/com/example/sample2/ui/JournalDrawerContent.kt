@@ -120,7 +120,7 @@ fun JournalDrawerContent(
                     .fillMaxWidth()
                     .padding(top = Spacing.md, bottom = 8.dp)
                     .height(8.dp)
-                    .background(MaterialTheme.appColors.surfaceMuted)
+                    .background(MaterialTheme.appColors.surfaceQuiet)
             )
 
             Text(
@@ -175,7 +175,7 @@ fun JournalDrawerContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.appColors.surfaceMuted)
+                    .background(MaterialTheme.appColors.surfaceQuiet)
                     .padding(horizontal = Spacing.xl, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -293,7 +293,7 @@ private fun SmartDrawerMenuItem(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.appColors.dividerMid
+                tint = MaterialTheme.appColors.dividerStrong
             )
         }
     }

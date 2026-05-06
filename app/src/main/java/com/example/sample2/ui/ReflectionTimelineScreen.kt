@@ -136,7 +136,7 @@ fun ReflectionTimelineScreen(
             }
 
             if (monthGroups.isEmpty()) {
-                Surface(modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.appColors.dividerSubtle, MaterialTheme.shapes.large), color = MaterialTheme.appColors.surfaceElevated, shape = MaterialTheme.shapes.large) {
+                Surface(modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.appColors.dividerSoft, MaterialTheme.shapes.large), color = MaterialTheme.appColors.surfaceQuiet, shape = MaterialTheme.shapes.large) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("まだ振り返りがありません", color = MaterialTheme.appColors.inkTertiary)
                         Text("今日の気づきや良かったことを追加してみましょう", color = MaterialTheme.appColors.inkTertiary, style = MaterialTheme.typography.bodySmall)

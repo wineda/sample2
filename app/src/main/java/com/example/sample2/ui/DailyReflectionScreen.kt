@@ -164,7 +164,7 @@ private fun SummarySection(h: ReflectionHints, s: com.example.sample2.analytics.
                 Text("ステータス", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
                 StatusBadge(state)
             }
-            Row(Modifier.fillMaxWidth().border(1.dp, MaterialTheme.appColors.dividerNeutral).background(MaterialTheme.appColors.surfaceMuted)) {
+            Row(Modifier.fillMaxWidth().border(1.dp, MaterialTheme.appColors.dividerStrong).background(MaterialTheme.appColors.surfaceQuiet)) {
                 MetricCell("STABLE", s?.stability?.toInt()?.toString() ?: "--", true)
                 MetricCell("ANXIETY", s?.anxiety?.let { "%.1f".format(it) } ?: "--", true)
                 MetricCell("ENERGY", s?.energy?.toInt()?.toString() ?: "--", true)
@@ -174,7 +174,7 @@ private fun SummarySection(h: ReflectionHints, s: com.example.sample2.analytics.
             Text("睡眠  ${h.dailyRecordText.substringBefore(" /")}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
             Text("感情傾向  ${h.emotionTrendText.removePrefix("感情傾向: ")}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
             Text("体調フラグ  ${if (hasBreakdown) "あり" else "なし"}", style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary))
-            Box(Modifier.fillMaxWidth().background(MaterialTheme.appColors.surfaceMuted).border(1.dp, MaterialTheme.appColors.dividerNeutral).padding(Spacing.md)) {
+            Box(Modifier.fillMaxWidth().background(MaterialTheme.appColors.surfaceQuiet).border(1.dp, MaterialTheme.appColors.dividerStrong).padding(Spacing.md)) {
                 Text(s?.summary ?: h.analysisSummaryText, style = MaterialTheme.typography.labelMedium.copy(lineHeight = 17.sp), color = MaterialTheme.appColors.inkSecondary)
             }
     }
@@ -187,7 +187,7 @@ private fun StatusBadge(state: PersonalityState?) {
         PersonalityState.RECOVERING -> SemanticColors.WarningMain to SemanticColors.WarningSoft
         PersonalityState.TENSE -> SemanticColors.WarningMain to SemanticColors.WarningSoft
         PersonalityState.EXHAUSTED -> SemanticColors.NegativeMain to SemanticColors.NegativeSoft
-        null -> MaterialTheme.appColors.inkTertiary to MaterialTheme.appColors.surfaceMuted
+        null -> MaterialTheme.appColors.inkTertiary to MaterialTheme.appColors.surfaceQuiet
     }
     Row(Modifier.background(bg, AppShapeTokens.Tech).padding(horizontal = 8.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(6.dp).height(6.dp).background(fg, CircleShape))
@@ -198,7 +198,7 @@ private fun StatusBadge(state: PersonalityState?) {
 
 @Composable
 private fun RowScope.MetricCell(label: String, value: String, divider: Boolean) {
-    Column(Modifier.weight(1f).then(if (divider) Modifier.border(0.5.dp, MaterialTheme.appColors.dividerNeutral) else Modifier).padding(8.dp)) {
+    Column(Modifier.weight(1f).then(if (divider) Modifier.border(0.5.dp, MaterialTheme.appColors.dividerStrong) else Modifier).padding(8.dp)) {
         Text(label, style = MonoTypography.Micro.copy(color = MaterialTheme.appColors.inkTertiary))
         Text(value, style = MonoTypography.Numeric.copy(color = MaterialTheme.appColors.inkPrimary))
     }
@@ -222,7 +222,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
     val accentColor = reflectionItemAccentColor(number)
     var focused by remember { mutableStateOf(false) }
     val border by animateColorAsState(
-        if (focused) SemanticColors.InfoMain else MaterialTheme.appColors.dividerNeutral,
+        if (focused) SemanticColors.InfoMain else MaterialTheme.appColors.dividerStrong,
         label = ""
     )
 
@@ -238,7 +238,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
                 Text(number, style = MonoTypography.Caption.copy(color = MaterialTheme.appColors.inkTertiary), modifier = Modifier.widthIn(min = 24.dp))
                 Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
                 val label = if (done) "入力済" else if (priority) "優先" else "未入力"
-                val lBg = if (done) SemanticColors.InfoSoft else if (priority) SemanticColors.WarningSoft else MaterialTheme.appColors.surfaceMuted
+                val lBg = if (done) SemanticColors.InfoSoft else if (priority) SemanticColors.WarningSoft else MaterialTheme.appColors.surfaceQuiet
                 val lColor = if (done) SemanticColors.InfoMain else if (priority) SemanticColors.WarningMain else MaterialTheme.appColors.inkTertiary
                 Text(label, style = MonoTypography.Micro.copy(color = lColor), modifier = Modifier.background(lBg, AppShapeTokens.Tech).padding(6.dp, 2.dp))
             }
@@ -256,7 +256,7 @@ private fun ReflectionItem(number: String, title: String, placeholder: String, v
                 textStyle = MaterialTheme.typography.titleSmall.copy(color = MaterialTheme.appColors.inkPrimary, lineHeight = 22.sp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(if (done || focused) MaterialTheme.colorScheme.surface else MaterialTheme.appColors.surfaceMuted, AppShapeTokens.Tech)
+                    .background(if (done || focused) MaterialTheme.colorScheme.surface else MaterialTheme.appColors.surfaceQuiet, AppShapeTokens.Tech)
                     .border(1.dp, border, AppShapeTokens.Tech)
                     .padding(Spacing.md, 8.dp),
                 decorationBox = { inner ->
@@ -282,7 +282,7 @@ private fun reflectionItemAccentColor(number: String): Color = when (number) {
 }
 @Composable
 private fun SaveBar(onCancel: () -> Unit, onSave: () -> Unit) {
-    val dividerColor = MaterialTheme.appColors.dividerCool
+    val dividerColor = MaterialTheme.appColors.dividerSoft
     Surface(
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
@@ -303,7 +303,7 @@ private fun SaveBar(onCancel: () -> Unit, onSave: () -> Unit) {
                 onClick = onCancel,
                 modifier = Modifier.weight(0.35f).height(52.dp),
                 colors = ButtonDefaults.textButtonColors(
-                    containerColor = MaterialTheme.appColors.surfaceCool,
+                    containerColor = MaterialTheme.appColors.surfaceInactive,
                     contentColor = MaterialTheme.appColors.inkSecondary
                 )
             ) {
