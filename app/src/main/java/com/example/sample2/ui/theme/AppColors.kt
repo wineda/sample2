@@ -9,25 +9,39 @@ import androidx.compose.ui.graphics.Color
 
 @Immutable
 data class AppColorScheme(
+    // テキスト/アイコンの色階層
     val inkPrimary: Color,
     val inkSecondary: Color,
     val inkTertiary: Color,
     val inkDisabled: Color,
     val inkStrongAlt: Color,
     val inkOnInk: Color,
-    val surfaceSubtle: Color,
-    val surfaceSubtleDeep: Color,
-    val surfaceSubtleAlt: Color,
-    val surfaceElevated: Color,
-    val surfaceCool: Color,
-    val surfaceMuted: Color,
-    val surfaceLight: Color,
-    val borderStrong: Color,
+
+    /**
+     * 静かな淡色背景。カード内のセクション・うっすら塗りに使う。
+     * surface よりわずかに暗く、視覚的に「落ち着いた領域」を表す。
+     */
+    val surfaceQuiet: Color,
+
+    /**
+     * 非アクティブ状態の小要素背景。
+     * 未入力バッジ・無効ボタン・未選択チップなど「効いていない」状態を表す。
+     */
+    val surfaceInactive: Color,
+
+    /**
+     * 標準の境界線色。カードの枠線・区切り線に使う最頻出のトークン。
+     */
     val dividerSoft: Color,
-    val dividerMid: Color,
-    val dividerSubtle: Color,
-    val dividerCool: Color,
-    val dividerNeutral: Color,
+
+    /**
+     * 強調が必要な境界線色。
+     * フォーカス前のフォーム枠線・アクセント区切りなど、dividerSoft より一段強い表現。
+     */
+    val dividerStrong: Color,
+
+    // 維持: 用途が明確で誤用がないトークン
+    val borderStrong: Color,
     val sleepGradientStart: Color,
     val sleepGradientEnd: Color,
     val scrimDim: Color,
@@ -40,19 +54,14 @@ val LightAppColors = AppColorScheme(
     inkDisabled = Color(0xFFC5CBD3),
     inkStrongAlt = Color(0xFF14181E),
     inkOnInk = Color(0xFFFFFFFF),
-    surfaceSubtle = Color(0xFFEEF1F5),
-    surfaceSubtleDeep = Color(0xFFE5E9EF),
-    surfaceSubtleAlt = Color(0xFFECEFF4),
-    surfaceElevated = Color(0xFFFAFBFC),
-    surfaceCool = Color(0xFFF1F3F7),
-    surfaceMuted = Color(0xFFFAFAFB),
-    surfaceLight = Color(0xFFF3F4F6),
+
+    surfaceQuiet = Color(0xFFFAFAFB),     // 旧 surfaceMuted (+ Elevated)
+    surfaceInactive = Color(0xFFF1F3F7),  // 旧 surfaceCool (+ Subtle, SubtleAlt, Light)
+
+    dividerSoft = Color(0xFFE5E7EB),      // 旧 dividerSoft (+ Cool, Subtle)
+    dividerStrong = Color(0xFFD1D5DB),    // 旧 dividerMid (+ Neutral, surfaceSubtleDeep)
+
     borderStrong = Color(0xFFB8C0CC),
-    dividerSoft = Color(0xFFE5E7EB),
-    dividerMid = Color(0xFFD1D5DB),
-    dividerSubtle = Color(0xFFE0E5EC),
-    dividerCool = Color(0xFFE8EBF0),
-    dividerNeutral = Color(0xFFE0E2E6),
     sleepGradientStart = Color(0xFFF8FAFD),
     sleepGradientEnd = Color(0xFFF1F4F9),
     scrimDim = Color(0x52000000),
@@ -65,19 +74,14 @@ val DarkAppColors = AppColorScheme(
     inkDisabled = Color(0xFF5A5F66),
     inkStrongAlt = Color(0xFFF1F1F5),
     inkOnInk = Color(0xFF14181E),
-    surfaceSubtle = Color(0xFF2A2D35),
-    surfaceSubtleDeep = Color(0xFF353841),
-    surfaceSubtleAlt = Color(0xFF2E3138),
-    surfaceElevated = Color(0xFF1A1C22),
-    surfaceCool = Color(0xFF2A2D35),
-    surfaceMuted = Color(0xFF1F2128),
-    surfaceLight = Color(0xFF2D3038),
+
+    surfaceQuiet = Color(0xFF1F2128),     // 旧 surfaceMuted
+    surfaceInactive = Color(0xFF2A2D35),  // 旧 surfaceCool/Subtle 系を統合した値
+
+    dividerSoft = Color(0xFF383B43),      // 旧 dividerSoft 系
+    dividerStrong = Color(0xFF4A4E57),    // 旧 dividerMid 系
+
     borderStrong = Color(0xFF5A6068),
-    dividerSoft = Color(0xFF383B43),
-    dividerMid = Color(0xFF4A4E57),
-    dividerSubtle = Color(0xFF383B43),
-    dividerCool = Color(0xFF383B43),
-    dividerNeutral = Color(0xFF383B43),
     sleepGradientStart = Color(0xFF1F2128),
     sleepGradientEnd = Color(0xFF181A1F),
     scrimDim = Color(0x7A000000),

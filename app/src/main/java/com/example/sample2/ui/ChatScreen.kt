@@ -709,7 +709,7 @@ private fun JournalBottomModeBar(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.appColors.surfaceSubtleDeep)
+        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.appColors.dividerStrong)
         Row(
             modifier = Modifier
                 .fillMaxWidth()

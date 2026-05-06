@@ -34,7 +34,7 @@ fun AppCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val border = if (variant == AppCardVariant.Outlined) {
-        BorderStroke(1.dp, MaterialTheme.appColors.dividerCool)
+        BorderStroke(1.dp, MaterialTheme.appColors.dividerSoft)
     } else null
 
     val elevation = when (variant) {

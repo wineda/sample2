@@ -233,7 +233,7 @@ fun EmotionResponseChildBubble(
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(2.dp)
-                    .background(MaterialTheme.appColors.dividerMid)
+                    .background(MaterialTheme.appColors.dividerStrong)
             )
             Box(
                 modifier = Modifier
@@ -419,7 +419,7 @@ fun MessageActionOverlay(
             Surface(
                 shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.5.dp, if (isTextFocused) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.surfaceSubtleDeep),
+                border = BorderStroke(1.5.dp, if (isTextFocused) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.dividerStrong),
                 tonalElevation = 0.dp,
                 shadowElevation = 3.dp
             ) {
@@ -496,7 +496,7 @@ fun MessageActionOverlay(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(MaterialTheme.shapes.small)
-                            .background(MaterialTheme.appColors.surfaceSubtle),
+                            .background(MaterialTheme.appColors.surfaceInactive),
                         contentAlignment = Alignment.Center
                     ) {
                         Text("🕒", color = MaterialTheme.appColors.inkTertiary, fontSize = 12.sp)
@@ -756,7 +756,7 @@ private fun AdditiveEmotionEditor(
                                     .weight(1f)
                                     .aspectRatio(1f)
                                     .clip(MaterialTheme.shapes.medium)
-                                    .background(MaterialTheme.appColors.surfaceSubtle)
+                                    .background(MaterialTheme.appColors.surfaceInactive)
                                     .clickable(enabled = !isAdded) {
                                         onEmotionsChanged(emotions.withScore(emotion, 1))
                                         showPalette = false
@@ -851,7 +851,7 @@ private fun EmotionSegmentRow(
                             .clip(MaterialTheme.shapes.small)
                             .clickable { onValueChanged(score) },
                         shape = MaterialTheme.shapes.small,
-                        color = if (score == value) colorSpec.main else MaterialTheme.appColors.surfaceSubtle
+                        color = if (score == value) colorSpec.main else MaterialTheme.appColors.surfaceInactive
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
@@ -945,7 +945,7 @@ private fun CollapsibleActionTypeEditor(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(MaterialTheme.appColors.surfaceSubtleAlt)
+                    .background(MaterialTheme.appColors.surfaceInactive)
             )
             Spacer(modifier = Modifier.height(14.dp))
             ActionTypeGrid(selectedType = currentType, onSelected = onSelected)
@@ -995,7 +995,7 @@ private fun ActionTypeGrid(
                             .aspectRatio(1f)
                             .heightIn(min = 92.dp)
                             .clip(MaterialTheme.shapes.medium)
-                            .background(if (isSelected) uiSpec.color.copy(alpha = 0.18f) else MaterialTheme.appColors.surfaceSubtle)
+                            .background(if (isSelected) uiSpec.color.copy(alpha = 0.18f) else MaterialTheme.appColors.surfaceInactive)
                             .border(
                                 if (isSelected) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
                                 MaterialTheme.shapes.medium
@@ -1093,7 +1093,7 @@ fun ActionFlagIconButton(
     val bgColor = if (checked) {
         activeColor.copy(alpha = 0.18f)
     } else {
-        MaterialTheme.appColors.surfaceLight
+        MaterialTheme.appColors.surfaceInactive
     }
 
     val contentColor = if (checked) {
