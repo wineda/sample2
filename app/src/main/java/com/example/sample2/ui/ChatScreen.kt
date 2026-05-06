@@ -784,7 +784,7 @@ private fun JournalBottomTab(
                 .height(2.dp)
                 .size(width = 14.dp, height = 2.dp)
                 .clip(AppShapeTokens.Tech)
-                .background(if (selected) SemanticColors.AccentRed else Color.Transparent)
+                .background(if (selected) SemanticColors.InfoMain else Color.Transparent)
         )
     }
 }
