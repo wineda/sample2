@@ -292,7 +292,7 @@ fun EmotionResponseChildBubble(
 }
 
 
-private fun categoryColorFor(message: MessageV2): Color {
+internal fun categoryColorFor(message: MessageV2): Color {
     return (message.emotions.maxEmotionOrNull()?.colorSpec() ?: EmotionPalette.Neutral).main
 }
 
@@ -1135,7 +1135,7 @@ fun ActionFlagIconButton(
 }
 
 @Composable
-private fun StatusIconBox(
+internal fun StatusIconBox(
     message: MessageV2,
     modifier: Modifier = Modifier
 ) {
