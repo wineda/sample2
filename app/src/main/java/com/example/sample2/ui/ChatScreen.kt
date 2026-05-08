@@ -64,6 +64,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,6 +86,8 @@ import com.example.sample2.data.JournalLocalDataSource
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.analytics.AnalyticsDisplayMode
+import com.example.sample2.ui.journal.ThreadList
+import com.example.sample2.ui.journal.stringSetSaver
 import com.example.sample2.ui.analytics.PersonalityAnalyticsScreen
 import com.example.sample2.util.formatDate
 import com.example.sample2.ui.theme.SemanticColors
@@ -141,6 +144,31 @@ fun ChatRoute() {
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
     var createEditorMessage by remember { mutableStateOf<MessageV2?>(null) }
     var createEditorParentTarget by remember { mutableStateOf<MessageV2?>(null) }
+    var explicitlyExpanded by rememberSaveable(
+        stateSaver = stringSetSaver()
+    ) { mutableStateOf<Set<String>>(emptySet()) }
+    var explicitlyCollapsed by rememberSaveable(
+        stateSaver = stringSetSaver()
+    ) { mutableStateOf<Set<String>>(emptySet()) }
+
+    fun isExpanded(parent: MessageV2): Boolean {
+        return when {
+            parent.id in explicitlyCollapsed -> false
+            parent.id in explicitlyExpanded -> true
+            parent.isToday() -> true
+            else -> false
+        }
+    }
+
+    fun toggleExpand(parent: MessageV2) {
+        if (isExpanded(parent)) {
+            explicitlyCollapsed = explicitlyCollapsed + parent.id
+            explicitlyExpanded = explicitlyExpanded - parent.id
+        } else {
+            explicitlyExpanded = explicitlyExpanded + parent.id
+            explicitlyCollapsed = explicitlyCollapsed - parent.id
+        }
+    }
 
     val dailyRecords = remember(dailyRecordsVersion) {
         state.loadDailyRecords()
@@ -578,53 +606,27 @@ fun ChatRoute() {
                                     )
                                 }
 
-                                JournalMessageListPane(
-                                    messages = parentEntries,
+                                ThreadList(
+                                    parents = parentEntries,
+                                    childrenByParentId = childEntriesByParentId,
                                     listState = listState,
                                     isSingleLineMode = state.isSingleLineMode,
-                                    timestampOf = { it.timestamp },
+                                    isExpanded = ::isExpanded,
+                                    onToggleExpand = ::toggleExpand,
+                                    onLongPressParent = { parent -> state.selectedMessage = parent },
+                                    onLongPressChild = { child -> state.selectedMessage = child },
+                                    onDoubleClickParent = { parent ->
+                                        createEditorParentTarget = parent
+                                        createEditorMessage = MessageV2(
+                                            id = "__new__",
+                                            timestamp = System.currentTimeMillis(),
+                                            text = ""
+                                        )
+                                    },
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxWidth()
-                                ) { msg, isConnectedToPreviousInDay, isConnectedToNextInDay ->
-                                    val childEntries = childEntriesByParentId[msg.id].orEmpty()
-                                    val blockBottomPadding = if (childEntries.isNotEmpty()) 10.dp else 16.dp
-                                    Column(
-                                        modifier = Modifier.padding(bottom = blockBottomPadding)
-                                    ) {
-                                        MessageBubble(
-                                            message = msg,
-                                            state = state,
-                                            isConnectedToPreviousInDay = isConnectedToPreviousInDay,
-                                            isConnectedToNextInDay = isConnectedToNextInDay,
-                                            onDelete = { state.deleteMessage(msg) },
-                                            onUpdate = { updated ->
-                                                state.updateMessage(updated)
-                                            },
-                                            onDoubleClick = { parent ->
-                                                createEditorParentTarget = parent
-                                                createEditorMessage = MessageV2(
-                                                    id = "__new__",
-                                                    timestamp = System.currentTimeMillis(),
-                                                    text = ""
-                                                )
-                                            }
-                                        )
-
-                                        if (childEntries.isNotEmpty()) {
-                                            Spacer(modifier = Modifier.height(4.dp))
-
-                                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                                childEntries.forEach { child ->
-                                                    EmotionResponseChildBubble(
-                                                        message = child,
-                                                        onLongClick = { state.selectedMessage = it }
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                )
                             }
 
                             if (showFilterSheet) {

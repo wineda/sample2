@@ -108,7 +108,7 @@ fun <T> JournalMessageListPane(
 }
 
 @Composable
-private fun ScrollToBottomButton(
+fun ScrollToBottomButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
