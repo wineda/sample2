@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Casino
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Menu
@@ -125,6 +126,7 @@ fun ReflectionTimelineScreen(
 
     // 編集中のフィールド（同時に1つだけ）
     var editingKey by remember { mutableStateOf<FieldEditorKey?>(null) }
+    var shuffleTargetDate by rememberSaveable { mutableStateOf<String?>(null) }
 
     val weekDates = remember(selectedWeekStart) {
         (0L..6L).map { selectedWeekStart.plusDays(it) }
@@ -220,10 +222,35 @@ fun ReflectionTimelineScreen(
                         if (editingKey?.date == date.toString() && editingKey?.field == field) {
                             editingKey = null
                         }
-                    }
+                    },
+                    onShuffleTomorrow = { d -> shuffleTargetDate = d.toString() }
                 )
             }
         }
+    }
+
+    // ランダム選択ダイアログ
+    shuffleTargetDate?.let { dateStr ->
+        val usedIds = remember(reflections) {
+            reflections.mapNotNull { it.tomorrowActionId }.toSet()
+        }
+        RandomActionShuffleDialog(
+            usedIds = usedIds,
+            onConfirm = { picked ->
+                val target = reflections.firstOrNull { it.date == dateStr }
+                    ?: DailyReflection(dateStr)
+                val newText = "#${picked.id} ${picked.text}"
+                onUpsertReflection(
+                    target.copy(
+                        tomorrowFirstAction = newText,
+                        tomorrowActionId = picked.id,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                )
+                shuffleTargetDate = null
+            },
+            onDismiss = { shuffleTargetDate = null }
+        )
     }
 }
 
@@ -597,9 +624,10 @@ private fun DayCard(
     editingKey: FieldEditorKey?,
     onStartEdit: (ReflectionField) -> Unit,
     onCancelEdit: () -> Unit,
-    onSaveField: (ReflectionField, String) -> Unit
+    onSaveField: (ReflectionField, String) -> Unit,
+    onShuffleTomorrow: (LocalDate) -> Unit
 ) {
-    val hasContent = reflection?.let { hasAnyOf4(it) } == true
+    val hasContent = reflection?.let { hasAnyReflectionContent(it) } == true
     AppCard(
         variant = AppCardVariant.Outlined,
         contentPadding = PaddingValues(0.dp),
@@ -674,7 +702,12 @@ private fun DayCard(
                     isEditing = isEditing,
                     onStartEdit = { onStartEdit(field) },
                     onCancelEdit = onCancelEdit,
-                    onSave = { newText -> onSaveField(field, newText) }
+                    onSave = { newText -> onSaveField(field, newText) },
+                    onShuffle = if (field == ReflectionField.TOMORROW) {
+                        { onShuffleTomorrow(date) }
+                    } else {
+                        null
+                    }
                 )
                 if (index < ReflectionField.entries.lastIndex) {
                     DividerLine()
@@ -731,7 +764,8 @@ private fun ReflectionFieldRow(
     isEditing: Boolean,
     onStartEdit: () -> Unit,
     onCancelEdit: () -> Unit,
-    onSave: (String) -> Unit
+    onSave: (String) -> Unit,
+    onShuffle: (() -> Unit)? = null
 ) {
     val accentColor = fieldColor(field)
     val isEmpty = text.isBlank()
@@ -780,22 +814,70 @@ private fun ReflectionFieldRow(
                     accentColor = accentColor
                 )
             } else if (isEmpty) {
-                Text(
-                    text = "+ 記録を追加",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.appColors.inkTertiary
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "+ 記録を追加",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.appColors.inkTertiary
+                        ),
+                        modifier = Modifier.weight(1f)
                     )
-                )
+                    if (onShuffle != null) {
+                        ShuffleChip(accentColor = accentColor, onClick = onShuffle)
+                    }
+                }
             } else {
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.appColors.inkPrimary,
-                        lineHeight = 20.sp
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.appColors.inkPrimary,
+                            lineHeight = 20.sp
+                        ),
+                        modifier = Modifier.weight(1f)
                     )
-                )
+                    if (onShuffle != null) {
+                        Spacer(Modifier.width(8.dp))
+                        ShuffleChip(accentColor = accentColor, onClick = onShuffle)
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ShuffleChip(accentColor: Color, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(accentColor.copy(alpha = 0.10f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Casino,
+            contentDescription = "ランダム選択",
+            tint = accentColor,
+            modifier = Modifier.size(14.dp)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = "おまかせ",
+            style = MaterialTheme.typography.labelSmall.copy(
+                color = accentColor,
+                fontWeight = FontWeight.SemiBold
+            )
+        )
     }
 }
 
@@ -908,6 +990,9 @@ private fun categoryFlags(r: DailyReflection): List<ReflectionField> =
 
 private fun hasAnyOf4(r: DailyReflection): Boolean =
     r.wins.isNotBlank() || r.difficulties.isNotBlank() || r.insights.isNotBlank() || r.summary.isNotBlank()
+
+private fun hasAnyReflectionContent(r: DailyReflection): Boolean =
+    hasAnyOf4(r) || r.tomorrowFirstAction.isNotBlank()
 
 /**
  * 振り返り項目の色。
