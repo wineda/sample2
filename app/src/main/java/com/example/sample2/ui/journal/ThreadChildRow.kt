@@ -1,7 +1,6 @@
 package com.example.sample2.ui.journal
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,20 +8,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.sample2.data.JournalEntryType
@@ -40,16 +36,12 @@ import com.example.sample2.util.formatTime
  *   [時刻 48dp] [マーカー 18dp] [コンテンツ 1fr]
  *
  * @param parentTimestamp 親メッセージのタイムスタンプ（経過時間メタ表示に使用）
- * @param isFirst リストの先頭要素か（マーカーの上半分縦線を省略）
- * @param isLast リストの末尾要素か（マーカーの下半分縦線を省略）
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ThreadChildRow(
     child: MessageV2,
     parentTimestamp: Long,
-    isFirst: Boolean,
-    isLast: Boolean,
     onLongPress: (MessageV2) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -83,11 +75,7 @@ fun ThreadChildRow(
 
         Spacer(Modifier.width(Spacing.sm))
 
-        ThreadChildMarker(
-            child = child,
-            isFirst = isFirst,
-            isLast = isLast,
-        )
+        ThreadChildMarker(child = child)
 
         Spacer(Modifier.width(Spacing.sm))
 
@@ -116,47 +104,17 @@ fun ThreadChildRow(
 @Composable
 private fun ThreadChildMarker(
     child: MessageV2,
-    isFirst: Boolean,
-    isLast: Boolean,
 ) {
     Box(
         modifier = Modifier
             .width(18.dp)
-            .fillMaxHeight()
-            .heightIn(min = 28.dp),
+            .heightIn(min = 28.dp)
+            .padding(top = 2.dp),
         contentAlignment = Alignment.TopCenter,
     ) {
-        if (!isFirst) {
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(8.dp)
-                    .align(Alignment.TopCenter)
-                    .background(MaterialTheme.appColors.dividerSoft),
-            )
-        }
-        if (!isLast) {
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .fillMaxHeight()
-                    .padding(top = 16.dp)
-                    .align(Alignment.TopCenter)
-                    .background(MaterialTheme.appColors.dividerSoft),
-            )
-        }
-        Box(
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .size(14.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface),
-            contentAlignment = Alignment.Center,
-        ) {
-            StatusIconBox(
-                message = child,
-                modifier = Modifier.size(14.dp),
-            )
-        }
+        StatusIconBox(
+            message = child,
+            modifier = Modifier.size(14.dp),
+        )
     }
 }
