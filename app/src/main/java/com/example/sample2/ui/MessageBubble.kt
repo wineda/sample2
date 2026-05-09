@@ -674,10 +674,15 @@ private fun FlagSection(
 @Composable
 private fun FlagIconItem(type: ActionType, isActive: Boolean, onClick: () -> Unit) {
     val uiSpec = type.toUiSpec()
+    val shape = RoundedCornerShape(10.dp)
     Column(
         modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(if (isActive) MaterialTheme.appColors.iconActiveBackground else Color.Transparent)
+            .clip(shape)
+            .background(if (isActive) uiSpec.color.copy(alpha = 0.18f) else Color.Transparent)
+            .border(
+                if (isActive) BorderStroke(1.5.dp, uiSpec.color) else BorderStroke(0.dp, Color.Transparent),
+                shape
+            )
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -686,13 +691,14 @@ private fun FlagIconItem(type: ActionType, isActive: Boolean, onClick: () -> Uni
             painter = painterResource(id = uiSpec.iconRes),
             contentDescription = type.label,
             modifier = Modifier.size(22.dp),
-            tint = if (isActive) Color(0xFF1A1A1A) else Color(0xFF666666)
+            tint = if (isActive) uiSpec.color else MaterialTheme.appColors.inkSecondary
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = type.label,
             fontSize = 10.sp,
-            color = if (isActive) Color(0xFF1A1A1A) else Color(0xFF777777),
+            color = if (isActive) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.inkTertiary,
+            fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
             textAlign = TextAlign.Center,
             lineHeight = 13.sp,
             maxLines = 2,
