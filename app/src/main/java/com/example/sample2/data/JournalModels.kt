@@ -84,7 +84,9 @@ data class DailyReflection(
     val insights: String = "",
     val tomorrowFirstAction: String = "",
     val summary: String = "",
-    val updatedAt: Long = 0L
+    val updatedAt: Long = 0L,
+    /** その日にランダム選択した「明日やること」の番号（1-365）。自由入力や未選択の場合は null。 */
+    val tomorrowActionId: Int? = null
 )
 data class SleepData(
     val durationMinutes: Int = 0,

@@ -24,7 +24,7 @@ object JournalJsonStorage {
     private const val DAILY_REFLECTIONS_FILE_NAME = "daily_reflections.json"
 
     // daily_reflections を追加
-    private const val BACKUP_VERSION = 6
+    private const val BACKUP_VERSION = 7
 
     private val DATE_REGEX = Regex("""\d{4}-\d{2}-\d{2}""")
 
@@ -317,6 +317,11 @@ object JournalJsonStorage {
     }
 
     private fun parseDailyReflection(obj: JSONObject): DailyReflection {
+        val rawTomorrowId = if (obj.has("tomorrowActionId") && !obj.isNull("tomorrowActionId")) {
+            obj.optInt("tomorrowActionId").takeIf { it in 1..365 }
+        } else {
+            null
+        }
         return DailyReflection(
             date = obj.optString("date", ""),
             wins = obj.optString("wins", ""),
@@ -324,7 +329,8 @@ object JournalJsonStorage {
             insights = obj.optString("insights", ""),
             tomorrowFirstAction = obj.optString("tomorrowFirstAction", ""),
             summary = obj.optString("summary", ""),
-            updatedAt = obj.optLong("updatedAt", 0L)
+            updatedAt = obj.optLong("updatedAt", 0L),
+            tomorrowActionId = rawTomorrowId
         )
     }
 
@@ -417,6 +423,9 @@ object JournalJsonStorage {
             put("tomorrowFirstAction", tomorrowFirstAction)
             put("summary", summary)
             put("updatedAt", updatedAt)
+            if (tomorrowActionId != null) {
+                put("tomorrowActionId", tomorrowActionId)
+            }
         }
     }
 
@@ -507,7 +516,8 @@ object JournalJsonStorage {
             insights = reflection.insights,
             tomorrowFirstAction = reflection.tomorrowFirstAction,
             summary = reflection.summary,
-            updatedAt = normalizedUpdatedAt
+            updatedAt = normalizedUpdatedAt,
+            tomorrowActionId = reflection.tomorrowActionId?.takeIf { it in 1..365 }
         )
     }
 
