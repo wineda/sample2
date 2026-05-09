@@ -10,6 +10,7 @@ import com.example.sample2.data.EmotionMetrics
 import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.SleepData
+import com.example.sample2.data.TriggerKind
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -24,7 +25,7 @@ object JournalJsonStorage {
     private const val DAILY_REFLECTIONS_FILE_NAME = "daily_reflections.json"
 
     // daily_reflections を追加
-    private const val BACKUP_VERSION = 7
+    private const val BACKUP_VERSION = 8
 
     private val DATE_REGEX = Regex("""\d{4}-\d{2}-\d{2}""")
 
@@ -246,6 +247,8 @@ object JournalJsonStorage {
         val normalizedParentId = rawParentId.ifBlank { null }
         val entryType = parseEntryType(obj.optString("entryType", ""))
         val response = obj.optJSONObject("response")?.let(::parseEmotionResponse)
+        val triggerKey = obj.optString("trigger", "")
+        val trigger = if (triggerKey.isBlank()) null else TriggerKind.fromKey(triggerKey)
 
         return MessageV2(
             id = obj.optString("id").ifBlank { UUID.randomUUID().toString() },
@@ -255,7 +258,8 @@ object JournalJsonStorage {
             flags = obj.optJSONObject("flags")?.let(::parseActionFlags) ?: ActionFlags(),
             parentId = normalizedParentId,
             entryType = entryType,
-            response = response
+            response = response,
+            trigger = if (entryType == JournalEntryType.EMOTION_RESPONSE) null else trigger
         )
     }
 
@@ -359,6 +363,9 @@ object JournalJsonStorage {
             if (response != null) {
                 put("response", response.toJson())
             }
+            if (trigger != null) {
+                put("trigger", trigger.key)
+            }
         }
     }
 
@@ -446,7 +453,8 @@ object JournalJsonStorage {
                     emotions = normalizeEmotionMetrics(message.emotions),
                     flags = normalizeActionFlags(message.flags),
                     parentId = message.parentId?.ifBlank { null },
-                    response = message.response?.let(::normalizeEmotionResponse)
+                    response = message.response?.let(::normalizeEmotionResponse),
+                    trigger = if (message.entryType == JournalEntryType.EMOTION_RESPONSE) null else message.trigger
                 )
             }
             .sortedWith(compareBy<MessageV2> { it.timestamp }.thenBy { it.id })

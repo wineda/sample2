@@ -1,6 +1,12 @@
 package com.example.sample2.data
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material.icons.outlined.RocketLaunch
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 
 data class MessageV2(
     val id: String,
@@ -11,6 +17,8 @@ data class MessageV2(
     val parentId: String? = null,
     val entryType: JournalEntryType = JournalEntryType.MEMO,
     val response: EmotionResponse? = null,
+    /** 「きっかけ」フラグ。親メッセージ（MEMO）のみ意味を持ち、子メッセージ（EMOTION_RESPONSE）では常に null。 */
+    val trigger: TriggerKind? = null
 )
 
 enum class JournalEntryType {
@@ -33,6 +41,34 @@ data class EmotionMetrics(
     val happy: Int = 0,
     val calm: Int = 0
 )
+
+/**
+ * 親メッセージ（メモ）の「きっかけ」を表す排他フラグ。
+ *
+ * 「何かのきっかけ → 感情 → 行動 → 結果」というジャーナリングの構造の冒頭に位置する。
+ * 子メッセージ（EMOTION_RESPONSE）には設定しない。
+ *
+ * @param key JSON保存時のキー（小文字スネークケース、後方互換のため固定）
+ * @param label 日本語表示名
+ * @param icon Material アウトラインアイコン
+ * @param color 表示色
+ */
+enum class TriggerKind(
+    val key: String,
+    val label: String,
+    val icon: ImageVector,
+    val color: Color
+) {
+    SELF_INITIATED("self_initiated", "自発", Icons.Outlined.RocketLaunch, Color(0xFF1976D2)),
+    PSYCHOLOGICAL("psychological", "心理", Icons.Outlined.Psychology, Color(0xFF9C27B0)),
+    PHYSICAL("physical", "身体", Icons.Outlined.FitnessCenter, Color(0xFF00897B)),
+    EXTERNAL("external", "外部", Icons.Outlined.Groups, Color(0xFFF57C00));
+
+    companion object {
+        fun fromKey(key: String?): TriggerKind? =
+            entries.firstOrNull { it.key == key }
+    }
+}
 
 enum class ActionGroup(val label: String, val color: Color) {
     LOAD("負荷", Color(0xFF8E24AA)),
