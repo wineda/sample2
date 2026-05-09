@@ -175,6 +175,12 @@ private data class ChartLayout(
         return chartLeft + slotWidth * index + slotWidth / 2f
     }
 
+    fun xForAxisValue(value: Float, axisMin: Float, axisMax: Float): Float {
+        if (abs(axisMax - axisMin) < 0.0001f) return chartLeft + width / 2f
+        val rate = ((value - axisMin) / (axisMax - axisMin)).coerceIn(0f, 1f)
+        return chartLeft + width * rate
+    }
+
     fun yForValue(value: Float, minValue: Float, maxValue: Float): Float {
         if (abs(maxValue - minValue) < 0.0001f) return chartTop + height / 2f
         val rate = ((value - minValue) / (maxValue - minValue)).coerceIn(0f, 1f)
@@ -1186,21 +1192,14 @@ private fun MultiLineChart(
                     }
                 }
             }
-            val pointCount = remember(labels, displayedSeries) {
-                minOf(
-                    labels.size,
-                    displayedSeries.minOfOrNull { it.values.size } ?: labels.size
-                )
-            }
-            val normalizedLabels = remember(labels, pointCount) { labels.take(pointCount) }
             SimpleMultiLineChart(
-                labels = normalizedLabels,
-                series = displayedSeries.map { it.copy(values = it.values.take(pointCount)) },
+                labels = labels,
+                series = displayedSeries,
                 comparisonSeries = comparisonSeries.orEmpty().filter { compared ->
                     compared.label !in hiddenSeriesLabels
-                }.map { it.copy(values = it.values.take(pointCount)) },
-                seriesXValues = seriesXValues.mapValues { (_, xs) -> xs.take(pointCount) },
-                comparisonSeriesXValues = comparisonSeriesXValues.mapValues { (_, xs) -> xs.take(pointCount) },
+                },
+                seriesXValues = seriesXValues,
+                comparisonSeriesXValues = comparisonSeriesXValues,
                 selectedXAxisValue = selectedXAxisValue,
                 onSelectedXAxisValueChange = onSelectedXAxisValueChange,
                 xAxisMin = xAxisMin,
@@ -1215,7 +1214,7 @@ private fun MultiLineChart(
                     .fillMaxWidth()
             )
             ChartXAxisLabels(
-                labels = normalizedLabels,
+                labels = labels,
                 startPadding = 34.dp + 4.dp,
                 endPadding = 0.dp
             )
@@ -1354,22 +1353,21 @@ private fun SimpleMultiLineChart(
             }
 
             fun buildPoints(values: List<Float>): List<Offset> {
-                val count = minOf(values.size, labels.size)
-                if (count == 0) return emptyList()
-                return values.take(count).mapIndexed { index, value ->
+                if (values.isEmpty()) return emptyList()
+                return values.mapIndexed { index, value ->
                     Offset(
-                        x = chartLayout.xForIndex(index, count),
+                        x = chartLayout.xForIndex(index, values.size),
                         y = chartLayout.yForValue(value, minValue, maxValue)
                     )
                 }
             }
 
             fun buildPoints(values: List<Float>, xValues: List<Float>): List<Offset> {
-                if (xValues.size != values.size || labels.size != values.size) return buildPoints(values)
+                if (xValues.size != values.size) return buildPoints(values)
                 if (values.isEmpty()) return emptyList()
                 return values.mapIndexed { index, value ->
                     Offset(
-                        x = chartLayout.xForIndex(index, values.size),
+                        x = chartLayout.xForAxisValue(xValues[index], axisMinResolved, axisMaxResolved),
                         y = chartLayout.yForValue(value, minValue, maxValue)
                     )
                 }
