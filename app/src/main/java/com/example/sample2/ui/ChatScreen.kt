@@ -92,7 +92,10 @@ import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.appColors
 import kotlinx.coroutines.launch
 import java.io.File
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import com.example.sample2.ui.theme.Spacing
 import com.example.sample2.ui.theme.AppShapeTokens
 
@@ -434,7 +437,7 @@ fun ChatRoute() {
                                 scope.launch { drawerState.close() }
                             },
                             onBackup = {
-                                backupLauncher.launch("journal_backup.json")
+                                backupLauncher.launch(buildBackupFileName())
                                 scope.launch { drawerState.close() }
                             },
                             onRestore = {
@@ -979,10 +982,24 @@ private fun CompactActionChip(
 }
 
 
+/**
+ * バックアップファイル名を `journal_backup_yyyy-MM-dd.json` 形式で生成する。
+ * 日付は端末のローカルタイムを採用。
+ */
+private fun buildBackupFileName(now: Long = System.currentTimeMillis()): String {
+    val datePart = SimpleDateFormat("yyyy-MM-dd", Locale.JAPAN).format(Date(now))
+    return "journal_backup_${datePart}.json"
+}
+
 private fun shareJournalBackup(
     context: android.content.Context,
     repository: DefaultJournalRepository
 ) {
+    val fileName = buildBackupFileName()
+
+    // cacheDir に書き出すファイルは内部用キャッシュ。
+    // 衝突回避のためタイムスタンプ(ミリ秒)込みのキャッシュ名を引き続き使うが、
+    // 共有時のユーザー向けタイトル(EXTRA_SUBJECT)は日付付きの正規名を使う。
     val backupFile = File(
         context.cacheDir,
         "journal-share-${System.currentTimeMillis()}.json"
@@ -1001,7 +1018,7 @@ private fun shareJournalBackup(
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "application/json"
         putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_SUBJECT, "journal_backup.json")
+        putExtra(Intent.EXTRA_SUBJECT, fileName)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
