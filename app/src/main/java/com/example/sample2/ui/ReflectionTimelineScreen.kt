@@ -357,7 +357,7 @@ private fun WeeklyOverviewCard(
         ) {
             Text(
                 "今週の概要",
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = MaterialTheme.typography.labelMedium.copy(
                     color = MaterialTheme.appColors.inkSecondary,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 1.5.sp
@@ -365,7 +365,7 @@ private fun WeeklyOverviewCard(
             )
             Text(
                 "${stats.recordedDays} / ${stats.totalDays}日 ・ ${stats.totalEntries}件",
-                style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.appColors.inkTertiary)
+                style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.appColors.inkTertiary)
             )
         }
 
@@ -555,7 +555,7 @@ private fun StatCell(
             Spacer(Modifier.height(4.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = MaterialTheme.typography.labelMedium.copy(
                     color = MaterialTheme.appColors.inkSecondary
                 )
             )
@@ -587,7 +587,7 @@ private fun DaysSectionTitle() {
     ) {
         Text(
             "日々の記録",
-            style = MaterialTheme.typography.labelSmall.copy(
+            style = MaterialTheme.typography.labelMedium.copy(
                 color = MaterialTheme.appColors.inkSecondary,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 1.5.sp
@@ -595,7 +595,7 @@ private fun DaysSectionTitle() {
         )
         Text(
             "↓ 新しい順",
-            style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.appColors.inkTertiary)
+            style = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.appColors.inkTertiary)
         )
     }
 }
@@ -639,14 +639,14 @@ private fun DayCard(
                 )
                 Text(
                     text = "${date.monthValue}月",
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = MaterialTheme.typography.labelMedium.copy(
                         color = MaterialTheme.appColors.inkSecondary
                     ),
                     modifier = Modifier.padding(bottom = 2.dp)
                 )
                 Text(
                     text = dayOfWeekShort(date.dayOfWeek) + (if (isToday) " · TODAY" else ""),
-                    style = MaterialTheme.typography.labelSmall.copy(
+                    style = MaterialTheme.typography.labelMedium.copy(
                         color = if (isToday) SemanticColors.InfoMain else MaterialTheme.appColors.inkTertiary,
                         letterSpacing = 0.8.sp
                     ),
@@ -775,7 +775,7 @@ private fun ReflectionFieldRow(
         ) {
             Text(
                 text = field.label,
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = MaterialTheme.typography.labelMedium.copy(
                     color = if (isEmpty && !isEditing) MaterialTheme.appColors.inkTertiary else accentColor,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 1.sp
