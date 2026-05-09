@@ -28,7 +28,6 @@ import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,8 +69,7 @@ import java.util.Locale
 /* ===========================================================================
  * 振り返り画面（リデザイン版）
  *
- * - 期間タブ: 週のみ実装。日/月/四半期は「準備中」プレースホルダ。
- * - 範囲ナビ: 月曜始まりの7日範囲を ‹ › で前後切り替え。
+ * - 週固定: 月曜始まりの7日範囲をヘッダー内の ‹ › で前後切り替え。
  * - Weekly Overview: 曜日別スタックバー + 4指標サマリー。
  * - 日々の記録: 7日分の DayCard を新しい順で表示。
  *   - 4色メーター: wins / difficulties / insights / summary の入力有無を表示。
@@ -80,13 +78,6 @@ import java.util.Locale
  *   - フォーカスアウトで自動保存（差分があれば upsert）。
  * - tomorrowFirstAction はこの画面では表示・編集しない（既存データは保持）。
  * =========================================================================== */
-
-private enum class ReflectionPeriodTab(val label: String) {
-    DAY("日"),
-    WEEK("週"),
-    MONTH("月"),
-    QUARTER("四半期")
-}
 
 private enum class ReflectionField(val label: String) {
     WINS("うまくいったこと"),
@@ -116,8 +107,6 @@ fun ReflectionTimelineScreen(
 ) {
     val reflectionMap = remember(reflections) { reflections.associateBy { it.date } }
 
-    var selectedTab by rememberSaveable { mutableStateOf(ReflectionPeriodTab.WEEK) }
-
     var selectedWeekStart by rememberSaveable(stateSaver = LocalDateSaver) {
         mutableStateOf(weekStartMonday(LocalDate.now()))
     }
@@ -140,96 +129,69 @@ fun ReflectionTimelineScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        JournalTopHeader(
-            title = "振り返り",
-            navigationIcon = Icons.Outlined.Menu,
-            navigationContentDescription = "メニュー",
-            onNavigationClick = onMenuClick,
-            actions = {
-                CompactHeaderIconButton(
-                    selected = false,
-                    onClick = { /* 検索は今後の拡張枠 */ },
-                    icon = Icons.Outlined.Search,
-                    contentDescription = "検索（準備中）"
-                )
-                CompactHeaderIconButton(
-                    selected = false,
-                    onClick = {
-                        selectedWeekStart = weekStartMonday(today)
-                        editingKey = FieldEditorKey(today.toString(), ReflectionField.WINS)
-                    },
-                    icon = Icons.Outlined.Add,
-                    contentDescription = "今日の記録を追加"
-                )
+        // 「今週」または未来週にいる間は、次の週へのナビゲーションを隠す
+        val canGoNext = selectedWeekStart.isBefore(weekStartMonday(today))
+        ReflectionTopBar(
+            weekStart = selectedWeekStart,
+            canGoNext = canGoNext,
+            onMenuClick = onMenuClick,
+            onPrev = { selectedWeekStart = selectedWeekStart.minusWeeks(1) },
+            onNext = { selectedWeekStart = selectedWeekStart.plusWeeks(1) },
+            onSearchClick = { /* 検索は今後の拡張枠 */ },
+            onAddTodayClick = {
+                selectedWeekStart = weekStartMonday(today)
+                editingKey = FieldEditorKey(today.toString(), ReflectionField.WINS)
             }
         )
 
-        PeriodTabs(
-            selected = selectedTab,
-            onSelect = { selectedTab = it }
-        )
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            item {
+                WeeklyOverviewCard(
+                    weekDates = weekDates,
+                    reflectionMap = reflectionMap,
+                    stats = weekStats,
+                    today = today
+                )
+            }
+            item {
+                DaysSectionTitle()
+            }
 
-        // 「今週」または未来週にいる間は、次の週へのナビゲーションを隠す
-        val canGoNext = selectedWeekStart.isBefore(weekStartMonday(today))
-        RangeNavBar(
-            weekStart = selectedWeekStart,
-            canGoNext = canGoNext,
-            onPrev = { selectedWeekStart = selectedWeekStart.minusWeeks(1) },
-            onNext = { selectedWeekStart = selectedWeekStart.plusWeeks(1) }
-        )
-
-        if (selectedTab != ReflectionPeriodTab.WEEK) {
-            ComingSoonBody(selectedTab)
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                item {
-                    WeeklyOverviewCard(
-                        weekDates = weekDates,
-                        reflectionMap = reflectionMap,
-                        stats = weekStats,
-                        today = today
-                    )
-                }
-                item {
-                    DaysSectionTitle()
-                }
-
-                // 未来日はカード化しない。今日以前の日のみ新しい順で表示。
-                val orderedDates = weekDates.filter { !it.isAfter(today) }.sortedDescending()
-                items(orderedDates, key = { it.toString() }) { date ->
-                    val reflection = reflectionMap[date.toString()]
-                    DayCard(
-                        date = date,
-                        reflection = reflection,
-                        isToday = date == today,
-                        editingKey = editingKey,
-                        onStartEdit = { field ->
-                            editingKey = FieldEditorKey(date.toString(), field)
-                        },
-                        onCancelEdit = {
-                            if (editingKey?.date == date.toString()) editingKey = null
-                        },
-                        onSaveField = { field, newText ->
-                            val current = reflectionMap[date.toString()]
-                            val needsUpdate = current == null || !sameField(current, field, newText)
-                            if (needsUpdate) {
-                                val updated = updateField(
-                                    base = current ?: DailyReflection(date = date.toString()),
-                                    field = field,
-                                    value = newText
-                                ).copy(updatedAt = System.currentTimeMillis())
-                                onUpsertReflection(updated)
-                            }
-                            if (editingKey?.date == date.toString() && editingKey?.field == field) {
-                                editingKey = null
-                            }
+            // 未来日はカード化しない。今日以前の日のみ新しい順で表示。
+            val orderedDates = weekDates.filter { !it.isAfter(today) }.sortedDescending()
+            items(orderedDates, key = { it.toString() }) { date ->
+                val reflection = reflectionMap[date.toString()]
+                DayCard(
+                    date = date,
+                    reflection = reflection,
+                    isToday = date == today,
+                    editingKey = editingKey,
+                    onStartEdit = { field ->
+                        editingKey = FieldEditorKey(date.toString(), field)
+                    },
+                    onCancelEdit = {
+                        if (editingKey?.date == date.toString()) editingKey = null
+                    },
+                    onSaveField = { field, newText ->
+                        val current = reflectionMap[date.toString()]
+                        val needsUpdate = current == null || !sameField(current, field, newText)
+                        if (needsUpdate) {
+                            val updated = updateField(
+                                base = current ?: DailyReflection(date = date.toString()),
+                                field = field,
+                                value = newText
+                            ).copy(updatedAt = System.currentTimeMillis())
+                            onUpsertReflection(updated)
                         }
-                    )
-                }
+                        if (editingKey?.date == date.toString() && editingKey?.field == field) {
+                            editingKey = null
+                        }
+                    }
+                )
             }
         }
     }
@@ -239,99 +201,110 @@ fun ReflectionTimelineScreen(
 // ヘッダー周辺
 // ============================================================================
 
+/**
+ * 振り返り画面専用のトップバー。
+ * - 左端: ≡ メニューアイコン
+ * - 中央: 範囲ナビ ‹ M月D日 — D日 / 第N週 ›（2行ラベル + 前後ボタン）
+ * - 右端: 検索 + 追加 アイコン
+ * 「振り返り」というタイトル文字は持たない（ボトムナビで現在地が分かるため）。
+ */
 @Composable
-private fun PeriodTabs(
-    selected: ReflectionPeriodTab,
-    onSelect: (ReflectionPeriodTab) -> Unit
+private fun ReflectionTopBar(
+    weekStart: LocalDate,
+    canGoNext: Boolean,
+    onMenuClick: () -> Unit,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+    onSearchClick: () -> Unit,
+    onAddTodayClick: () -> Unit
 ) {
-    val border = MaterialTheme.appColors.dividerSoft
-    val bg = MaterialTheme.appColors.surfaceQuiet
-    val activeBg = MaterialTheme.appColors.inkStrongAlt
-    val inkPrimary = MaterialTheme.appColors.inkPrimary
-    val inkOnInk = MaterialTheme.appColors.inkOnInk
-    val inkDisabled = MaterialTheme.appColors.inkDisabled
+    val borderColor = MaterialTheme.appColors.dividerSoft
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(bg)
-            .border(1.dp, border, RoundedCornerShape(6.dp))
-            .padding(2.dp)
-    ) {
-        ReflectionPeriodTab.entries.forEach { tab ->
-            val isActive = tab == selected
-            val labelColor = when {
-                isActive -> inkOnInk
-                tab == ReflectionPeriodTab.WEEK -> inkPrimary
-                else -> inkDisabled
-            }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(if (isActive) activeBg else Color.Transparent)
-                    .clickable { onSelect(tab) }
-                    .padding(vertical = 6.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = tab.label,
-                    style = MonoTypography.Caption.copy(
-                        color = labelColor,
-                        fontWeight = if (isActive) FontWeight.Medium else FontWeight.Normal,
-                        letterSpacing = 0.5.sp
-                    )
+            .background(MaterialTheme.colorScheme.surface)
+            .drawBehind {
+                drawLine(
+                    color = borderColor,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx()
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun RangeNavBar(
-    weekStart: LocalDate,
-    canGoNext: Boolean,
-    onPrev: () -> Unit,
-    onNext: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        // 左: メニュー
+        CompactHeaderIconButton(
+            selected = false,
+            onClick = onMenuClick,
+            icon = Icons.Outlined.Menu,
+            contentDescription = "メニュー"
+        )
+
+        // 中央: 範囲ナビ（残りスペースを weight(1f) で確保し、内側で中央寄せ）
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .weight(1f)
+                .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.Center
         ) {
-            RangeNavButton(icon = Icons.Outlined.ChevronLeft, contentDescription = "前の週", onClick = onPrev)
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            RangeNavButton(
+                icon = Icons.Outlined.ChevronLeft,
+                contentDescription = "前の週",
+                onClick = onPrev
+            )
+            Spacer(Modifier.width(8.dp))
+            Column(
+                modifier = Modifier.weight(1f, fill = false),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 val end = weekStart.plusDays(6)
                 Text(
                     text = formatRangeMain(weekStart, end),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.appColors.inkPrimary
+                    color = MaterialTheme.appColors.inkPrimary,
+                    maxLines = 1
                 )
                 Text(
                     text = formatRangeSub(weekStart),
                     style = MonoTypography.Micro.copy(
                         color = MaterialTheme.appColors.inkTertiary,
                         letterSpacing = 0.5.sp
-                    )
+                    ),
+                    maxLines = 1
                 )
             }
-            // 未来週へは進めない仕様。今週以降は › ボタンを非表示にする。
-            // ただしレイアウトのバランスを保つため、同サイズのスペーサーで領域は確保する。
+            Spacer(Modifier.width(8.dp))
+            // 未来週へは進めない仕様。今週以降は › ボタンを透明な領域として確保する
+            // （位置がズレないようにするため、サイズだけ維持）
             if (canGoNext) {
-                RangeNavButton(icon = Icons.Outlined.ChevronRight, contentDescription = "次の週", onClick = onNext)
+                RangeNavButton(
+                    icon = Icons.Outlined.ChevronRight,
+                    contentDescription = "次の週",
+                    onClick = onNext
+                )
             } else {
                 Spacer(modifier = Modifier.size(28.dp))
             }
         }
+
+        // 右: 検索 + 追加
+        CompactHeaderIconButton(
+            selected = false,
+            onClick = onSearchClick,
+            icon = Icons.Outlined.Search,
+            contentDescription = "検索（準備中）"
+        )
+        CompactHeaderIconButton(
+            selected = false,
+            onClick = onAddTodayClick,
+            icon = Icons.Outlined.Add,
+            contentDescription = "今日の記録を追加"
+        )
     }
 }
 
@@ -356,30 +329,6 @@ private fun RangeNavButton(
             tint = MaterialTheme.appColors.inkSecondary,
             modifier = Modifier.size(16.dp)
         )
-    }
-}
-
-@Composable
-private fun ComingSoonBody(tab: ReflectionPeriodTab) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                "「${tab.label}」ビューは準備中です",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.appColors.inkSecondary
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "現在は「週」ビューのみ利用できます",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.appColors.inkTertiary
-            )
-        }
     }
 }
 
