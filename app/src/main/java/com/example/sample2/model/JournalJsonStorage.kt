@@ -459,7 +459,13 @@ object JournalJsonStorage {
                     emotions = normalizeEmotionMetrics(message.emotions),
                     flags = normalizeActionFlags(message.flags),
                     parentId = message.parentId?.ifBlank { null },
-                    response = message.response?.let(::normalizeEmotionResponse)
+                    response = message.response?.let(::normalizeEmotionResponse),
+                    // きっかけは親メッセージ（MEMO）専用。子カードに紛れていたら null に正規化
+                    trigger = if (message.entryType == JournalEntryType.EMOTION_RESPONSE) {
+                        null
+                    } else {
+                        message.trigger
+                    }
                 )
             }
             .sortedWith(compareBy<MessageV2> { it.timestamp }.thenBy { it.id })

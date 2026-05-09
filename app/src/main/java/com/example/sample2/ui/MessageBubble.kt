@@ -86,6 +86,7 @@ import com.example.sample2.data.EmotionMetrics
 import com.example.sample2.data.EmotionType
 import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
+import com.example.sample2.data.TriggerKind
 import com.example.sample2.data.firstEnabledActionOrNull
 import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.components.AppDestructiveDialog
@@ -397,6 +398,7 @@ fun MessageActionOverlay(
     var editingTimestamp by remember(message.id) { mutableStateOf(message.timestamp) }
     var editingEmotions by remember(message.id) { mutableStateOf(message.emotions) }
     var editingFlags by remember(message.id) { mutableStateOf(message.flags) }
+    var editingTrigger by remember(message.id) { mutableStateOf(message.trigger) }
     var selectedActionType by remember(message.id) { mutableStateOf(message.flags.firstEnabledActionOrNull()) }
     var showActionMenu by remember(message.id) { mutableStateOf(false) }
     var showDeleteConfirm by remember(message.id) { mutableStateOf(false) }
@@ -416,7 +418,13 @@ fun MessageActionOverlay(
             text = editingText.text,
             timestamp = editingTimestamp,
             emotions = editingEmotions,
-            flags = editingFlags
+            flags = editingFlags,
+            // 子カードには trigger を持たせない
+            trigger = if (message.entryType == JournalEntryType.EMOTION_RESPONSE) {
+                null
+            } else {
+                editingTrigger
+            }
         )
         if (mode == EditorMode.CREATE) onCreate(payload) else onUpdate(payload)
         onDismiss()
@@ -480,6 +488,17 @@ fun MessageActionOverlay(
                     }
                 )
                 HorizontalDivider(color = MaterialTheme.appColors.dividerColor)
+
+                if (message.entryType != JournalEntryType.EMOTION_RESPONSE) {
+                    TriggerSection(
+                        selected = editingTrigger,
+                        onSelected = { picked ->
+                            focusManager.clearFocus(force = true)
+                            editingTrigger = if (picked == editingTrigger) null else picked
+                        }
+                    )
+                    HorizontalDivider(color = MaterialTheme.appColors.dividerColor)
+                }
 
                 FlagSection(
                     selectedType = selectedActionType,
@@ -711,6 +730,73 @@ private fun FlagIconItem(type: ActionType, isActive: Boolean, onClick: () -> Uni
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
+    }
+}
+
+
+/**
+ * 親メモ編集ダイアログ用の「きっかけ」選択 UI。
+ * TriggerKind の4種類を横並びで表示し、タップで排他選択。
+ * 同じものを再タップすると null（解除）。
+ */
+@Composable
+private fun TriggerSection(
+    selected: TriggerKind?,
+    onSelected: (TriggerKind) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 14.dp)
+    ) {
+        Text(
+            text = "きっかけ",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.appColors.inkSecondary,
+            modifier = Modifier.padding(bottom = 10.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TriggerKind.entries.forEach { kind ->
+                val isSelected = kind == selected
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 80.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(
+                            if (isSelected) kind.color.copy(alpha = 0.18f)
+                            else MaterialTheme.appColors.surfaceInactive
+                        )
+                        .border(
+                            if (isSelected) BorderStroke(1.5.dp, kind.color)
+                            else BorderStroke(0.dp, Color.Transparent),
+                            MaterialTheme.shapes.medium
+                        )
+                        .clickable { onSelected(kind) }
+                        .padding(horizontal = 6.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = kind.icon,
+                        contentDescription = kind.label,
+                        modifier = Modifier.size(20.dp),
+                        tint = if (isSelected) kind.color else MaterialTheme.appColors.inkSecondary
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = kind.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.appColors.inkPrimary
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -1228,11 +1314,49 @@ fun ActionFlagIconButton(
     }
 }
 
+/**
+ * 親カード or 子カードの左に表示する 28dp の角アイコン。
+ *
+ * @param useTrigger true のとき message.trigger を優先してアイコンを決める。
+ *                   親カード（ThreadHead）から呼ぶときに true を渡す。
+ *                   子カードでは既定値（false）でよい。
+ */
 @Composable
 internal fun StatusIconBox(
     message: MessageV2,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useTrigger: Boolean = false
 ) {
+    if (useTrigger) {
+        val trigger = message.trigger
+        Box(
+            modifier = modifier,
+            contentAlignment = Alignment.Center
+        ) {
+            if (trigger != null) {
+                Surface(
+                    color = trigger.color.copy(alpha = 0.15f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Box(
+                        modifier = Modifier.size(28.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = trigger.icon,
+                            contentDescription = trigger.label,
+                            tint = trigger.color,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+            // trigger が null の時は何も描画しない（呼び出し元の Modifier.size(28.dp) で領域だけ確保される）
+        }
+        return
+    }
+
+    // 既存ロジック（子カード等）— 変更なし
     val display = message.flags.firstEnabledActionOrNull()?.toStatusUi()
         ?: message.emotions.maxEmotionOrNull()?.toStatusUi()
 

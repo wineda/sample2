@@ -27,10 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sample2.data.MessageV2
-import com.example.sample2.data.firstEnabledActionOrNull
-import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.StatusIconBox
-import com.example.sample2.ui.categoryColorFor
 import com.example.sample2.ui.theme.Spacing
 import com.example.sample2.ui.theme.appColors
 import com.example.sample2.util.formatTime
@@ -46,10 +43,8 @@ fun ThreadHead(
     onDoubleClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val categoryColor = categoryColorFor(parent)
-    val categoryLabel = parent.flags.firstEnabledActionOrNull()?.label
-        ?: parent.emotions.maxEmotionOrNull()?.label
-        ?: "メモ"
+    val triggerLabel = parent.trigger?.label
+    val triggerColor = parent.trigger?.color ?: MaterialTheme.appColors.inkSecondary
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 0f else -90f,
         label = "thread-toggle"
@@ -70,7 +65,8 @@ fun ThreadHead(
     ) {
         StatusIconBox(
             message = parent,
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(28.dp),
+            useTrigger = true
         )
 
         Column(
@@ -81,18 +77,20 @@ fun ThreadHead(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
             ) {
-                Text(
-                    text = categoryLabel,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = categoryColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = "·",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.appColors.inkTertiary,
-                )
+                if (triggerLabel != null) {
+                    Text(
+                        text = triggerLabel,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = triggerColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = "·",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.appColors.inkTertiary,
+                    )
+                }
                 Text(
                     text = formatTime(parent.timestamp),
                     style = MaterialTheme.typography.labelSmall,
