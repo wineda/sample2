@@ -309,6 +309,13 @@ fun EmotionResponseChildBubble(
 
 
 internal fun categoryColorFor(message: MessageV2): Color {
+    // 1. 行動フラグがあれば、最初に有効なフラグの ActionGroup 色を採用。
+    //    ThreadHead のカテゴリラベル決定ロジック（行動フラグ → 感情 → "メモ"）と
+    //    優先順位を揃えることで、ラベルと色が一致する。
+    message.flags.firstEnabledActionOrNull()?.let { action ->
+        return action.group.color
+    }
+    // 2. 行動フラグがなければ感情から色を決める。
     return (message.emotions.maxEmotionOrNull()?.colorSpec() ?: EmotionPalette.Neutral).main
 }
 
