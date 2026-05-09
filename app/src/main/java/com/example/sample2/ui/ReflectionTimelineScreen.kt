@@ -550,21 +550,21 @@ private fun StatsRow(stats: WeekStats) {
         StatCell(
             label = "うまく",
             value = stats.winsCount.toString(),
-            valueColor = SemanticColors.PositiveMain,
+            valueColor = fieldColor(ReflectionField.WINS),
             drawDivider = true,
             modifier = Modifier.weight(1f)
         )
         StatCell(
             label = "しんどい",
             value = stats.difficultiesCount.toString(),
-            valueColor = SemanticColors.WarningMain,
+            valueColor = fieldColor(ReflectionField.DIFFICULTIES),
             drawDivider = true,
             modifier = Modifier.weight(1f)
         )
         StatCell(
             label = "気づき",
             value = stats.insightsCount.toString(),
-            valueColor = SemanticColors.InfoMain,
+            valueColor = fieldColor(ReflectionField.INSIGHTS),
             drawDivider = true,
             modifier = Modifier.weight(1f)
         )
@@ -960,10 +960,20 @@ private fun categoryFlags(r: DailyReflection): List<ReflectionField> =
 private fun hasAnyOf4(r: DailyReflection): Boolean =
     r.wins.isNotBlank() || r.difficulties.isNotBlank() || r.insights.isNotBlank() || r.summary.isNotBlank()
 
+/**
+ * 振り返り4項目の色。記録画面（ChatScreen）の ActionGroup カラーと意味的に揃えてある:
+ *  - WINS         → ActionGroup.RECOVER（立て直し）の緑
+ *  - DIFFICULTIES → ActionGroup.LOAD（負荷）の紫
+ *  - INSIGHTS     → ActionGroup.FORWARD（前進）のオレンジ
+ *  - SUMMARY      → どのグループにも該当しないニュートラル紫（既存維持）
+ *
+ * SemanticColors.* はアプリ全体で共有されている色のため、振り返り画面だけで配色を
+ * 変えたい今回のケースでは、ここに直接ハードコードする方が波及範囲が小さくて安全。
+ */
 private fun fieldColor(field: ReflectionField): Color = when (field) {
-    ReflectionField.WINS -> SemanticColors.PositiveMain
-    ReflectionField.DIFFICULTIES -> SemanticColors.WarningMain
-    ReflectionField.INSIGHTS -> SemanticColors.InfoMain
+    ReflectionField.WINS -> Color(0xFF43A047)
+    ReflectionField.DIFFICULTIES -> Color(0xFF8E24AA)
+    ReflectionField.INSIGHTS -> Color(0xFFFB8C00)
     ReflectionField.SUMMARY -> SemanticColors.SummaryMain
 }
 
