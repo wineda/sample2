@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Color
 import com.example.sample2.R
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.EmotionType
-import com.example.sample2.ui.theme.EmotionPalette
+import com.example.sample2.ui.theme.colorSpec
 
 data class EmotionUiSpec(
     @DrawableRes val iconRes: Int,
@@ -19,11 +19,11 @@ data class ActionUiSpec(
 
 fun EmotionType.toUiSpec(): EmotionUiSpec {
     return when (this) {
-        EmotionType.ANXIETY -> EmotionUiSpec(R.drawable.ic_shield_lock, EmotionPalette.Anxiety)
-        EmotionType.ANGRY -> EmotionUiSpec(android.R.drawable.ic_dialog_alert, EmotionPalette.Angry)
-        EmotionType.SAD -> EmotionUiSpec(android.R.drawable.ic_menu_close_clear_cancel, EmotionPalette.Sad)
-        EmotionType.HAPPY -> EmotionUiSpec(android.R.drawable.btn_star_big_on, EmotionPalette.Happy)
-        EmotionType.CALM -> EmotionUiSpec(android.R.drawable.ic_menu_compass, EmotionPalette.Calm)
+        EmotionType.ANXIETY -> EmotionUiSpec(R.drawable.ic_anxiety, colorSpec().main)
+        EmotionType.ANGRY -> EmotionUiSpec(R.drawable.ic_angry, colorSpec().main)
+        EmotionType.SAD -> EmotionUiSpec(R.drawable.ic_sad, colorSpec().main)
+        EmotionType.HAPPY -> EmotionUiSpec(R.drawable.ic_happy, colorSpec().main)
+        EmotionType.CALM -> EmotionUiSpec(R.drawable.ic_satisfied, colorSpec().main)
     }
 }
 
