@@ -138,6 +138,7 @@ fun ChatRoute() {
     }
 
     var showDailyRecordScreen by remember { mutableStateOf(false) }
+    var dailyRecordTargetDate by rememberSaveable { mutableStateOf<String?>(null) }
     var showPersonalityAnalytics by remember { mutableStateOf(false) }
     var showPersonalityAnalyticsDetail by remember { mutableStateOf(false) }
     var showReflectionScreen by remember { mutableStateOf(false) }
@@ -494,15 +495,18 @@ fun ChatRoute() {
                     ) { padding ->
                     when (currentMode) {
                         JournalScreenMode.DailyRecord -> {
-                            Box(modifier = Modifier.padding(padding)) {
-                                DailyRecordScreen(
-                                    onClose = {
-                                        switchToJournal()
-                                        dailyRecordsVersion++
-                                    },
-                                    onOpenReflection = { _ -> openReflectionTimeline() }
-                                )
+                            val reflections = remember(reflectionsVersion) {
+                                state.loadDailyReflections()
                             }
+                            DailyRecordCalendarScreen(
+                                records = dailyRecords,
+                                reflections = reflections,
+                                onMenuClick = { scope.launch { drawerState.open() } },
+                                onDayClick = { date ->
+                                    dailyRecordTargetDate = date.toString()
+                                },
+                                modifier = Modifier.padding(padding)
+                            )
                         }
 
                         JournalScreenMode.Reflection -> {
@@ -642,6 +646,34 @@ fun ChatRoute() {
                                     onApply = { applied ->
                                         filterState = applied
                                         showFilterSheet = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    if (dailyRecordTargetDate != null) {
+                        androidx.compose.ui.window.Dialog(
+                            onDismissRequest = { dailyRecordTargetDate = null },
+                            properties = androidx.compose.ui.window.DialogProperties(
+                                usePlatformDefaultWidth = false,
+                                dismissOnBackPress = true,
+                                dismissOnClickOutside = false
+                            )
+                        ) {
+                            Surface(
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colorScheme.background
+                            ) {
+                                DailyRecordScreen(
+                                    onClose = {
+                                        dailyRecordTargetDate = null
+                                        dailyRecordsVersion++
+                                    },
+                                    initialDate = dailyRecordTargetDate!!,
+                                    onOpenReflection = { _ ->
+                                        dailyRecordTargetDate = null
+                                        openReflectionTimeline()
                                     }
                                 )
                             }
