@@ -17,16 +17,22 @@ internal class ScoreCalculator {
         val stepsNorm = PersonalityMath.normalizeSteps(features.steps)
 
         val exercisedNorm = PersonalityMath.normalizeCount(f.exercised, 2)
-        val socializedNorm = PersonalityMath.normalizeCount(f.socialized, 2)
-        val challengeNorm = PersonalityMath.normalizeCount(f.challenge, 2)
+        val consultConnectNorm = PersonalityMath.normalizeCount(f.consultConnect, 2)
+        val mindfulActionNorm = PersonalityMath.normalizeCount(f.mindfulAction, 2)
         val breakdownNorm = PersonalityMath.normalizeCount(f.breakdown, 3)
         val quickActionNorm = PersonalityMath.normalizeCount(f.quickAction, 3)
 
         val pendingTaskNorm = PersonalityMath.normalizeCount(f.pendingTask, 3)
+        val reluctanceNorm = PersonalityMath.normalizeCount(f.reluctance, 2)
         val meetingStressNorm = PersonalityMath.normalizeCount(f.meetingStress, 2)
-        val smartphoneDriftNorm = PersonalityMath.normalizeCount(f.smartphoneDrift, 3)
+        val ruminationNorm = PersonalityMath.normalizeCount(f.rumination, 2)
+        val idleDriftNorm = PersonalityMath.normalizeCount(f.idleDrift, 3)
         val alcoholNorm = PersonalityMath.normalizeCount(f.alcohol, 2)
-        val hangoverNorm = PersonalityMath.normalizeCount(f.hangover, 1)
+        val hyperfocusNorm = PersonalityMath.normalizeCount(f.hyperfocus, 2)
+        val noDrinkChoiceNorm = PersonalityMath.normalizeCount(f.noDrinkChoice, 1)
+        val restNorm = PersonalityMath.normalizeCount(f.rest, 1)
+        val insightNorm = PersonalityMath.normalizeCount(f.insight, 2)
+        val tomorrowBatonNorm = PersonalityMath.normalizeCount(f.tomorrowBaton, 1)
 
         val effectivePendingTaskNorm = PersonalityMath.clamp(pendingTaskNorm - 0.85 * quickActionNorm, 0.0, 1.0)
         val quickActionReliefNorm = PersonalityMath.clamp(quickActionNorm - 0.35 * pendingTaskNorm, 0.0, 1.0)
@@ -41,25 +47,25 @@ internal class ScoreCalculator {
                 14.0 * angryNorm +
                 13.0 * sadNorm +
                 7.0 * meetingStressNorm +
-                5.0 * smartphoneDriftNorm
+                5.0 * idleDriftNorm
         val anxietyNegativeLoad =
             7.6 * anxietyNorm +
                 3.1 * angryNorm +
                 2.3 * sadNorm +
                 1.0 * meetingStressNorm +
-                0.9 * smartphoneDriftNorm
+                0.9 * idleDriftNorm
         val energyNegativeLoad =
             10.0 * anxietyNorm +
                 5.0 * angryNorm +
                 18.0 * sadNorm +
                 5.0 * meetingStressNorm +
-                5.0 * smartphoneDriftNorm
+                5.0 * idleDriftNorm
         val controlNegativeLoad =
             19.0 * anxietyNorm +
                 16.0 * angryNorm +
                 7.0 * sadNorm +
                 12.0 * meetingStressNorm +
-                11.0 * smartphoneDriftNorm
+                11.0 * idleDriftNorm
 
         val stabilityRaw =
             56.0 +
@@ -69,14 +75,20 @@ internal class ScoreCalculator {
                 4.0 * sleepQualityNorm +
                 3.0 * stepsNorm +
                 2.0 * exercisedNorm +
-                6.0 * socializedNorm +
-                3.0 * challengeNorm +
+                6.0 * consultConnectNorm +
+                3.0 * mindfulActionNorm +
                 2.0 * breakdownNorm +
                 5.0 * quickActionReliefNorm -
                 stabilityNegativeLoad * stabilityPendingAmplifier -
                 7.0 * effectivePendingTaskNorm -
                 4.0 * alcoholNorm -
-                5.0 * hangoverNorm
+                3.0 * reluctanceNorm -
+                4.0 * ruminationNorm -
+                2.0 * hyperfocusNorm +
+                3.0 * noDrinkChoiceNorm +
+                4.0 * restNorm +
+                3.0 * insightNorm +
+                2.0 * tomorrowBatonNorm
 
         val anxietyRaw =
             1.4 +
@@ -87,13 +99,19 @@ internal class ScoreCalculator {
                 0.3 * sleepQualityNorm -
                 0.3 * stepsNorm -
                 0.2 * exercisedNorm -
-                0.2 * socializedNorm -
-                0.5 * challengeNorm -
+                0.2 * consultConnectNorm -
+                0.5 * mindfulActionNorm -
                 0.4 * breakdownNorm -
                 0.9 * quickActionReliefNorm +
                 1.4 * effectivePendingTaskNorm +
                 0.4 * alcoholNorm +
-                0.8 * hangoverNorm
+                0.5 * reluctanceNorm +
+                0.7 * ruminationNorm +
+                0.3 * hyperfocusNorm -
+                0.3 * noDrinkChoiceNorm -
+                0.5 * restNorm -
+                0.3 * insightNorm -
+                0.2 * tomorrowBatonNorm
 
         val energyRaw =
             44.0 +
@@ -101,8 +119,8 @@ internal class ScoreCalculator {
                 10.0 * sleepQualityNorm +
                 14.0 * stepsNorm +
                 14.0 * exercisedNorm +
-                3.0 * socializedNorm +
-                4.0 * challengeNorm +
+                3.0 * consultConnectNorm +
+                4.0 * mindfulActionNorm +
                 3.0 * breakdownNorm +
                 6.0 * quickActionReliefNorm +
                 10.0 * happyNorm +
@@ -110,13 +128,19 @@ internal class ScoreCalculator {
                 energyNegativeLoad * energyPendingAmplifier -
                 6.0 * effectivePendingTaskNorm -
                 4.0 * alcoholNorm -
-                13.0 * hangoverNorm
+                2.0 * reluctanceNorm -
+                3.0 * ruminationNorm -
+                3.0 * hyperfocusNorm +
+                2.0 * noDrinkChoiceNorm +
+                6.0 * restNorm +
+                2.0 * insightNorm +
+                1.0 * tomorrowBatonNorm
 
         val controlRaw =
             50.0 +
-                12.0 * challengeNorm +
+                12.0 * mindfulActionNorm +
                 14.0 * breakdownNorm +
-                5.0 * socializedNorm +
+                5.0 * consultConnectNorm +
                 3.0 * exercisedNorm +
                 1.5 * happyNorm +
                 2.0 * calmNorm +
@@ -125,7 +149,13 @@ internal class ScoreCalculator {
                 controlNegativeLoad * controlPendingAmplifier -
                 16.0 * effectivePendingTaskNorm -
                 5.0 * alcoholNorm -
-                7.0 * hangoverNorm
+                3.0 * reluctanceNorm -
+                4.0 * ruminationNorm -
+                2.0 * hyperfocusNorm +
+                6.0 * noDrinkChoiceNorm +
+                2.0 * restNorm +
+                5.0 * insightNorm +
+                4.0 * tomorrowBatonNorm
 
         return ScoreCore(stabilityRaw, anxietyRaw, energyRaw, controlRaw)
     }

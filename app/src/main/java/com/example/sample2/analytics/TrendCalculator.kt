@@ -83,7 +83,7 @@ internal class TrendCalculator {
                 0.06 * PersonalityMath.normalizeEmotionAbs(e.angry) * effectivePendingNorm -
                 0.10 * quickActionNorm +
                 0.10 * PersonalityMath.normalizeCount(f.meetingStress, 2) +
-                0.08 * PersonalityMath.normalizeCount(f.smartphoneDrift, 2) +
+                0.08 * PersonalityMath.normalizeCount(f.idleDrift, 2) +
                 0.10 * when {
                     (rawToday.features.sleepHours ?: 7.0) < 4.5 -> 1.0
                     (rawToday.features.sleepHours ?: 7.0) < 5.5 -> 0.6

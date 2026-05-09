@@ -20,17 +20,22 @@ internal class FeatureExtractor {
         )
 
         val flags = DailyFlagCounts(
-            exercised = messages.count { it.flags.exercised },
-            socialized = messages.count { it.flags.socialized },
-            delegate = messages.count { it.flags.delegate },
-            challenge = messages.count { it.flags.challenge },
-            breakdown = messages.count { it.flags.breakdown },
-            quickAction = messages.count { it.flags.quickAction },
             pendingTask = messages.count { it.flags.pendingTask },
+            reluctance = messages.count { it.flags.reluctance },
             meetingStress = messages.count { it.flags.meetingStress },
-            smartphoneDrift = messages.count { it.flags.smartphoneDrift },
+            rumination = messages.count { it.flags.rumination },
+            idleDrift = messages.count { it.flags.idleDrift },
             alcohol = messages.count { it.flags.alcohol },
-            hangover = messages.count { it.flags.hangover }
+            hyperfocus = messages.count { it.flags.hyperfocus },
+            noDrinkChoice = messages.count { it.flags.noDrinkChoice },
+            quickAction = messages.count { it.flags.quickAction },
+            breakdown = messages.count { it.flags.breakdown },
+            rest = messages.count { it.flags.rest },
+            exercised = messages.count { it.flags.exercised },
+            mindfulAction = messages.count { it.flags.mindfulAction },
+            insight = messages.count { it.flags.insight },
+            tomorrowBaton = messages.count { it.flags.tomorrowBaton },
+            consultConnect = messages.count { it.flags.consultConnect }
         )
 
         val sleepHours = dailyRecord?.sleep?.durationMinutes

@@ -22,9 +22,9 @@ internal class SummaryBuilder(
 
         val sleepDelta = PersonalityMath.compareHigherIsBetter(features.sleepHours, baseline.sleepHours, 1.5)
         val stepsDelta = PersonalityMath.compareHigherIsBetter(features.steps?.toDouble(), baseline.steps, 3000.0)
-        val challengeDelta = PersonalityMath.compareHigherIsBetter(f.challenge.toDouble(), baseline.flags.challenge, 1.0)
+        val mindfulActionDelta = PersonalityMath.compareHigherIsBetter(f.mindfulAction.toDouble(), baseline.flags.mindfulAction, 1.0)
         val breakdownDelta = PersonalityMath.compareHigherIsBetter(f.breakdown.toDouble(), baseline.flags.breakdown, 1.0)
-        val socializedDelta = PersonalityMath.compareHigherIsBetter(f.socialized.toDouble(), baseline.flags.socialized, 1.0)
+        val consultConnectDelta = PersonalityMath.compareHigherIsBetter(f.consultConnect.toDouble(), baseline.flags.consultConnect, 1.0)
         val quickActionDelta = PersonalityMath.compareHigherIsBetter(f.quickAction.toDouble(), baseline.flags.quickAction, 1.0)
         val anxietyDelta = PersonalityMath.compareLowerIsBetter(
             e.anxiety,
@@ -38,7 +38,11 @@ internal class SummaryBuilder(
         )
         val pendingTaskDelta = PersonalityMath.compareLowerIsBetter(f.pendingTask.toDouble(), baseline.flags.pendingTask, 1.2)
         val meetingStressDelta = PersonalityMath.compareLowerIsBetter(f.meetingStress.toDouble(), baseline.flags.meetingStress, 1.0)
-        val smartphoneDelta = PersonalityMath.compareLowerIsBetter(f.smartphoneDrift.toDouble(), baseline.flags.smartphoneDrift, 1.0)
+        val idleDriftDelta = PersonalityMath.compareLowerIsBetter(f.idleDrift.toDouble(), baseline.flags.idleDrift, 1.0)
+        val restDelta = PersonalityMath.compareHigherIsBetter(f.rest.toDouble(), baseline.flags.rest, 1.0)
+        val insightDelta = PersonalityMath.compareHigherIsBetter(f.insight.toDouble(), baseline.flags.insight, 1.0)
+        val ruminationDelta = PersonalityMath.compareLowerIsBetter(f.rumination.toDouble(), baseline.flags.rumination, 1.0)
+        val hyperfocusDelta = PersonalityMath.compareLowerIsBetter(f.hyperfocus.toDouble(), baseline.flags.hyperfocus, 1.0)
         val calmDelta = PersonalityMath.compareHigherIsBetter(
             e.calm,
             baseline.emotions.calm,
@@ -52,9 +56,11 @@ internal class SummaryBuilder(
 
         if (sleepDelta >= 0.35) plus += "睡眠が平常より良い"
         if (stepsDelta >= 0.35) plus += "歩数が平常より多い"
-        if (socializedDelta >= 0.35) plus += "会話が平常より多い"
-        if (challengeDelta >= 0.35) plus += "チャレンジが平常より多い"
-        if (breakdownDelta >= 0.35) plus += "細分化が平常より多い"
+        if (consultConnectDelta >= 0.35) plus += "相談・つながりが平常より多い"
+        if (mindfulActionDelta >= 0.35) plus += "意識して行動が平常より多い"
+        if (breakdownDelta >= 0.35) plus += "分解が平常より多い"
+        if (restDelta >= 0.35) plus += "休息が平常より多い"
+        if (insightDelta >= 0.35) plus += "気づきが平常より多い"
         if (quickActionDelta >= 0.35) plus += "すぐやるが平常より多い"
         if (happyDelta >= 0.35) plus += "喜びが平常より高い"
         if (calmDelta >= 0.35) plus += "安心感が平常より高い"
@@ -63,8 +69,10 @@ internal class SummaryBuilder(
         if (anxietyDelta <= -0.35) minus += "不安が平常より高い"
         if (sadDelta <= -0.35) minus += "悲しみが平常より高い"
         if (pendingTaskDelta <= -0.35) minus += "未処理が平常より多い"
-        if (meetingStressDelta <= -0.35) minus += "会議負荷が平常より高い"
-        if (smartphoneDelta <= -0.35) minus += "スマホ逸脱が平常より多い"
+        if (meetingStressDelta <= -0.35) minus += "会議ストレスが平常より高い"
+        if (idleDriftDelta <= -0.35) minus += "ダラダラが平常より多い"
+        if (ruminationDelta <= -0.35) minus += "ぐるぐる思考が平常より多い"
+        if (hyperfocusDelta <= -0.35) minus += "過集中が平常より多い"
         if ((features.sleepHours ?: 99.0) in 0.1..<5.5) minus += "睡眠不足"
         if (e.anxiety >= 2.0) minus += "強い不安"
         if (e.angry >= 1.8) minus += "怒りが強い"
@@ -99,7 +107,7 @@ internal class SummaryBuilder(
             PersonalityState.TENSE -> {
                 when {
                     control < 40.0 -> "抱え込みを減らし、未処理を1つ片づけるか、すぐやるを1つ増やすと戻しやすい。"
-                    anxiety >= 7.0 -> "刺激を減らし、休憩や会話を先に入れたい。"
+                    anxiety >= 7.0 -> "刺激を減らし、休憩や相談・つながりを先に入れたい。"
                     else -> "押し切るより、負荷源を減らす方が効く。"
                 }
             }
