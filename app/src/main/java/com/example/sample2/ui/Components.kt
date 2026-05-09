@@ -307,7 +307,7 @@ fun DateStepper(selectedDate: LocalDate,onDateChange: (LocalDate) -> Unit,minDat
             StepperCircleNav(Icons.Rounded.ChevronLeft, "前日", { onDateChange(selectedDate.minusDays(1)) }, enabled = minDate?.let { selectedDate>it } ?: true)
             Column(Modifier.weight(1f).clickable { showDialog=true }.semantics { contentDescription = "日付選択" }, horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.JAPAN)), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkPrimary)
+                    Text(selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.JAPAN)), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.appColors.inkPrimary)
                     if (selectedDate==today) Surface(shape=AppShapeTokens.Tech, color=SemanticColors.InfoMain){ Text("TODAY", color=Color.White, style=MonoTypography.Micro, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
                     else if (selectedDate<today) Surface(shape=AppShapeTokens.Tech, color=MaterialTheme.appColors.surfaceInactive){ Text("${ChronoUnit.DAYS.between(selectedDate,today)}日前", color=MaterialTheme.appColors.inkTertiary, style=MonoTypography.Micro, modifier=Modifier.padding(horizontal=Spacing.xs, vertical=1.dp)) }
                 }
