@@ -143,17 +143,35 @@ fun ReflectionTimelineScreen(
     ) {
         // 「今週」または未来週にいる間は、次の週へのナビゲーションを隠す
         val canGoNext = selectedWeekStart.isBefore(weekStartMonday(today))
-        ReflectionTopBar(
+        JournalTopHeader(
+            title = "振り返り",
+            subtitle = null,
+            navigationIcon = Icons.Outlined.Menu,
+            navigationContentDescription = "メニュー",
+            onNavigationClick = onMenuClick,
+            actions = {
+                CompactHeaderIconButton(
+                    selected = false,
+                    onClick = { /* 検索は今後の拡張枠 */ },
+                    icon = Icons.Outlined.Search,
+                    contentDescription = "検索（準備中）"
+                )
+                CompactHeaderIconButton(
+                    selected = false,
+                    onClick = {
+                        selectedWeekStart = weekStartMonday(today)
+                        editingKey = FieldEditorKey(today.toString(), ReflectionField.WINS)
+                    },
+                    icon = Icons.Outlined.Add,
+                    contentDescription = "今日の記録を追加"
+                )
+            }
+        )
+        WeekRangeNavStrip(
             weekStart = selectedWeekStart,
             canGoNext = canGoNext,
-            onMenuClick = onMenuClick,
             onPrev = { selectedWeekStart = selectedWeekStart.minusWeeks(1) },
-            onNext = { selectedWeekStart = selectedWeekStart.plusWeeks(1) },
-            onSearchClick = { /* 検索は今後の拡張枠 */ },
-            onAddTodayClick = {
-                selectedWeekStart = weekStartMonday(today)
-                editingKey = FieldEditorKey(today.toString(), ReflectionField.WINS)
-            }
+            onNext = { selectedWeekStart = selectedWeekStart.plusWeeks(1) }
         )
 
         LazyColumn(
@@ -214,21 +232,14 @@ fun ReflectionTimelineScreen(
 // ============================================================================
 
 /**
- * 振り返り画面専用のトップバー。
- * - 左端: ≡ メニューアイコン
- * - 中央: 範囲ナビ ‹ M月D日 — D日 / 第N週 ›（2行ラベル + 前後ボタン）
- * - 右端: 検索 + 追加 アイコン
- * 「振り返り」というタイトル文字は持たない（ボトムナビで現在地が分かるため）。
+ * 振り返り画面のヘッダー直下に表示する週ナビ帯。
  */
 @Composable
-private fun ReflectionTopBar(
+private fun WeekRangeNavStrip(
     weekStart: LocalDate,
     canGoNext: Boolean,
-    onMenuClick: () -> Unit,
     onPrev: () -> Unit,
-    onNext: () -> Unit,
-    onSearchClick: () -> Unit,
-    onAddTodayClick: () -> Unit
+    onNext: () -> Unit
 ) {
     val borderColor = MaterialTheme.appColors.dividerSoft
 
@@ -244,79 +255,47 @@ private fun ReflectionTopBar(
                     strokeWidth = 1.dp.toPx()
                 )
             }
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
-        // 左: メニュー
-        CompactHeaderIconButton(
-            selected = false,
-            onClick = onMenuClick,
-            icon = Icons.Outlined.Menu,
-            contentDescription = "メニュー"
+        RangeNavButton(
+            icon = Icons.Outlined.ChevronLeft,
+            contentDescription = "前の週",
+            onClick = onPrev
         )
-
-        // 中央: 範囲ナビ（残りスペースを weight(1f) で確保し、内側で中央寄せ）
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+        Spacer(Modifier.width(8.dp))
+        Column(
+            modifier = Modifier.weight(1f, fill = false),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            RangeNavButton(
-                icon = Icons.Outlined.ChevronLeft,
-                contentDescription = "前の週",
-                onClick = onPrev
+            val end = weekStart.plusDays(6)
+            Text(
+                text = formatRangeMain(weekStart, end),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.appColors.inkPrimary,
+                maxLines = 1
             )
-            Spacer(Modifier.width(8.dp))
-            Column(
-                modifier = Modifier.weight(1f, fill = false),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val end = weekStart.plusDays(6)
-                Text(
-                    text = formatRangeMain(weekStart, end),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.appColors.inkPrimary,
-                    maxLines = 1
-                )
-                Text(
-                    text = formatRangeSub(weekStart),
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        color = MaterialTheme.appColors.inkTertiary,
-                        letterSpacing = 0.5.sp
-                    ),
-                    maxLines = 1
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            // 未来週へは進めない仕様。今週以降は › ボタンを透明な領域として確保する
-            // （位置がズレないようにするため、サイズだけ維持）
-            if (canGoNext) {
-                RangeNavButton(
-                    icon = Icons.Outlined.ChevronRight,
-                    contentDescription = "次の週",
-                    onClick = onNext
-                )
-            } else {
-                Spacer(modifier = Modifier.size(28.dp))
-            }
+            Text(
+                text = formatRangeSub(weekStart),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    color = MaterialTheme.appColors.inkTertiary,
+                    letterSpacing = 0.5.sp
+                ),
+                maxLines = 1
+            )
         }
-
-        // 右: 検索 + 追加
-        CompactHeaderIconButton(
-            selected = false,
-            onClick = onSearchClick,
-            icon = Icons.Outlined.Search,
-            contentDescription = "検索（準備中）"
-        )
-        CompactHeaderIconButton(
-            selected = false,
-            onClick = onAddTodayClick,
-            icon = Icons.Outlined.Add,
-            contentDescription = "今日の記録を追加"
-        )
+        Spacer(Modifier.width(8.dp))
+        if (canGoNext) {
+            RangeNavButton(
+                icon = Icons.Outlined.ChevronRight,
+                contentDescription = "次の週",
+                onClick = onNext
+            )
+        } else {
+            Spacer(modifier = Modifier.size(28.dp))
+        }
     }
 }
 
