@@ -1,6 +1,12 @@
 package com.example.sample2.data
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material.icons.outlined.RocketLaunch
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 
 data class MessageV2(
     val id: String,
@@ -15,13 +21,18 @@ data class MessageV2(
 )
 
 /**
- * 記録の「きっかけ」を表す分類。
+ * 記録の「きっかけ」を表す分類。親カード（MEMO）のみで意味を持ち、
+ * 子カード（EMOTION_RESPONSE）では常に null として扱われる。
  */
-enum class TriggerKind(val label: String, val color: Color) {
-    EXTERNAL("外部", Color(0xFFF57C00)),
-    PSYCHOLOGICAL("心理", Color(0xFF9C27B0)),
-    PHYSICAL("身体", Color(0xFF00897B)),
-    SPONTANEOUS("自発", Color(0xFF1976D2))
+enum class TriggerKind(
+    val label: String,
+    val color: Color,
+    val icon: ImageVector
+) {
+    EXTERNAL("外部", Color(0xFFF57C00), Icons.Outlined.Groups),
+    PSYCHOLOGICAL("心理", Color(0xFF9C27B0), Icons.Outlined.Psychology),
+    PHYSICAL("身体", Color(0xFF00897B), Icons.Outlined.FitnessCenter),
+    SPONTANEOUS("自発", Color(0xFF1976D2), Icons.Outlined.RocketLaunch)
 }
 
 enum class JournalEntryType {
