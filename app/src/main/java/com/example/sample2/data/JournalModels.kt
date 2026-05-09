@@ -9,9 +9,20 @@ data class MessageV2(
     val emotions: EmotionMetrics = EmotionMetrics(),
     val flags: ActionFlags = ActionFlags(),
     val parentId: String? = null,
+    val trigger: TriggerKind? = null,
     val entryType: JournalEntryType = JournalEntryType.MEMO,
     val response: EmotionResponse? = null,
 )
+
+/**
+ * 記録の「きっかけ」を表す分類。
+ */
+enum class TriggerKind(val label: String, val color: Color) {
+    EXTERNAL("外部", Color(0xFFF57C00)),
+    PSYCHOLOGICAL("心理", Color(0xFF9C27B0)),
+    PHYSICAL("身体", Color(0xFF00897B)),
+    SPONTANEOUS("自発", Color(0xFF1976D2))
+}
 
 enum class JournalEntryType {
     MEMO,

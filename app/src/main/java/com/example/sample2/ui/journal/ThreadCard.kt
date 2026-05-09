@@ -9,14 +9,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sample2.data.MessageV2
-import com.example.sample2.ui.categoryColorFor
 import com.example.sample2.ui.components.AppCard
 import com.example.sample2.ui.components.AppCardVariant
+import com.example.sample2.ui.theme.appColors
 
 @Composable
 fun ThreadCard(
@@ -31,7 +32,8 @@ fun ThreadCard(
     modifier: Modifier = Modifier,
 ) {
     val status = remember(parent, children) { deriveThreadStatus(parent, children) }
-    val categoryColor = categoryColorFor(parent)
+    // 縦線色は「きっかけ」の色に統一。未設定なら薄いグレー（divider）にして主張を抑える。
+    val accentColor = parent.trigger?.color ?: MaterialTheme.appColors.dividerSoft
 
     AppCard(
         modifier = modifier,
@@ -45,7 +47,7 @@ fun ThreadCard(
                 .height(IntrinsicSize.Min)
         ) {
             BoxColorBar(
-                color = categoryColor,
+                color = accentColor,
                 modifier = Modifier
                     .width(3.dp)
                     .fillMaxHeight()

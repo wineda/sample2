@@ -10,6 +10,7 @@ import com.example.sample2.data.EmotionMetrics
 import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.MessageV2
 import com.example.sample2.data.SleepData
+import com.example.sample2.data.TriggerKind
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -254,9 +255,18 @@ object JournalJsonStorage {
             emotions = obj.optJSONObject("emotions")?.let(::parseEmotionMetrics) ?: EmotionMetrics(),
             flags = obj.optJSONObject("flags")?.let(::parseActionFlags) ?: ActionFlags(),
             parentId = normalizedParentId,
+            trigger = parseTriggerKind(obj.optString("trigger", "")),
             entryType = entryType,
             response = response
         )
+    }
+
+    private fun parseTriggerKind(raw: String): TriggerKind? {
+        return try {
+            TriggerKind.valueOf(raw)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
     }
 
     private fun parseEntryType(raw: String): JournalEntryType {
@@ -354,6 +364,9 @@ object JournalJsonStorage {
             put("flags", flags.toJson())
             if (parentId != null) {
                 put("parentId", parentId)
+            }
+            if (trigger != null) {
+                put("trigger", trigger.name)
             }
             put("entryType", entryType.name)
             if (response != null) {
