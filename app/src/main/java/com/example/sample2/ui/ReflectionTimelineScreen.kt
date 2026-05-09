@@ -318,8 +318,6 @@ private fun RangeNavButton(
         modifier = Modifier
             .size(28.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.appColors.dividerSoft, RoundedCornerShape(4.dp))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
