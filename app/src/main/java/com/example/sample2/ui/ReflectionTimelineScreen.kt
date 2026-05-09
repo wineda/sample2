@@ -8,301 +8,1047 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.outlined.ChevronLeft
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sample2.data.DailyReflection
-import com.example.sample2.ui.theme.AppShapeTokens
+import com.example.sample2.ui.components.AppCard
+import com.example.sample2.ui.components.AppCardVariant
 import com.example.sample2.ui.theme.MonoTypography
 import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.appColors
+import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.YearMonth
 import java.time.format.DateTimeParseException
+import java.time.temporal.WeekFields
 import java.util.Locale
-import com.example.sample2.ui.components.AppCard
-import com.example.sample2.ui.components.AppCardVariant
-import com.example.sample2.ui.theme.Spacing
 
-private enum class ReflectionFieldFilter(val label: String, val timelineLabel: String) {
-    SUMMARY("ひとことまとめ", "ひとことまとめ"),
-    WINS("うまくいったこと", "うまくいったこと"),
-    DIFFICULTIES("しんどかったこと", "しんどかったこと"),
-    INSIGHTS("気づき", "気づき"),
-    TOMORROW_FIRST_ACTION("明日まずやること", "明日まずやること")
+/* ===========================================================================
+ * 振り返り画面（リデザイン版）
+ *
+ * - 期間タブ: 週のみ実装。日/月/四半期は「準備中」プレースホルダ。
+ * - 範囲ナビ: 月曜始まりの7日範囲を ‹ › で前後切り替え。
+ * - Weekly Overview: 曜日別スタックバー + 4指標サマリー。
+ * - 日々の記録: 7日分の DayCard を新しい順で表示。
+ *   - 4色メーター: wins / difficulties / insights / summary の入力有無を表示。
+ *   - 入力済み項目: 読み取り表示 + 鉛筆アイコン → タップで TextField 展開。
+ *   - 空欄項目: 「+ 記録を追加」プレースホルダ → タップで TextField 展開。
+ *   - フォーカスアウトで自動保存（差分があれば upsert）。
+ * - tomorrowFirstAction はこの画面では表示・編集しない（既存データは保持）。
+ * =========================================================================== */
+
+private enum class ReflectionPeriodTab(val label: String) {
+    DAY("日"),
+    WEEK("週"),
+    MONTH("月"),
+    QUARTER("四半期")
 }
 
-private data class ReflectionListUiState(
-    val query: String = "",
-    val fieldFilters: Set<ReflectionFieldFilter> = emptySet()
-)
+private enum class ReflectionField(val label: String) {
+    WINS("うまくいったこと"),
+    DIFFICULTIES("しんどかったこと"),
+    INSIGHTS("気づき"),
+    SUMMARY("ひとことまとめ")
+}
 
-private data class ReflectionDayGroup(
-    val date: LocalDate,
-    val entries: List<Pair<ReflectionFieldFilter, String>>,
-    val reflectionDateKey: String
-)
+private data class FieldEditorKey(val date: String, val field: ReflectionField)
 
-private data class ReflectionMonthGroup(
-    val yearMonth: YearMonth,
-    val days: List<ReflectionDayGroup>
+private data class WeekStats(
+    val winsCount: Int,
+    val difficultiesCount: Int,
+    val insightsCount: Int,
+    val summaryCount: Int,
+    val recordedDays: Int,
+    val totalDays: Int,
+    val totalEntries: Int
 )
 
 @Composable
 fun ReflectionTimelineScreen(
     reflections: List<DailyReflection>,
-    onOpenReflection: (String) -> Unit,
-    onCreateToday: () -> Unit,
+    onUpsertReflection: (DailyReflection) -> Unit,
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var uiState by remember { mutableStateOf(ReflectionListUiState()) }
-    var isSearchExpanded by rememberSaveable { mutableStateOf(false) }
-    var isFilterSheetOpen by rememberSaveable { mutableStateOf(false) }
-    val searchFocusRequester = remember { FocusRequester() }
+    val reflectionMap = remember(reflections) { reflections.associateBy { it.date } }
 
-    val monthGroups = remember(reflections, uiState) {
-        buildMonthGroups(reflections = reflections, uiState = uiState)
+    var selectedTab by rememberSaveable { mutableStateOf(ReflectionPeriodTab.WEEK) }
+
+    var selectedWeekStart by rememberSaveable(stateSaver = LocalDateSaver) {
+        mutableStateOf(weekStartMonday(LocalDate.now()))
     }
 
-    Scaffold(modifier = modifier, containerColor = MaterialTheme.colorScheme.background) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            JournalTopHeader(
-                title = "振り返り",
-                showLiveDot = reflections.any { it.date == LocalDate.now().toString() && it.hasAnyContent() },
-                navigationIcon = Icons.Outlined.Menu,
-                navigationContentDescription = "メニュー",
-                onNavigationClick = onMenuClick,
-                actions = {
-                    CompactHeaderIconButton(selected = false, onClick = { isSearchExpanded = true }, icon = Icons.Outlined.Search, contentDescription = "検索")
-                    CompactHeaderIconButton(selected = uiState.fieldFilters.isNotEmpty(), onClick = { isFilterSheetOpen = true }, icon = Icons.Outlined.FilterList, contentDescription = "フィルター", showNotificationDot = uiState.fieldFilters.isNotEmpty())
-                    CompactHeaderIconButton(selected = false, onClick = onCreateToday, icon = Icons.Outlined.Add, contentDescription = "追加")
-                }
-            )
+    // 編集中のフィールド（同時に1つだけ）
+    var editingKey by remember { mutableStateOf<FieldEditorKey?>(null) }
 
-            if (isSearchExpanded) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = uiState.query,
-                        onValueChange = { value -> uiState = uiState.copy(query = value) },
-                        modifier = Modifier.weight(1f).focusRequester(searchFocusRequester),
-                        singleLine = true,
-                        label = { Text("キーワードで探す") }
-                    )
-                    TextButton(onClick = { isSearchExpanded = false }) { Text("キャンセル") }
-                }
-                LaunchedEffect(Unit) { searchFocusRequester.requestFocus() }
+    val weekDates = remember(selectedWeekStart) {
+        (0L..6L).map { selectedWeekStart.plusDays(it) }
+    }
+
+    val weekStats = remember(reflectionMap, weekDates) {
+        computeWeekStats(reflectionMap, weekDates)
+    }
+
+    val today = remember { LocalDate.now() }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        JournalTopHeader(
+            title = "振り返り",
+            navigationIcon = Icons.Outlined.Menu,
+            navigationContentDescription = "メニュー",
+            onNavigationClick = onMenuClick,
+            actions = {
+                CompactHeaderIconButton(
+                    selected = false,
+                    onClick = { /* 検索は今後の拡張枠 */ },
+                    icon = Icons.Outlined.Search,
+                    contentDescription = "検索（準備中）"
+                )
+                CompactHeaderIconButton(
+                    selected = false,
+                    onClick = {
+                        selectedWeekStart = weekStartMonday(today)
+                        editingKey = FieldEditorKey(today.toString(), ReflectionField.WINS)
+                    },
+                    icon = Icons.Outlined.Add,
+                    contentDescription = "今日の記録を追加"
+                )
             }
+        )
 
-            if (monthGroups.isEmpty()) {
-                Surface(modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.appColors.dividerSoft, MaterialTheme.shapes.large), color = MaterialTheme.appColors.surfaceQuiet, shape = MaterialTheme.shapes.large) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("まだ振り返りがありません", color = MaterialTheme.appColors.inkTertiary)
-                        Text("今日の気づきや良かったことを追加してみましょう", color = MaterialTheme.appColors.inkTertiary, style = MaterialTheme.typography.bodySmall)
-                    }
+        PeriodTabs(
+            selected = selectedTab,
+            onSelect = { selectedTab = it }
+        )
+
+        RangeNavBar(
+            weekStart = selectedWeekStart,
+            onPrev = { selectedWeekStart = selectedWeekStart.minusWeeks(1) },
+            onNext = { selectedWeekStart = selectedWeekStart.plusWeeks(1) }
+        )
+
+        if (selectedTab != ReflectionPeriodTab.WEEK) {
+            ComingSoonBody(selectedTab)
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    WeeklyOverviewCard(
+                        weekDates = weekDates,
+                        reflectionMap = reflectionMap,
+                        stats = weekStats,
+                        today = today
+                    )
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    monthGroups.forEach { group ->
-                        item { ReflectionMonthHeader(group.yearMonth) }
-                        items(group.days) { day ->
-                            ReflectionDayCard(day = day, onClick = { onOpenReflection(day.reflectionDateKey) })
+                item {
+                    DaysSectionTitle()
+                }
+
+                val orderedDates = weekDates.sortedDescending()
+                items(orderedDates, key = { it.toString() }) { date ->
+                    val reflection = reflectionMap[date.toString()]
+                    DayCard(
+                        date = date,
+                        reflection = reflection,
+                        isToday = date == today,
+                        editingKey = editingKey,
+                        onStartEdit = { field ->
+                            editingKey = FieldEditorKey(date.toString(), field)
+                        },
+                        onCancelEdit = {
+                            if (editingKey?.date == date.toString()) editingKey = null
+                        },
+                        onSaveField = { field, newText ->
+                            val current = reflectionMap[date.toString()]
+                            val needsUpdate = current == null || !sameField(current, field, newText)
+                            if (needsUpdate) {
+                                val updated = updateField(
+                                    base = current ?: DailyReflection(date = date.toString()),
+                                    field = field,
+                                    value = newText
+                                ).copy(updatedAt = System.currentTimeMillis())
+                                onUpsertReflection(updated)
+                            }
+                            if (editingKey?.date == date.toString() && editingKey?.field == field) {
+                                editingKey = null
+                            }
                         }
-                    }
+                    )
                 }
             }
         }
     }
+}
 
-    if (isFilterSheetOpen) {
-        ReflectionFilterSheet(
-            selectedFilters = uiState.fieldFilters,
-            onDismiss = { isFilterSheetOpen = false },
-            onClear = { uiState = uiState.copy(fieldFilters = emptySet()) },
-            onSelectAll = { uiState = uiState.copy(fieldFilters = emptySet()) },
-            onToggleFilter = { filter -> uiState = uiState.copy(fieldFilters = if (filter in uiState.fieldFilters) uiState.fieldFilters - filter else uiState.fieldFilters + filter) }
+// ============================================================================
+// ヘッダー周辺
+// ============================================================================
+
+@Composable
+private fun PeriodTabs(
+    selected: ReflectionPeriodTab,
+    onSelect: (ReflectionPeriodTab) -> Unit
+) {
+    val border = MaterialTheme.appColors.dividerSoft
+    val bg = MaterialTheme.appColors.surfaceQuiet
+    val activeBg = MaterialTheme.appColors.inkStrongAlt
+    val inkPrimary = MaterialTheme.appColors.inkPrimary
+    val inkOnInk = MaterialTheme.appColors.inkOnInk
+    val inkDisabled = MaterialTheme.appColors.inkDisabled
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(6.dp))
+            .padding(2.dp)
+    ) {
+        ReflectionPeriodTab.entries.forEach { tab ->
+            val isActive = tab == selected
+            val labelColor = when {
+                isActive -> inkOnInk
+                tab == ReflectionPeriodTab.WEEK -> inkPrimary
+                else -> inkDisabled
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(if (isActive) activeBg else Color.Transparent)
+                    .clickable { onSelect(tab) }
+                    .padding(vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = tab.label,
+                    style = MonoTypography.Caption.copy(
+                        color = labelColor,
+                        fontWeight = if (isActive) FontWeight.Medium else FontWeight.Normal,
+                        letterSpacing = 0.5.sp
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RangeNavBar(
+    weekStart: LocalDate,
+    onPrev: () -> Unit,
+    onNext: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            RangeNavButton(icon = Icons.Outlined.ChevronLeft, contentDescription = "前の週", onClick = onPrev)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val end = weekStart.plusDays(6)
+                Text(
+                    text = formatRangeMain(weekStart, end),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.appColors.inkPrimary
+                )
+                Text(
+                    text = formatRangeSub(weekStart),
+                    style = MonoTypography.Micro.copy(
+                        color = MaterialTheme.appColors.inkTertiary,
+                        letterSpacing = 0.5.sp
+                    )
+                )
+            }
+            RangeNavButton(icon = Icons.Outlined.ChevronRight, contentDescription = "次の週", onClick = onNext)
+        }
+    }
+}
+
+@Composable
+private fun RangeNavButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.appColors.dividerSoft, RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = MaterialTheme.appColors.inkSecondary,
+            modifier = Modifier.size(16.dp)
         )
     }
 }
 
 @Composable
-private fun ReflectionMonthHeader(yearMonth: YearMonth, modifier: Modifier = Modifier) {
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = "%04d ・ %s".format(yearMonth.year, yearMonth.month.name),
-            style = MaterialTheme.typography.labelMedium,
-            letterSpacing = 4.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold
-        )
-        HorizontalDivider(modifier = Modifier.padding(start = 12.dp).weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+private fun ComingSoonBody(tab: ReflectionPeriodTab) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                "「${tab.label}」ビューは準備中です",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.appColors.inkSecondary
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "現在は「週」ビューのみ利用できます",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.appColors.inkTertiary
+            )
+        }
     }
 }
 
+// ============================================================================
+// Weekly Overview
+// ============================================================================
+
 @Composable
-private fun ReflectionDayCard(day: ReflectionDayGroup, onClick: () -> Unit) {
+private fun WeeklyOverviewCard(
+    weekDates: List<LocalDate>,
+    reflectionMap: Map<String, DailyReflection>,
+    stats: WeekStats,
+    today: LocalDate
+) {
     AppCard(
-        modifier = Modifier.clickable(onClick = onClick),
         variant = AppCardVariant.Outlined,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(Spacing.lg),
+        contentPadding = PaddingValues(0.dp),
         verticalSpacing = 0.dp
     ) {
-        Row(Modifier.fillMaxWidth()) {
-            ReflectionDateColumn(date = day.date)
-            Column(modifier = Modifier.weight(1f).padding(start = Spacing.md), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                day.entries.forEachIndexed { index, entry ->
-                    ReflectionEntryItem(filter = entry.first, text = entry.second)
-                    if (index < day.entries.lastIndex) {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "今週の概要",
+                style = MonoTypography.Micro.copy(
+                    color = MaterialTheme.appColors.inkSecondary,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.5.sp
+                )
+            )
+            Text(
+                "${stats.recordedDays} / ${stats.totalDays}日 ・ ${stats.totalEntries}件",
+                style = MonoTypography.Micro.copy(color = MaterialTheme.appColors.inkTertiary)
+            )
+        }
+
+        DividerLine()
+
+        WeekBars(
+            weekDates = weekDates,
+            reflectionMap = reflectionMap,
+            today = today
+        )
+
+        DividerLine()
+
+        StatsRow(stats = stats)
+    }
+}
+
+@Composable
+private fun WeekBars(
+    weekDates: List<LocalDate>,
+    reflectionMap: Map<String, DailyReflection>,
+    today: LocalDate
+) {
+    val countsPerDay = weekDates.map { date ->
+        reflectionMap[date.toString()]?.let { categoryFlags(it) } ?: emptyList()
+    }
+    val maxCount = (countsPerDay.maxOfOrNull { it.size } ?: 0).coerceAtLeast(1)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        weekDates.forEachIndexed { index, date ->
+            val flags = countsPerDay[index]
+            DayBar(
+                date = date,
+                segments = flags,
+                maxCount = maxCount,
+                isToday = date == today,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun DayBar(
+    date: LocalDate,
+    segments: List<ReflectionField>,
+    maxCount: Int,
+    isToday: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        val barTotalHeight = 60.dp
+        val emptyColor = MaterialTheme.appColors.dividerSoft
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(barTotalHeight)
+                .clip(RoundedCornerShape(2.dp))
+                .background(emptyColor)
+        ) {
+            if (segments.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter),
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    val ratio = segments.size.toFloat() / maxCount.toFloat()
+                    val filledHeight = barTotalHeight * ratio
+                    val segHeight = filledHeight / segments.size
+                    segments.forEach { f ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(segHeight)
+                                .background(fieldColor(f))
+                        )
                     }
+                }
+            }
+        }
+        Text(
+            text = dayOfWeekShort(date.dayOfWeek),
+            style = MonoTypography.Micro.copy(
+                color = MaterialTheme.appColors.inkTertiary,
+                fontSize = 9.sp
+            )
+        )
+        if (isToday) {
+            Box(
+                modifier = Modifier
+                    .size(18.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.appColors.inkStrongAlt),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = date.dayOfMonth.toString(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = MaterialTheme.appColors.inkOnInk,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+            }
+        } else {
+            Text(
+                text = date.dayOfMonth.toString(),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    color = MaterialTheme.appColors.inkPrimary,
+                    fontWeight = FontWeight.Medium
+                )
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatsRow(stats: WeekStats) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        StatCell(
+            label = "うまく",
+            value = stats.winsCount.toString(),
+            valueColor = SemanticColors.PositiveMain,
+            drawDivider = true,
+            modifier = Modifier.weight(1f)
+        )
+        StatCell(
+            label = "しんどい",
+            value = stats.difficultiesCount.toString(),
+            valueColor = SemanticColors.WarningMain,
+            drawDivider = true,
+            modifier = Modifier.weight(1f)
+        )
+        StatCell(
+            label = "気づき",
+            value = stats.insightsCount.toString(),
+            valueColor = SemanticColors.InfoMain,
+            drawDivider = true,
+            modifier = Modifier.weight(1f)
+        )
+        StatCell(
+            label = "記録日",
+            value = "${stats.recordedDays}/${stats.totalDays}",
+            valueColor = MaterialTheme.appColors.inkPrimary,
+            drawDivider = false,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun StatCell(
+    label: String,
+    value: String,
+    valueColor: Color,
+    drawDivider: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val dividerColor = MaterialTheme.appColors.dividerSoft
+    Box(
+        modifier = modifier
+            .padding(vertical = 10.dp, horizontal = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = value,
+                style = MonoTypography.Numeric.copy(
+                    color = valueColor,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.appColors.inkSecondary
+                )
+            )
+        }
+        if (drawDivider) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .width(1.dp)
+                    .height(28.dp)
+                    .background(dividerColor)
+            )
+        }
+    }
+}
+
+// ============================================================================
+// 日々の記録セクション
+// ============================================================================
+
+@Composable
+private fun DaysSectionTitle() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Bottom
+    ) {
+        Text(
+            "日々の記録",
+            style = MonoTypography.Micro.copy(
+                color = MaterialTheme.appColors.inkSecondary,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.5.sp
+            )
+        )
+        Text(
+            "↓ 新しい順",
+            style = MonoTypography.Micro.copy(color = MaterialTheme.appColors.inkTertiary)
+        )
+    }
+}
+
+@Composable
+private fun DayCard(
+    date: LocalDate,
+    reflection: DailyReflection?,
+    isToday: Boolean,
+    editingKey: FieldEditorKey?,
+    onStartEdit: (ReflectionField) -> Unit,
+    onCancelEdit: () -> Unit,
+    onSaveField: (ReflectionField, String) -> Unit
+) {
+    val hasContent = reflection?.let { hasAnyOf4(it) } == true
+    AppCard(
+        variant = AppCardVariant.Outlined,
+        contentPadding = PaddingValues(0.dp),
+        verticalSpacing = 0.dp
+    ) {
+        // 日付ヘッダ
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.appColors.surfaceQuiet)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = date.dayOfMonth.toString(),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp,
+                        color = MaterialTheme.appColors.inkPrimary
+                    )
+                )
+                Text(
+                    text = "${date.monthValue}月",
+                    style = MonoTypography.Micro.copy(
+                        color = MaterialTheme.appColors.inkSecondary
+                    ),
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+                Text(
+                    text = dayOfWeekShort(date.dayOfWeek) + (if (isToday) " · TODAY" else ""),
+                    style = MonoTypography.Micro.copy(
+                        color = if (isToday) SemanticColors.InfoMain else MaterialTheme.appColors.inkTertiary,
+                        letterSpacing = 0.8.sp
+                    ),
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                ReflectionField.entries.forEach { f ->
+                    val filled = reflection?.let { fieldText(it, f) }?.isNotBlank() == true
+                    Box(
+                        modifier = Modifier
+                            .size(width = 16.dp, height = 5.dp)
+                            .clip(RoundedCornerShape(1.dp))
+                            .background(if (filled) fieldColor(f) else MaterialTheme.appColors.dividerSoft)
+                    )
+                }
+            }
+        }
+
+        DividerLine()
+
+        if (!hasContent && editingKey?.date != date.toString()) {
+            // 完全に記録なし & 編集中でもない日 → 「記録なし · タップして追加」表示
+            DayEmptyRow(
+                onClick = { onStartEdit(ReflectionField.WINS) }
+            )
+        } else {
+            ReflectionField.entries.forEachIndexed { index, field ->
+                val text = reflection?.let { fieldText(it, field) }.orEmpty()
+                val isEditing = editingKey?.date == date.toString() && editingKey?.field == field
+                ReflectionFieldRow(
+                    field = field,
+                    text = text,
+                    isEditing = isEditing,
+                    onStartEdit = { onStartEdit(field) },
+                    onCancelEdit = onCancelEdit,
+                    onSave = { newText -> onSaveField(field, newText) }
+                )
+                if (index < ReflectionField.entries.lastIndex) {
+                    DividerLine()
                 }
             }
         }
     }
 }
 
+/** 記録なしの日のプレースホルダ行（斜線パターン背景） */
 @Composable
-private fun ReflectionDateColumn(date: LocalDate) {
-    Row(modifier = Modifier.width(88.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(
-            modifier = Modifier.weight(1f).padding(end = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = date.dayOfMonth.toString(), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.appColors.inkStrongAlt)
-            Text(text = date.dayOfWeekLabel(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.appColors.inkTertiary)
-        }
-        Box(
-            modifier = Modifier
-                .width(1.dp)
-                .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.outlineVariant)
+private fun DayEmptyRow(onClick: () -> Unit) {
+    val stripeBase = MaterialTheme.colorScheme.surface
+    val stripeAccent = MaterialTheme.appColors.surfaceQuiet
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .drawBehind {
+                drawRect(stripeBase)
+                val stripeWidth = 12.dp.toPx()
+                var x = -size.height
+                while (x < size.width) {
+                    drawLine(
+                        color = stripeAccent,
+                        start = Offset(x, size.height),
+                        end = Offset(x + size.height, 0f),
+                        strokeWidth = stripeWidth / 2,
+                        cap = StrokeCap.Square
+                    )
+                    x += stripeWidth
+                }
+            }
+            .padding(vertical = 18.dp, horizontal = 14.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "記録なし · タップして追加",
+            style = MaterialTheme.typography.bodySmall.copy(
+                color = MaterialTheme.appColors.inkTertiary
+            )
         )
     }
 }
 
+// ============================================================================
+// インライン編集行
+// ============================================================================
+
 @Composable
-private fun ReflectionEntryItem(filter: ReflectionFieldFilter, text: String) {
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-        Box(modifier = Modifier.width(4.dp).height(58.dp).clip(AppShapeTokens.Tech).background(filterColor(filter)))
-        Column(modifier = Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(text = filter.timelineLabel, color = filterColor(filter), style = MonoTypography.Micro.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp))
-            Text(text = text, color = MaterialTheme.appColors.inkStrongAlt, style = MaterialTheme.typography.bodyMedium)
-        }
+private fun ReflectionFieldRow(
+    field: ReflectionField,
+    text: String,
+    isEditing: Boolean,
+    onStartEdit: () -> Unit,
+    onCancelEdit: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    val accentColor = fieldColor(field)
+    val isEmpty = text.isBlank()
+
+    val rowModifier = if (isEmpty && !isEditing) {
+        // 空欄行は全体タップで編集モード（誤タップしても損失なし）
+        Modifier.clickable { onStartEdit() }
+    } else {
+        Modifier
     }
-}
 
-@Composable
-private fun filterColor(filter: ReflectionFieldFilter) = when (filter) {
-    ReflectionFieldFilter.SUMMARY -> MaterialTheme.appColors.inkTertiary
-    ReflectionFieldFilter.WINS -> SemanticColors.PositiveMain
-    ReflectionFieldFilter.DIFFICULTIES -> SemanticColors.WarningMain
-    ReflectionFieldFilter.INSIGHTS -> SemanticColors.InfoMain
-    ReflectionFieldFilter.TOMORROW_FIRST_ACTION -> SemanticColors.NegativeMain
-}
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(rowModifier)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .width(4.dp)
+                .height(if (isEditing) 60.dp else 36.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(if (isEmpty && !isEditing) MaterialTheme.appColors.dividerSoft else accentColor)
+        )
+        Spacer(Modifier.width(12.dp))
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ReflectionFilterSheet(selectedFilters: Set<ReflectionFieldFilter>, onDismiss: () -> Unit, onClear: () -> Unit, onSelectAll: () -> Unit, onToggleFilter: (ReflectionFieldFilter) -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onClick = onClear) { Text("クリア") }
-            TextButton(onClick = onDismiss) { Text("完了") }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = field.label,
+                style = MonoTypography.Micro.copy(
+                    color = if (isEmpty && !isEditing) MaterialTheme.appColors.inkTertiary else accentColor,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp
+                )
+            )
+            if (isEditing) {
+                EditingField(
+                    initialText = text,
+                    onCancel = onCancelEdit,
+                    onSave = onSave,
+                    accentColor = accentColor
+                )
+            } else if (isEmpty) {
+                Text(
+                    text = "+ 記録を追加",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.appColors.inkTertiary
+                    )
+                )
+            } else {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.appColors.inkPrimary,
+                        lineHeight = 20.sp
+                    )
+                )
+            }
         }
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterOptionChip("すべて", selectedFilters.isEmpty(), onSelectAll)
-            ReflectionFieldFilter.entries.forEach { filter ->
-                FilterOptionChip(filter.label, filter in selectedFilters) { onToggleFilter(filter) }
+
+        if (!isEmpty && !isEditing) {
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable(onClick = onStartEdit),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Edit,
+                    contentDescription = "${field.label}を編集",
+                    tint = MaterialTheme.appColors.inkTertiary,
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun FilterOptionChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(modifier = Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = onClick), color = if (selected) MaterialTheme.appColors.inkStrongAlt else MaterialTheme.colorScheme.surface) {
-        Text(text = label, color = if (selected) MaterialTheme.appColors.inkOnInk else MaterialTheme.appColors.inkPrimary, modifier = Modifier.padding(horizontal = Spacing.md, vertical = 8.dp), style = MaterialTheme.typography.bodySmall)
+private fun EditingField(
+    initialText: String,
+    onCancel: () -> Unit,
+    onSave: (String) -> Unit,
+    accentColor: Color
+) {
+    var value by remember(initialText) {
+        mutableStateOf(TextFieldValue(initialText, selection = TextRange(initialText.length)))
+    }
+    val focusRequester = remember { FocusRequester() }
+    var hasFocused by remember { mutableStateOf(false) }
+    var hasFiredSave by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    BasicTextField(
+        value = value,
+        onValueChange = { value = it },
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester)
+            .onFocusChanged { state ->
+                if (state.isFocused) {
+                    hasFocused = true
+                } else if (hasFocused && !hasFiredSave) {
+                    hasFiredSave = true
+                    val newText = value.text
+                    if (newText != initialText) {
+                        onSave(newText)
+                    } else {
+                        onCancel()
+                    }
+                }
+            }
+            .background(MaterialTheme.appColors.surfaceQuiet, RoundedCornerShape(4.dp))
+            .border(1.dp, accentColor, RoundedCornerShape(4.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        textStyle = MaterialTheme.typography.bodyMedium.copy(
+            color = MaterialTheme.appColors.inkPrimary,
+            lineHeight = 20.sp
+        ),
+        cursorBrush = SolidColor(accentColor),
+        keyboardOptions = KeyboardOptions.Default,
+        decorationBox = { inner ->
+            if (value.text.isEmpty()) {
+                Text(
+                    "ここに入力 — 別の場所をタップで保存",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.appColors.inkDisabled
+                    )
+                )
+            }
+            inner()
+        }
+    )
+}
+
+// ============================================================================
+// 共通パーツ
+// ============================================================================
+
+@Composable
+private fun DividerLine() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(MaterialTheme.appColors.dividerSoft)
+    )
+}
+
+// ============================================================================
+// データユーティリティ
+// ============================================================================
+
+private fun fieldText(r: DailyReflection, field: ReflectionField): String = when (field) {
+    ReflectionField.WINS -> r.wins
+    ReflectionField.DIFFICULTIES -> r.difficulties
+    ReflectionField.INSIGHTS -> r.insights
+    ReflectionField.SUMMARY -> r.summary
+}
+
+private fun updateField(base: DailyReflection, field: ReflectionField, value: String): DailyReflection = when (field) {
+    ReflectionField.WINS -> base.copy(wins = value)
+    ReflectionField.DIFFICULTIES -> base.copy(difficulties = value)
+    ReflectionField.INSIGHTS -> base.copy(insights = value)
+    ReflectionField.SUMMARY -> base.copy(summary = value)
+}
+
+private fun sameField(r: DailyReflection, field: ReflectionField, value: String): Boolean =
+    fieldText(r, field) == value
+
+private fun categoryFlags(r: DailyReflection): List<ReflectionField> =
+    ReflectionField.entries.filter { fieldText(r, it).isNotBlank() }
+
+private fun hasAnyOf4(r: DailyReflection): Boolean =
+    r.wins.isNotBlank() || r.difficulties.isNotBlank() || r.insights.isNotBlank() || r.summary.isNotBlank()
+
+private fun fieldColor(field: ReflectionField): Color = when (field) {
+    ReflectionField.WINS -> SemanticColors.PositiveMain
+    ReflectionField.DIFFICULTIES -> SemanticColors.WarningMain
+    ReflectionField.INSIGHTS -> SemanticColors.InfoMain
+    ReflectionField.SUMMARY -> SemanticColors.SummaryMain
+}
+
+private fun computeWeekStats(
+    reflectionMap: Map<String, DailyReflection>,
+    weekDates: List<LocalDate>
+): WeekStats {
+    var wins = 0
+    var diff = 0
+    var ins = 0
+    var sum = 0
+    var recordedDays = 0
+    weekDates.forEach { date ->
+        val r = reflectionMap[date.toString()] ?: return@forEach
+        var any = false
+        if (r.wins.isNotBlank()) { wins++; any = true }
+        if (r.difficulties.isNotBlank()) { diff++; any = true }
+        if (r.insights.isNotBlank()) { ins++; any = true }
+        if (r.summary.isNotBlank()) { sum++; any = true }
+        if (any) recordedDays++
+    }
+    return WeekStats(
+        winsCount = wins,
+        difficultiesCount = diff,
+        insightsCount = ins,
+        summaryCount = sum,
+        recordedDays = recordedDays,
+        totalDays = weekDates.size,
+        totalEntries = wins + diff + ins + sum
+    )
+}
+
+// ============================================================================
+// 日付ユーティリティ
+// ============================================================================
+
+/** 月曜始まりでその週の月曜日を返す */
+private fun weekStartMonday(date: LocalDate): LocalDate {
+    val dow = date.dayOfWeek.value // Mon=1 ... Sun=7
+    return date.minusDays((dow - 1).toLong())
+}
+
+private fun dayOfWeekShort(d: DayOfWeek): String = when (d) {
+    DayOfWeek.MONDAY -> "月"
+    DayOfWeek.TUESDAY -> "火"
+    DayOfWeek.WEDNESDAY -> "水"
+    DayOfWeek.THURSDAY -> "木"
+    DayOfWeek.FRIDAY -> "金"
+    DayOfWeek.SATURDAY -> "土"
+    DayOfWeek.SUNDAY -> "日"
+}
+
+private fun formatRangeMain(start: LocalDate, end: LocalDate): String {
+    return if (start.month == end.month) {
+        "${start.monthValue}月${start.dayOfMonth}日 — ${end.dayOfMonth}日"
+    } else {
+        "${start.monthValue}月${start.dayOfMonth}日 — ${end.monthValue}月${end.dayOfMonth}日"
     }
 }
 
-private fun buildMonthGroups(reflections: List<DailyReflection>, uiState: ReflectionListUiState): List<ReflectionMonthGroup> {
-    val filteredByReflection = reflections.asSequence()
-        .filter { it.hasAnyContent() }
-        .filter { reflection -> if (uiState.query.isBlank()) true else reflection.searchableText().contains(uiState.query.trim().lowercase(Locale.JAPAN)) }
-        .mapNotNull { reflection ->
-            val date = reflection.date.toLocalDateOrNull() ?: return@mapNotNull null
-            val entries = reflection.entries(uiState.fieldFilters)
-            if (entries.isEmpty()) null else date to ReflectionDayGroup(date = date, entries = entries, reflectionDateKey = reflection.date)
-        }
-        .toList()
-
-    return filteredByReflection
-        .groupBy { YearMonth.from(it.first) }
-        .toSortedMap(compareByDescending { it })
-        .map { (yearMonth, dayPairs) ->
-            ReflectionMonthGroup(
-                yearMonth = yearMonth,
-                days = dayPairs.map { it.second }.sortedByDescending { it.date }
-            )
-        }
+private fun formatRangeSub(start: LocalDate): String {
+    val weekFields = WeekFields.of(Locale.JAPAN)
+    val weekNum = start.get(weekFields.weekOfWeekBasedYear())
+    val year = start.get(weekFields.weekBasedYear())
+    return "${year}年 第${weekNum}週"
 }
 
-private fun DailyReflection.entries(selectedFilters: Set<ReflectionFieldFilter>): List<Pair<ReflectionFieldFilter, String>> {
-    val all = listOf(
-        ReflectionFieldFilter.WINS to wins,
-        ReflectionFieldFilter.DIFFICULTIES to difficulties,
-        ReflectionFieldFilter.INSIGHTS to insights,
-        ReflectionFieldFilter.TOMORROW_FIRST_ACTION to tomorrowFirstAction,
-        ReflectionFieldFilter.SUMMARY to summary
-    )
-    return all.filter { (filter, text) -> text.isNotBlank() && (selectedFilters.isEmpty() || filter in selectedFilters) }
-}
+// ============================================================================
+// LocalDate を rememberSaveable に保存するためのカスタム Saver
+// ============================================================================
 
-private fun DailyReflection.hasAnyContent(): Boolean = wins.isNotBlank() || difficulties.isNotBlank() || insights.isNotBlank() || tomorrowFirstAction.isNotBlank() || summary.isNotBlank()
-private fun DailyReflection.searchableText(): String = listOf(date, wins, difficulties, insights, tomorrowFirstAction, summary).joinToString("\n").lowercase(Locale.JAPAN)
-private fun LocalDate.dayOfWeekLabel(): String = when (dayOfWeek.value) { 1 -> "月"; 2 -> "火"; 3 -> "水"; 4 -> "木"; 5 -> "金"; 6 -> "土"; else -> "日" }
-private fun String.toLocalDateOrNull(): LocalDate? = try { LocalDate.parse(this) } catch (_: DateTimeParseException) { null }
+private val LocalDateSaver: Saver<LocalDate, String> = Saver(
+    save = { it.toString() },
+    restore = {
+        try {
+            LocalDate.parse(it)
+        } catch (_: DateTimeParseException) {
+            LocalDate.now()
+        }
+    }
+)

@@ -136,7 +136,6 @@ fun ChatRoute() {
     var showPersonalityAnalytics by remember { mutableStateOf(false) }
     var showPersonalityAnalyticsDetail by remember { mutableStateOf(false) }
     var showReflectionScreen by remember { mutableStateOf(false) }
-    var reflectionEditorDate by remember { mutableStateOf<String?>(null) }
     var reflectionsVersion by remember { mutableIntStateOf(0) }
     var filterState by remember { mutableStateOf(JournalFilterState()) }
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -223,24 +222,11 @@ fun ChatRoute() {
         showDailyRecordScreen = true
     }
 
-    var reflectionInitialDate by remember { mutableStateOf(todayDateStringForRoute()) }
-
     fun openReflectionTimeline() {
         showFilterSheet = false
         showPersonalityAnalytics = false
         showPersonalityAnalyticsDetail = false
         showDailyRecordScreen = false
-        reflectionEditorDate = null
-        showReflectionScreen = true
-    }
-
-    fun openReflectionEditor(date: String = todayDateStringForRoute()) {
-        showFilterSheet = false
-        showPersonalityAnalytics = false
-        showPersonalityAnalyticsDetail = false
-        showDailyRecordScreen = false
-        reflectionInitialDate = date
-        reflectionEditorDate = date
         showReflectionScreen = true
     }
 
@@ -478,32 +464,23 @@ fun ChatRoute() {
                                         switchToJournal()
                                         dailyRecordsVersion++
                                     },
-                                    onOpenReflection = { date -> openReflectionEditor(date) }
+                                    onOpenReflection = { _ -> openReflectionTimeline() }
                                 )
                             }
                         }
 
                         JournalScreenMode.Reflection -> {
-                            if (reflectionEditorDate == null) {
-                                val reflections = remember(reflectionsVersion) {
-                                    state.loadDailyReflections()
-                                }
-                                ReflectionTimelineScreen(
-                                    reflections = reflections,
-                                    onOpenReflection = { date ->
-                                        openReflectionEditor(date)
-                                    },
-                                    onCreateToday = { openReflectionEditor() },
-                                    onMenuClick = { scope.launch { drawerState.open() } }
-                                )
-                            } else {
-                                DailyReflectionScreen(
-                                    state = state,
-                                    initialDate = reflectionInitialDate,
-                                    onClose = { reflectionEditorDate = null },
-                                    onSaved = { reflectionsVersion++ }
-                                )
+                            val reflections = remember(reflectionsVersion) {
+                                state.loadDailyReflections()
                             }
+                            ReflectionTimelineScreen(
+                                reflections = reflections,
+                                onUpsertReflection = { updated ->
+                                    state.upsertDailyReflection(updated)
+                                    reflectionsVersion++
+                                },
+                                onMenuClick = { scope.launch { drawerState.open() } }
+                            )
                         }
 
                         JournalScreenMode.Analytics -> {
@@ -993,10 +970,6 @@ private fun CompactActionChip(
     }
 }
 
-
-private fun todayDateStringForRoute(): String {
-    return SimpleDateFormat("yyyy-MM-dd", Locale.JAPAN).format(Date())
-}
 
 private fun shareJournalBackup(
     context: android.content.Context,
