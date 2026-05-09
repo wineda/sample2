@@ -170,8 +170,11 @@ fun ReflectionTimelineScreen(
             onSelect = { selectedTab = it }
         )
 
+        // 「今週」または未来週にいる間は、次の週へのナビゲーションを隠す
+        val canGoNext = selectedWeekStart.isBefore(weekStartMonday(today))
         RangeNavBar(
             weekStart = selectedWeekStart,
+            canGoNext = canGoNext,
             onPrev = { selectedWeekStart = selectedWeekStart.minusWeeks(1) },
             onNext = { selectedWeekStart = selectedWeekStart.plusWeeks(1) }
         )
@@ -196,7 +199,8 @@ fun ReflectionTimelineScreen(
                     DaysSectionTitle()
                 }
 
-                val orderedDates = weekDates.sortedDescending()
+                // 未来日はカード化しない。今日以前の日のみ新しい順で表示。
+                val orderedDates = weekDates.filter { !it.isAfter(today) }.sortedDescending()
                 items(orderedDates, key = { it.toString() }) { date ->
                     val reflection = reflectionMap[date.toString()]
                     DayCard(
@@ -289,6 +293,7 @@ private fun PeriodTabs(
 @Composable
 private fun RangeNavBar(
     weekStart: LocalDate,
+    canGoNext: Boolean,
     onPrev: () -> Unit,
     onNext: () -> Unit
 ) {
@@ -320,7 +325,13 @@ private fun RangeNavBar(
                     )
                 )
             }
-            RangeNavButton(icon = Icons.Outlined.ChevronRight, contentDescription = "次の週", onClick = onNext)
+            // 未来週へは進めない仕様。今週以降は › ボタンを非表示にする。
+            // ただしレイアウトのバランスを保つため、同サイズのスペーサーで領域は確保する。
+            if (canGoNext) {
+                RangeNavButton(icon = Icons.Outlined.ChevronRight, contentDescription = "次の週", onClick = onNext)
+            } else {
+                Spacer(modifier = Modifier.size(28.dp))
+            }
         }
     }
 }

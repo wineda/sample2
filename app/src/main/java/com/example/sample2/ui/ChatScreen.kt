@@ -479,7 +479,8 @@ fun ChatRoute() {
                                     state.upsertDailyReflection(updated)
                                     reflectionsVersion++
                                 },
-                                onMenuClick = { scope.launch { drawerState.open() } }
+                                onMenuClick = { scope.launch { drawerState.open() } },
+                                modifier = Modifier.padding(padding)
                             )
                         }
 
