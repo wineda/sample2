@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
@@ -112,11 +113,13 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.example.sample2.ui.theme.Spacing
 import com.example.sample2.ui.theme.AppShapeTokens
+import com.example.sample2.ui.theme.AppTextStyles
 import com.example.sample2.ui.theme.appColors
 
 private const val AnalyticsLogTag = "PersonalityAnalytics"
@@ -167,12 +170,12 @@ private val WorkSummaryActionTypes = listOf(
     ActionType.INSIGHT,
 )
 
-private val TimelineLabelWidth = 44.dp
-private val TimelineCountWidth = 24.dp
-private val TimelineDiffWidth = 36.dp
+private val SummaryLabelColumnWidth = 36.dp
+private val SummaryCountColumnWidth = 24.dp
+private val SummaryDiffColumnWidth = 36.dp
 
-/** 短縮表示ラベル（タイムライン用に短くする）。 */
-private fun ActionType.shortLabel(): String = when (this) {
+/** タイムライン用の短縮ラベル。 */
+private fun ActionType.shortSummaryLabel(): String = when (this) {
     ActionType.QUICK_ACTION -> "すぐ"
     ActionType.BREAKDOWN -> "分解"
     ActionType.MINDFUL_ACTION -> "意識"
@@ -271,7 +274,7 @@ private fun formatMinuteLabel(minutes: Float): String {
 
 
 @Composable
-private fun DetailHeaderWithDateStepper(
+private fun DetailAnalyticsHeader(
     selectedDate: LocalDate,
     datesWithRecord: Set<LocalDate>,
     onDateChange: (LocalDate) -> Unit,
@@ -295,7 +298,7 @@ private fun DetailHeaderWithDateStepper(
                     strokeWidth = 1.dp.toPx()
                 )
             }
-            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+            .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically
     ) {
         CompactHeaderIconButton(
@@ -304,42 +307,52 @@ private fun DetailHeaderWithDateStepper(
             icon = Icons.Outlined.Menu,
             contentDescription = "メニュー"
         )
-        Spacer(Modifier.width(Spacing.sm))
+
+        Spacer(Modifier.width(Spacing.xs))
+
+        Text(
+            text = "詳細分析",
+            style = AppTextStyles.ScreenTitleLarge.copy(fontSize = 16.sp),
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.appColors.inkStrongAlt,
+            modifier = Modifier.padding(end = Spacing.xs)
+        )
 
         Row(
-            modifier = Modifier
-                .weight(1f)
-                .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.appColors.surfaceQuiet)
-                .padding(horizontal = 4.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
                 onClick = { onDateChange(selectedDate.minusDays(1)) },
-                modifier = Modifier.size(28.dp),
-                enabled = canGoPrev
+                enabled = canGoPrev,
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.ChevronLeft,
                     contentDescription = "前日",
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(16.dp),
+                    tint = if (canGoPrev) {
+                        MaterialTheme.appColors.inkSecondary
+                    } else {
+                        MaterialTheme.appColors.inkDisabled
+                    }
                 )
             }
 
             Column(
                 modifier = Modifier
                     .weight(1f)
+                    .clip(MaterialTheme.shapes.small)
                     .clickable { showDatePicker = true }
                     .padding(vertical = 2.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Text(
-                        text = selectedDate.format(DateTimeFormatter.ofPattern("M月d日(E)", Locale.JAPAN)),
+                        text = selectedDate.format(DateTimeFormatter.ofPattern("M月d日", Locale.JAPAN)),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.appColors.inkPrimary
@@ -353,27 +366,63 @@ private fun DetailHeaderWithDateStepper(
                                 text = "TODAY",
                                 color = Color.White,
                                 style = MonoTypography.Micro,
-                                modifier = Modifier.padding(horizontal = Spacing.xs, vertical = 1.dp)
+                                modifier = Modifier.padding(
+                                    horizontal = Spacing.xs,
+                                    vertical = 1.dp
+                                )
+                            )
+                        }
+                    } else if (selectedDate < today) {
+                        Surface(
+                            shape = AppShapeTokens.Tech,
+                            color = MaterialTheme.appColors.surfaceInactive
+                        ) {
+                            Text(
+                                text = "${ChronoUnit.DAYS.between(selectedDate, today)}日前",
+                                color = MaterialTheme.appColors.inkTertiary,
+                                style = MonoTypography.Micro,
+                                modifier = Modifier.padding(
+                                    horizontal = Spacing.xs,
+                                    vertical = 1.dp
+                                )
                             )
                         }
                     }
                 }
-                Text(
-                    text = "詳細分析",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.appColors.inkTertiary
-                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(top = 2.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = null,
+                        modifier = Modifier.size(11.dp),
+                        tint = MaterialTheme.appColors.inkTertiary
+                    )
+                    Text(
+                        text = selectedDate.format(DateTimeFormatter.ofPattern("E曜日", Locale.JAPAN)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.appColors.inkTertiary
+                    )
+                }
             }
 
             IconButton(
                 onClick = { onDateChange(selectedDate.plusDays(1)) },
-                modifier = Modifier.size(28.dp),
-                enabled = canGoNext
+                enabled = canGoNext,
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.ChevronRight,
                     contentDescription = "翌日",
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(16.dp),
+                    tint = if (canGoNext) {
+                        MaterialTheme.appColors.inkSecondary
+                    } else {
+                        MaterialTheme.appColors.inkDisabled
+                    }
                 )
             }
         }
@@ -648,7 +697,7 @@ fun PersonalityAnalyticsScreen(
     Column(modifier = modifier.fillMaxSize()) {
         when (displayMode) {
             AnalyticsDisplayMode.DETAIL -> {
-                DetailHeaderWithDateStepper(
+                DetailAnalyticsHeader(
                     selectedDate = selectedDate ?: LocalDate.now(),
                     datesWithRecord = allRawScoresDesc.map { it.date }.toSet(),
                     onDateChange = { selectedDateText = it.toString() },
@@ -658,7 +707,7 @@ fun PersonalityAnalyticsScreen(
             else -> {
                 JournalTopHeader(
                     title = "分析",
-                    subtitle = analyticsPeriodLabel ?: "データなし",
+                    subtitle = "感情・行動の推移",
                     navigationIcon = Icons.Outlined.Menu,
                     navigationContentDescription = "メニュー",
                     onNavigationClick = {},
@@ -2195,12 +2244,12 @@ private fun WorkActionDailySummaryCard(
 ) {
     val todayStats: Map<ActionType, WorkActionStat> = remember(messages) {
         WorkSummaryActionTypes.associateWith { type ->
-            val matched = messages.filter { type.matches(it.flags) }
+            val matched = messages.filter {
+                isDetailChartVisibleTime(it.timestamp) && type.matches(it.flags)
+            }
             WorkActionStat(
                 count = matched.size,
-                minutes = matched
-                    .filter { isDetailChartVisibleTime(it.timestamp) }
-                    .map { minutesOfDay(it.timestamp) }
+                minutes = matched.map { minutesOfDay(it.timestamp) }
             )
         }
     }
@@ -2281,15 +2330,15 @@ private fun WorkActionDailySummaryCard(
                 }
                 val stat = todayStats[type]
                 WorkActionTimelineRow(
-                    label = type.shortLabel(),
+                    label = type.shortSummaryLabel(),
                     color = ActionPalette.ChartCategories[index % ActionPalette.ChartCategories.size],
                     count = stat?.count ?: 0,
                     minutes = stat?.minutes.orEmpty(),
                     diffText = if (showDiff) {
-                        formatDiff(
+                        formatSummaryDiff(
                             today = stat?.count ?: 0,
                             comparison = comparisonCounts?.get(type),
-                            hasComparisonData = hasComparisonData
+                            hasComparisonDate = hasComparisonData
                         )
                     } else {
                         null
@@ -2302,11 +2351,11 @@ private fun WorkActionDailySummaryCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = TimelineLabelWidth + Spacing.sm,
+                    start = SummaryLabelColumnWidth + Spacing.sm,
                     end = if (showDiff) {
-                        TimelineCountWidth + TimelineDiffWidth + Spacing.sm + Spacing.sm
+                        SummaryCountColumnWidth + SummaryDiffColumnWidth + Spacing.sm + Spacing.sm
                     } else {
-                        TimelineCountWidth + Spacing.sm
+                        SummaryCountColumnWidth + Spacing.sm
                     }
                 ),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -2334,9 +2383,6 @@ private fun WorkActionTimelineRow(
     val labelColor = if (isZero) MaterialTheme.appColors.inkDisabled else MaterialTheme.appColors.inkSecondary
     val dotColor = if (isZero) MaterialTheme.appColors.inkDisabled else color
     val countColor = if (isZero) MaterialTheme.appColors.inkDisabled else MaterialTheme.appColors.inkPrimary
-    val trackColor = MaterialTheme.appColors.surfaceQuiet
-    val dividerColor = MaterialTheme.appColors.dividerSoft
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -2345,7 +2391,7 @@ private fun WorkActionTimelineRow(
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         Row(
-            modifier = Modifier.width(TimelineLabelWidth),
+            modifier = Modifier.width(SummaryLabelColumnWidth),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
@@ -2362,39 +2408,17 @@ private fun WorkActionTimelineRow(
             )
         }
 
-        Canvas(
+        TimelineTrack(
+            color = color,
+            minutes = minutes,
             modifier = Modifier
                 .weight(1f)
                 .height(18.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(trackColor)
-        ) {
-            val stroke = 1.dp.toPx()
-            listOf(13f, 19f).forEach { hour ->
-                val fraction = ((hour * 60f - DetailChartStartMinutes) / (DetailChartEndMinutes - DetailChartStartMinutes))
-                    .coerceIn(0f, 1f)
-                val x = size.width * fraction
-                drawLine(
-                    color = dividerColor,
-                    start = Offset(x, 0f),
-                    end = Offset(x, size.height),
-                    strokeWidth = stroke
-                )
-            }
-            minutes.forEach { minute ->
-                val fraction = ((minute - DetailChartStartMinutes) / (DetailChartEndMinutes - DetailChartStartMinutes))
-                    .coerceIn(0f, 1f)
-                drawCircle(
-                    color = dotColor,
-                    radius = 3.dp.toPx(),
-                    center = Offset(size.width * fraction, size.height / 2f)
-                )
-            }
-        }
+        )
 
         Text(
             text = count.toString(),
-            modifier = Modifier.width(TimelineCountWidth),
+            modifier = Modifier.width(SummaryCountColumnWidth),
             style = MonoTypography.Micro,
             color = countColor,
             fontWeight = if (isZero) FontWeight.Normal else FontWeight.SemiBold,
@@ -2404,10 +2428,48 @@ private fun WorkActionTimelineRow(
         if (diffText != null) {
             Text(
                 text = diffText,
-                modifier = Modifier.width(TimelineDiffWidth),
+                modifier = Modifier.width(SummaryDiffColumnWidth),
                 style = MonoTypography.Micro,
                 color = MaterialTheme.appColors.inkTertiary,
                 textAlign = TextAlign.End
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimelineTrack(
+    color: Color,
+    minutes: List<Float>,
+    modifier: Modifier = Modifier
+) {
+    val trackBg = MaterialTheme.appColors.surfaceQuiet
+    val divider = MaterialTheme.appColors.dividerSoft
+
+    Canvas(
+        modifier = modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(trackBg)
+    ) {
+        val totalRange = DetailChartEndMinutes - DetailChartStartMinutes
+
+        listOf(13f, 19f).forEach { hour ->
+            val rate = ((hour * 60f - DetailChartStartMinutes) / totalRange).coerceIn(0f, 1f)
+            drawLine(
+                color = divider,
+                start = Offset(size.width * rate, 0f),
+                end = Offset(size.width * rate, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+
+        val dotRadius = 3.dp.toPx()
+        minutes.forEach { min ->
+            val rate = ((min - DetailChartStartMinutes) / totalRange).coerceIn(0f, 1f)
+            drawCircle(
+                color = color,
+                radius = dotRadius,
+                center = Offset(size.width * rate, size.height / 2f)
             )
         }
     }
@@ -2420,8 +2482,8 @@ private fun WorkActionTimelineRow(
  * - 減少: "▼n"
  * - 変化なし: "−"
  */
-private fun formatDiff(today: Int, comparison: Int?, hasComparisonData: Boolean): String {
-    if (!hasComparisonData || comparison == null) return "−"
+private fun formatSummaryDiff(today: Int, comparison: Int?, hasComparisonDate: Boolean): String {
+    if (!hasComparisonDate || comparison == null) return "−"
     val diff = today - comparison
     return when {
         diff > 0 -> "▲$diff"
