@@ -524,6 +524,7 @@ fun ChatRoute() {
                             ) {
                                 JournalCompactMetaRow(
                                     dateLabel = dateLabel,
+                                    entryCount = parentEntries.size,
                                     hasActiveFilter = hasActiveFilter,
                                     isSingleLineMode = state.isSingleLineMode,
                                     isWorkMode = workModeEnabled,
@@ -783,6 +784,7 @@ private fun JournalBottomTab(
 @Composable
 private fun JournalCompactMetaRow(
     dateLabel: String,
+    entryCount: Int,
     hasActiveFilter: Boolean,
     isSingleLineMode: Boolean,
     isWorkMode: Boolean,
@@ -792,10 +794,15 @@ private fun JournalCompactMetaRow(
     onToggleSingleLine: () -> Unit
 ) {
     val effectiveSingleLineMode = isSingleLineMode || isWorkMode
+    val title = "記録 ${entryCount}件"
+    val datePart = dateLabel.substringBefore('・').trim()
+    val isToday = dateLabel.contains("今日")
+    val subtitle = if (isToday) "$datePart · 今日" else datePart
+
     JournalTopHeader(
-        title = dateLabel.substringBefore('・'),
-        subtitle = if (dateLabel.contains("今日")) "今日" else null,
-        showLiveDot = dateLabel.contains("今日"),
+        title = title,
+        subtitle = subtitle,
+        showLiveDot = false,
         navigationIcon = Icons.Outlined.Menu,
         navigationContentDescription = "メニュー",
         onNavigationClick = onMenuClick,
