@@ -590,8 +590,7 @@ fun PersonalityAnalyticsScreen(
                     item {
                         ActionFlagCountChartCard(
                             labels = chartXAxisLabels,
-                            series = actionFlagSeries,
-                            smoothLine = selectedPeriod == AnalyticsPeriod.ALL
+                            series = actionFlagSeries
                         )
                     }
                     item {
@@ -678,7 +677,6 @@ fun PersonalityAnalyticsScreen(
 private fun ActionFlagCountChartCard(
     labels: List<String>,
     series: List<LineSeries>,
-    smoothLine: Boolean,
     startPadding: Dp = 0.dp,
     endPadding: Dp = 0.dp,
     modifier: Modifier = Modifier
@@ -695,14 +693,11 @@ private fun ActionFlagCountChartCard(
             fontWeight = FontWeight.Bold
         )
 
-        MultiLineChart(
+        StackedBarChart(
             labels = labels,
             series = series,
-            minValue = 0f,
-            maxValue = 10f,
-            yAxisTicks = listOf(0f, 2f, 4f, 6f, 8f, 10f),
+            yAxisTicks = null,
             toggleableLegend = true,
-            smoothLine = smoothLine,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)
@@ -920,6 +915,197 @@ private fun CombinedEmotionChart(
         smoothLine = period == AnalyticsPeriod.ALL,
         modifier = modifier
     )
+}
+
+@Composable
+private fun StackedBarChart(
+    labels: List<String>,
+    series: List<LineSeries>,
+    yAxisTicks: List<Float>? = null,
+    toggleableLegend: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    var hiddenSeriesLabels by remember(series) {
+        mutableStateOf(setOf<String>())
+    }
+    val displayedSeries = remember(series, hiddenSeriesLabels) {
+        series.filterNot { it.label in hiddenSeriesLabels }
+    }
+    val pointCount = remember(labels, displayedSeries) {
+        minOf(
+            labels.size,
+            displayedSeries.minOfOrNull { it.values.size } ?: labels.size
+        )
+    }
+    val normalizedLabels = remember(labels, pointCount) { labels.take(pointCount) }
+    val normalizedSeries = remember(displayedSeries, pointCount) {
+        displayedSeries.map { it.copy(values = it.values.take(pointCount)) }
+    }
+    val maxStackHeight = remember(normalizedLabels, normalizedSeries) {
+        if (normalizedLabels.isEmpty()) {
+            0f
+        } else {
+            normalizedLabels.indices.maxOf { index ->
+                normalizedSeries.sumOf { item ->
+                    (item.values.getOrNull(index) ?: 0f).coerceAtLeast(0f).toDouble()
+                }.toFloat()
+            }
+        }
+    }
+    val effectiveMax = maxOf(maxStackHeight, yAxisTicks?.maxOrNull() ?: 1f, 1f)
+    val guideValues = remember(effectiveMax, yAxisTicks) {
+        yAxisTicks
+            ?.takeIf { it.isNotEmpty() }
+            ?.distinct()
+            ?.sortedDescending()
+            ?: listOf(effectiveMax, effectiveMax / 2f, 0f)
+    }
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            series.forEach { item ->
+                val isHidden = item.label in hiddenSeriesLabels
+                Row(
+                    modifier = if (toggleableLegend) {
+                        Modifier.clickable {
+                            hiddenSeriesLabels = if (isHidden) {
+                                hiddenSeriesLabels - item.label
+                            } else {
+                                hiddenSeriesLabels + item.label
+                            }
+                        }
+                    } else {
+                        Modifier
+                    },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(8.dp)
+                            .height(8.dp)
+                            .background(
+                                if (isHidden) {
+                                    item.color.copy(alpha = 0.3f)
+                                } else {
+                                    item.color
+                                },
+                                AppShapeTokens.Pill
+                            )
+                    )
+                    Text(
+                        text = item.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isHidden) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(34.dp)
+                    .padding(top = Spacing.md, bottom = Spacing.md, end = 4.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.End
+            ) {
+                guideValues.forEach { value ->
+                    Text(
+                        text = if (value % 1f == 0f) {
+                            value.toInt().toString()
+                        } else {
+                            String.format(Locale.JAPAN, "%.1f", value)
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Canvas(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                val chartLayout = ChartLayout(
+                    chartLeft = 6.dp.toPx(),
+                    chartRight = size.width - 6.dp.toPx(),
+                    chartTop = 10.dp.toPx(),
+                    chartBottom = size.height - 10.dp.toPx()
+                )
+                if (chartLayout.width <= 0f || chartLayout.height <= 0f) return@Canvas
+
+                guideValues.forEach { tick ->
+                    val y = chartLayout.yForValue(tick, 0f, effectiveMax)
+                    drawLine(
+                        color = gridColor,
+                        start = Offset(chartLayout.chartLeft, y),
+                        end = Offset(chartLayout.chartRight, y),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                }
+
+                val count = normalizedLabels.size.coerceAtLeast(1)
+                val slotWidth = chartLayout.width / count.toFloat()
+                val barWidth = (slotWidth * 0.7f).coerceAtLeast(2.dp.toPx())
+
+                normalizedLabels.indices.forEach { index ->
+                    var cumulative = 0f
+                    val centerX = chartLayout.xForIndex(index, count)
+                    normalizedSeries.forEach { item ->
+                        val value = (item.values.getOrNull(index) ?: 0f).coerceAtLeast(0f)
+                        if (value <= 0f) return@forEach
+                        val yTop = chartLayout.yForValue(cumulative + value, 0f, effectiveMax)
+                        val yBottom = chartLayout.yForValue(cumulative, 0f, effectiveMax)
+                        drawRect(
+                            color = item.color,
+                            topLeft = Offset(centerX - barWidth / 2f, yTop),
+                            size = androidx.compose.ui.geometry.Size(barWidth, yBottom - yTop)
+                        )
+                        cumulative += value
+                    }
+                }
+            }
+        }
+
+        if (normalizedLabels.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 34.dp + 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = normalizedLabels.first(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (normalizedLabels.size > 1) {
+                    Text(
+                        text = normalizedLabels.last(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
