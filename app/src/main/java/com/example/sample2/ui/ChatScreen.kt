@@ -75,6 +75,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import com.example.sample2.data.DefaultJournalRepository
+import com.example.sample2.data.EmotionResponse
 import com.example.sample2.ui.components.AppConfirmDialog
 import com.example.sample2.ui.components.AppDestructiveDialog
 import com.example.sample2.data.ActionType
@@ -617,7 +618,9 @@ fun ChatRoute() {
                                         createEditorMessage = MessageV2(
                                             id = "__new__",
                                             timestamp = System.currentTimeMillis(),
-                                            text = ""
+                                            text = "",
+                                            parentId = parent.id,
+                                            entryType = JournalEntryType.EMOTION_RESPONSE
                                         )
                                     },
                                     modifier = Modifier
@@ -697,22 +700,38 @@ fun ChatRoute() {
                 onUpdate = {},
                 onCreate = { created ->
                     val targetParent = createEditorParentTarget
-                    if (targetParent == null) {
-                        state.inputText = created.text
-                        val beforeIds = state.messages.map { it.id }.toSet()
-                        state.addMessage()
-                        state.messages.firstOrNull { it.id !in beforeIds }?.let { inserted ->
-                            state.updateMessage(inserted.copy(emotions = created.emotions, flags = created.flags))
-                        }
+                    val finalized = if (targetParent == null) {
+                        // ----- 親メモ -----
+                        // ダイアログで組み立てられた payload をそのまま採用。
+                        // id だけ "__new__" を捨てて新規採番させる（addMessageRaw 内で対応）。
+                        created.copy(
+                            id = "",
+                            parentId = null,
+                            entryType = JournalEntryType.MEMO,
+                            response = null
+                        )
                     } else {
-                        state.addEmotionResponse(
-                            parent = targetParent,
-                            targetEmotionKey = targetParent.emotions.maxEmotionOrNull()?.key ?: "",
-                            actionKey = "",
-                            effectScore = 0,
-                            note = created.text
+                        // ----- 子カード（感情応答） -----
+                        // 親への紐付けを確定させ、emotions / flags / timestamp / text は
+                        // ダイアログで入力されたものを採用する。
+                        // EmotionResponse の固定枠（targetEmotionKey 等）は親の状態と本文から組み立てる。
+                        val targetEmotionKey =
+                            targetParent.emotions.maxEmotionOrNull()?.key.orEmpty()
+                        created.copy(
+                            id = "",
+                            parentId = targetParent.id,
+                            entryType = JournalEntryType.EMOTION_RESPONSE,
+                            trigger = null,
+                            response = EmotionResponse(
+                                targetEmotionKey = targetEmotionKey,
+                                actionKey = "",
+                                effectScore = 0,
+                                note = created.text,
+                                createdAt = created.timestamp
+                            )
                         )
                     }
+                    state.addMessageRaw(finalized)
                     createEditorMessage = null
                     createEditorParentTarget = null
                 }

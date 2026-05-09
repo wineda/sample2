@@ -79,6 +79,27 @@ class JournalViewModel(
         persistMessages()
     }
 
+    /**
+     * 完全に組み立て済みの MessageV2 をそのまま追加する。
+     *
+     * MessageActionOverlay（編集ダイアログ）からの新規作成で、
+     * 本文・時刻・感情・行動フラグ・きっかけ・親子関係などを
+     * すべてダイアログ側で組み立てた状態で渡してもらう用途。
+     *
+     * id がブランクなら新しい UUID を採番する。
+     * 子カード（EMOTION_RESPONSE）の場合は trigger を null に強制する。
+     */
+    fun addMessageRaw(message: MessageV2) {
+        val safeId = message.id.ifBlank { UUID.randomUUID().toString() }
+        val normalized = if (message.entryType == JournalEntryType.EMOTION_RESPONSE) {
+            message.copy(id = safeId, trigger = null)
+        } else {
+            message.copy(id = safeId)
+        }
+        messages.add(normalized)
+        persistMessages()
+    }
+
     fun childrenOf(parent: MessageV2): List<MessageV2> {
         return messages
             .filter { it.parentId == parent.id }
