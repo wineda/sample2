@@ -20,7 +20,7 @@ import com.example.sample2.ui.theme.appColors
  *
  * - 上端にセパレータ
  * - 子要素間に 1px の薄いセパレータ
- * - 全体に薄い背景（surfaceQuiet）
+ * - 背景は親カードと同じ surface を継承（独自の塗りはなし）
  */
 @Composable
 fun ThreadBody(
@@ -34,7 +34,6 @@ fun ThreadBody(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.appColors.surfaceQuiet),
     ) {
         Box(
             modifier = Modifier
