@@ -1,5 +1,6 @@
 package com.example.sample2.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Backup
@@ -37,12 +37,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.example.sample2.ui.theme.AppShapeTokens
+import com.example.sample2.ui.theme.AppTextStyles
 import com.example.sample2.ui.theme.MenuIconPalette
+import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.appColors
 import com.example.sample2.ui.theme.Spacing
+import java.util.Locale
 
 @Composable
 fun JournalDrawerContent(
+    messageCount: Int,
+    dailyRecordCount: Int,
+    dailyReflectionCount: Int,
+    dataSizeBytes: Long,
     onClose: () -> Unit,
     onCopy: () -> Unit,
     onShare: () -> Unit,
@@ -73,7 +80,32 @@ fun JournalDrawerContent(
             SmartDrawerHeader(onClose = onClose)
 
             Text(
-                text = "データ操作",
+                text = "データ概要",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.66.sp,
+                color = MaterialTheme.appColors.inkTertiary,
+                modifier = Modifier.padding(horizontal = Spacing.xl, vertical = 12.dp)
+            )
+
+            DataOverviewCard(
+                messageCount = messageCount,
+                dailyRecordCount = dailyRecordCount,
+                dailyReflectionCount = dailyReflectionCount,
+                dataSizeBytes = dataSizeBytes,
+                modifier = Modifier.padding(horizontal = Spacing.xl)
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = Spacing.md, bottom = 8.dp)
+                    .height(8.dp)
+                    .background(MaterialTheme.appColors.surfaceQuiet)
+            )
+
+            Text(
+                text = "書き出し",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.66.sp,
@@ -85,8 +117,7 @@ fun JournalDrawerContent(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 SmartDrawerMenuItem(
-                    title = "コピー",
-                    subtitle = "内容をクリップボードへ",
+                    title = "クリップボードにコピー",
                     iconBackground = MenuIconPalette.Copy.background,
                     iconTint = MenuIconPalette.Copy.tint,
                     icon = {
@@ -100,8 +131,7 @@ fun JournalDrawerContent(
                 )
 
                 SmartDrawerMenuItem(
-                    title = "共有",
-                    subtitle = "他のアプリへ共有",
+                    title = "他のアプリに共有",
                     iconBackground = MenuIconPalette.Share.background,
                     iconTint = MenuIconPalette.Share.tint,
                     icon = {
@@ -137,7 +167,7 @@ fun JournalDrawerContent(
             ) {
                 SmartDrawerMenuItem(
                     title = "バックアップを作成",
-                    subtitle = "データを保存して退避",
+                    subtitle = "JSON形式で端末に保存",
                     iconBackground = MenuIconPalette.Backup.background,
                     iconTint = MenuIconPalette.Backup.tint,
                     icon = {
@@ -150,11 +180,35 @@ fun JournalDrawerContent(
                     onClick = onBackup
                 )
 
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = Spacing.md, bottom = 8.dp)
+                    .height(8.dp)
+                    .background(MaterialTheme.appColors.surfaceQuiet)
+            )
+
+            Text(
+                text = "復元",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.66.sp,
+                color = MaterialTheme.appColors.inkTertiary,
+                modifier = Modifier.padding(horizontal = Spacing.xl, vertical = 12.dp)
+            )
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 SmartDrawerMenuItem(
-                    title = "リストア",
-                    subtitle = "バックアップから復元",
-                    iconBackground = MenuIconPalette.Restore.background,
-                    iconTint = MenuIconPalette.Restore.tint,
+                    title = "バックアップから復元",
+                    subtitle = "現在のデータは上書きされます",
+                    iconBackground = SemanticColors.NegativeSoft,
+                    iconTint = SemanticColors.NegativeMain,
+                    titleColor = SemanticColors.NegativeMain,
+                    trailing = TrailingKind.DangerBadge,
                     icon = {
                         Icon(
                             imageVector = Icons.Default.Restore,
@@ -196,6 +250,99 @@ fun JournalDrawerContent(
     }
 }
 
+
+@Composable
+private fun DataOverviewCard(
+    messageCount: Int,
+    dailyRecordCount: Int,
+    dailyReflectionCount: Int,
+    dataSizeBytes: Long,
+    modifier: Modifier = Modifier
+) {
+    val formattedDataSize = formatDataSize(dataSizeBytes)
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.appColors.dividerSoft)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = Spacing.md, vertical = 4.dp)) {
+            DataOverviewRow(label = "記録", value = messageCount.toString(), unit = "件")
+            DataOverviewDivider()
+            DataOverviewRow(label = "日次記録", value = dailyRecordCount.toString(), unit = "日")
+            DataOverviewDivider()
+            DataOverviewRow(label = "振り返り", value = dailyReflectionCount.toString(), unit = "日")
+            DataOverviewDivider()
+            DataOverviewRow(
+                label = "データサイズ",
+                value = formattedDataSize.first,
+                unit = formattedDataSize.second
+            )
+        }
+    }
+}
+
+@Composable
+private fun DataOverviewRow(label: String, value: String, unit: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.sm),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.appColors.inkSecondary
+        )
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.appColors.inkPrimary
+            )
+            Text(
+                text = unit,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.appColors.inkTertiary,
+                modifier = Modifier.padding(bottom = 2.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun DataOverviewDivider() {
+    HorizontalDivider(
+        thickness = 1.dp,
+        color = MaterialTheme.appColors.dividerSoft
+    )
+}
+
+/**
+ * バイト数を「2.4 / MB」のような (値, 単位) ペアにフォーマット。
+ * KB / MB / GB を 1024 ベースで判定する。
+ */
+private fun formatDataSize(bytes: Long): Pair<String, String> {
+    if (bytes < 1024) return bytes.toString() to "B"
+    val kb = bytes / 1024.0
+    if (kb < 1024.0) return String.format(Locale.JAPAN, "%.1f", kb) to "KB"
+    val mb = kb / 1024.0
+    if (mb < 1024.0) return String.format(Locale.JAPAN, "%.1f", mb) to "MB"
+    val gb = mb / 1024.0
+    return String.format(Locale.JAPAN, "%.1f", gb) to "GB"
+}
+
+private enum class TrailingKind {
+    Chevron,
+    DangerBadge
+}
+
 @Composable
 private fun SmartDrawerHeader(
     onClose: () -> Unit
@@ -207,12 +354,22 @@ private fun SmartDrawerHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "メニュー",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.appColors.inkPrimary
-        )
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = "設定",
+                style = AppTextStyles.ScreenTitleLarge,
+                color = MaterialTheme.appColors.inkStrongAlt
+            )
+            Text(
+                text = "データ管理",
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.appColors.inkTertiary,
+                modifier = Modifier.padding(bottom = 1.dp)
+            )
+        }
         Box(
             modifier = Modifier
                 .size(32.dp)
@@ -234,9 +391,11 @@ private fun SmartDrawerHeader(
 @Composable
 private fun SmartDrawerMenuItem(
     title: String,
-    subtitle: String,
+    subtitle: String? = null,
     iconBackground: Color,
     iconTint: Color,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    trailing: TrailingKind = TrailingKind.Chevron,
     icon: @Composable () -> Unit,
     onClick: () -> Unit
 ) {
@@ -281,20 +440,39 @@ private fun SmartDrawerMenuItem(
                     text = title,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = titleColor
                 )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (!subtitle.isNullOrEmpty()) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.appColors.dividerStrong
-            )
+            when (trailing) {
+                TrailingKind.Chevron -> {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.appColors.dividerStrong
+                    )
+                }
+                TrailingKind.DangerBadge -> {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = SemanticColors.WarningSoft
+                    ) {
+                        Text(
+                            text = "注意",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = SemanticColors.WarningMain,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
