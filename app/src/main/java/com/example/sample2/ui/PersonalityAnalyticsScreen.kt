@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +27,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -33,6 +35,8 @@ import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AssistChip
@@ -42,6 +46,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -55,6 +60,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -88,7 +95,7 @@ import com.example.sample2.ui.ActionHeatmapBlock
 import com.example.sample2.ui.CompactHeaderIconButton
 import com.example.sample2.ui.EmotionHeatmapBlock
 import com.example.sample2.ui.JournalTopHeader
-import com.example.sample2.ui.DateStepper
+import com.example.sample2.ui.JournalDatePickerDialog
 import com.example.sample2.ui.components.AppCard
 import com.example.sample2.ui.components.AppCardVariant
 import com.example.sample2.ui.components.AppFormDialog
@@ -97,6 +104,8 @@ import com.example.sample2.ui.formatDate
 import androidx.compose.material.icons.outlined.Menu
 import com.example.sample2.util.formatTime
 import com.example.sample2.ui.theme.ActionPalette
+import com.example.sample2.ui.theme.MonoTypography
+import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.ScorePalette
 import java.time.Instant
 import java.time.DayOfWeek
@@ -108,6 +117,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.example.sample2.ui.theme.Spacing
 import com.example.sample2.ui.theme.AppShapeTokens
+import com.example.sample2.ui.theme.appColors
 
 private const val AnalyticsLogTag = "PersonalityAnalytics"
 
@@ -147,6 +157,30 @@ private enum class DetailCompareMode(
     PREVIOUS_WEEK("先週と比較")
 }
 
+
+/** 詳細分析サマリー対象の 5 項目（仕様で固定）。 */
+private val WorkSummaryActionTypes = listOf(
+    ActionType.QUICK_ACTION,
+    ActionType.BREAKDOWN,
+    ActionType.MINDFUL_ACTION,
+    ActionType.CONSULT_CONNECT,
+    ActionType.INSIGHT,
+)
+
+private val TimelineLabelWidth = 44.dp
+private val TimelineCountWidth = 24.dp
+private val TimelineDiffWidth = 36.dp
+
+/** 短縮表示ラベル（タイムライン用に短くする）。 */
+private fun ActionType.shortLabel(): String = when (this) {
+    ActionType.QUICK_ACTION -> "すぐ"
+    ActionType.BREAKDOWN -> "分解"
+    ActionType.MINDFUL_ACTION -> "意識"
+    ActionType.CONSULT_CONNECT -> "相談"
+    ActionType.INSIGHT -> "気づき"
+    else -> label
+}
+
 private data class LineSeries(
     val label: String,
     val color: Color,
@@ -158,6 +192,11 @@ private data class TimedLineSeries(
     val color: Color,
     val values: List<Float>,
     val xValues: List<Float>
+)
+
+private data class WorkActionStat(
+    val count: Int,
+    val minutes: List<Float>
 )
 
 private data class ChartLayout(
@@ -228,6 +267,131 @@ private fun formatMinuteLabel(minutes: Float): String {
     val hour = totalMinutes / 60
     val minute = totalMinutes % 60
     return String.format(Locale.JAPAN, "%02d:%02d", hour, minute)
+}
+
+
+@Composable
+private fun DetailHeaderWithDateStepper(
+    selectedDate: LocalDate,
+    datesWithRecord: Set<LocalDate>,
+    onDateChange: (LocalDate) -> Unit,
+    onMenuClick: () -> Unit,
+) {
+    val today = remember { LocalDate.now() }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val canGoNext = selectedDate < today
+    val canGoPrev = datesWithRecord.any { it < selectedDate }
+    val bottomBorderColor = MaterialTheme.appColors.dividerSoft
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .drawBehind {
+                drawLine(
+                    color = bottomBorderColor,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CompactHeaderIconButton(
+            selected = false,
+            onClick = onMenuClick,
+            icon = Icons.Outlined.Menu,
+            contentDescription = "メニュー"
+        )
+        Spacer(Modifier.width(Spacing.sm))
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.appColors.surfaceQuiet)
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(
+                onClick = { onDateChange(selectedDate.minusDays(1)) },
+                modifier = Modifier.size(28.dp),
+                enabled = canGoPrev
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.ChevronLeft,
+                    contentDescription = "前日",
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { showDatePicker = true }
+                    .padding(vertical = 2.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = selectedDate.format(DateTimeFormatter.ofPattern("M月d日(E)", Locale.JAPAN)),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.appColors.inkPrimary
+                    )
+                    if (selectedDate == today) {
+                        Surface(
+                            shape = AppShapeTokens.Tech,
+                            color = SemanticColors.InfoMain
+                        ) {
+                            Text(
+                                text = "TODAY",
+                                color = Color.White,
+                                style = MonoTypography.Micro,
+                                modifier = Modifier.padding(horizontal = Spacing.xs, vertical = 1.dp)
+                            )
+                        }
+                    }
+                }
+                Text(
+                    text = "詳細分析",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.appColors.inkTertiary
+                )
+            }
+
+            IconButton(
+                onClick = { onDateChange(selectedDate.plusDays(1)) },
+                modifier = Modifier.size(28.dp),
+                enabled = canGoNext
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.ChevronRight,
+                    contentDescription = "翌日",
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+    }
+
+    if (showDatePicker) {
+        JournalDatePickerDialog(
+            initialDate = selectedDate,
+            minDate = null,
+            maxDate = today,
+            datesWithRecord = datesWithRecord,
+            onDismiss = { showDatePicker = false },
+            onConfirm = {
+                onDateChange(it)
+                showDatePicker = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -482,27 +646,35 @@ fun PersonalityAnalyticsScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        JournalTopHeader(
-            title = if (initialDisplayMode == AnalyticsDisplayMode.DETAIL) "詳細分析" else "分析",
-            subtitle = if (initialDisplayMode == AnalyticsDisplayMode.DETAIL) {
-                "1日単位の内訳"
-            } else {
-                analyticsPeriodLabel ?: "データなし"
-            },
-            navigationIcon = Icons.Outlined.Menu,
-            navigationContentDescription = "メニュー",
-            onNavigationClick = {},
-            actions = {
-                availableDisplayModes.forEach { mode ->
-                    CompactHeaderIconButton(
-                        selected = displayMode == mode,
-                        onClick = { displayModeName = mode.name },
-                        icon = mode.icon(),
-                        contentDescription = mode.label()
-                    )
-                }
+        when (displayMode) {
+            AnalyticsDisplayMode.DETAIL -> {
+                DetailHeaderWithDateStepper(
+                    selectedDate = selectedDate ?: LocalDate.now(),
+                    datesWithRecord = allRawScoresDesc.map { it.date }.toSet(),
+                    onDateChange = { selectedDateText = it.toString() },
+                    onMenuClick = {}
+                )
             }
-        )
+            else -> {
+                JournalTopHeader(
+                    title = "分析",
+                    subtitle = analyticsPeriodLabel ?: "データなし",
+                    navigationIcon = Icons.Outlined.Menu,
+                    navigationContentDescription = "メニュー",
+                    onNavigationClick = {},
+                    actions = {
+                        availableDisplayModes.forEach { mode ->
+                            CompactHeaderIconButton(
+                                selected = displayMode == mode,
+                                onClick = { displayModeName = mode.name },
+                                icon = mode.icon(),
+                                contentDescription = mode.label()
+                            )
+                        }
+                    }
+                )
+            }
+        }
 
         if (displayMode == AnalyticsDisplayMode.CHARTS) {
             AnalyticsPeriodSelector(
@@ -535,10 +707,10 @@ fun PersonalityAnalyticsScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
-                        DateStepper(
-                            selectedDate = selectedDate ?: LocalDate.now(),
-                            onDateChange = { selectedDateText = it.toString() },
-                            datesWithRecord = allRawScoresDesc.map { it.date }.toSet()
+                        DetailCompareModeSelector(
+                            current = detailCompareMode,
+                            onChange = { detailCompareModeName = it.name },
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
 
@@ -548,7 +720,6 @@ fun PersonalityAnalyticsScreen(
                             messages = selectedDayMessages,
                             dailyRecord = selectedDayRecord,
                             compareMode = detailCompareMode,
-                            onCompareModeChange = { detailCompareModeName = it.name },
                             comparisonDate = comparisonDate,
                             comparisonMessages = comparisonDayMessages,
                             comparisonDailyRecord = comparisonDayRecord,
@@ -564,6 +735,16 @@ fun PersonalityAnalyticsScreen(
                                     selectedDateText = allRawScoresDesc[currentIndex - 1].date.toString()
                                 }
                             }
+                        )
+                    }
+
+                    item {
+                        WorkActionDailySummaryCard(
+                            date = selectedDate,
+                            messages = selectedDayMessages,
+                            compareMode = detailCompareMode,
+                            comparisonDate = comparisonDate,
+                            comparisonMessages = comparisonDayMessages
                         )
                     }
 
@@ -1776,7 +1957,6 @@ private fun DailyMessagePseudoTrendCard(
     messages: List<MessageV2>,
     dailyRecord: DailyRecord?,
     compareMode: DetailCompareMode,
-    onCompareModeChange: (DetailCompareMode) -> Unit,
     comparisonDate: LocalDate?,
     comparisonMessages: List<MessageV2>,
     comparisonDailyRecord: DailyRecord?,
@@ -1918,25 +2098,6 @@ private fun DailyMessagePseudoTrendCard(
             modifier = Modifier.padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = date?.let {
-                        "${DateTimeFormatter.ofPattern("M月d日(E)", Locale.JAPAN).format(it)} の日内推移"
-                    } ?: "日内推移",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            DetailCompareModeSelector(
-                current = compareMode,
-                onChange = onCompareModeChange,
-                modifier = Modifier.fillMaxWidth()
-            )
-
             comparisonLabel?.let { label ->
                 Text(
                     text = label,
@@ -2020,6 +2181,252 @@ private fun DailyMessagePseudoTrendCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun WorkActionDailySummaryCard(
+    date: LocalDate?,
+    messages: List<MessageV2>,
+    compareMode: DetailCompareMode,
+    comparisonDate: LocalDate?,
+    comparisonMessages: List<MessageV2>,
+    modifier: Modifier = Modifier
+) {
+    val todayStats: Map<ActionType, WorkActionStat> = remember(messages) {
+        WorkSummaryActionTypes.associateWith { type ->
+            val matched = messages.filter { type.matches(it.flags) }
+            WorkActionStat(
+                count = matched.size,
+                minutes = matched
+                    .filter { isDetailChartVisibleTime(it.timestamp) }
+                    .map { minutesOfDay(it.timestamp) }
+            )
+        }
+    }
+    val comparisonCounts: Map<ActionType, Int>? = remember(comparisonMessages, compareMode) {
+        if (compareMode == DetailCompareMode.NONE) {
+            null
+        } else {
+            WorkSummaryActionTypes.associateWith { type ->
+                comparisonMessages.count { type.matches(it.flags) }
+            }
+        }
+    }
+    val totalToday = todayStats.values.sumOf { it.count }
+    val totalCompare = comparisonCounts?.values?.sum()
+    val showDiff = compareMode != DetailCompareMode.NONE
+    val hasComparisonData = showDiff && comparisonDate != null && comparisonMessages.isNotEmpty()
+
+    AppCard(
+        modifier = modifier,
+        variant = AppCardVariant.Default,
+        contentPadding = PaddingValues(Spacing.md),
+        verticalSpacing = Spacing.sm
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "仕事行動 サマリ",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.appColors.inkPrimary
+            )
+            Text(
+                text = date?.let { "${it.monthValue}/${it.dayOfMonth} 計 ${totalToday}件" } ?: "計 ${totalToday}件",
+                style = MonoTypography.Micro,
+                color = MaterialTheme.appColors.inkTertiary
+            )
+        }
+
+        if (showDiff) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (hasComparisonData && comparisonDate != null) {
+                        val formatted = DateTimeFormatter.ofPattern("M/d(E)", Locale.JAPAN).format(comparisonDate)
+                        "比較対象: $formatted 計 ${totalCompare ?: 0}件"
+                    } else {
+                        when (compareMode) {
+                            DetailCompareMode.PREVIOUS_DAY -> "前日データなし"
+                            DetailCompareMode.PREVIOUS_WEEK -> "先週データなし"
+                            DetailCompareMode.NONE -> ""
+                        }
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.appColors.inkTertiary
+                )
+                Text(
+                    text = when (compareMode) {
+                        DetailCompareMode.PREVIOUS_DAY -> "前日比"
+                        DetailCompareMode.PREVIOUS_WEEK -> "先週比"
+                        DetailCompareMode.NONE -> ""
+                    },
+                    style = MonoTypography.Micro,
+                    color = MaterialTheme.appColors.inkTertiary
+                )
+            }
+        }
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            WorkSummaryActionTypes.forEachIndexed { index, type ->
+                if (index > 0) {
+                    HorizontalDivider(color = MaterialTheme.appColors.dividerSoft)
+                }
+                val stat = todayStats[type]
+                WorkActionTimelineRow(
+                    label = type.shortLabel(),
+                    color = ActionPalette.ChartCategories[index % ActionPalette.ChartCategories.size],
+                    count = stat?.count ?: 0,
+                    minutes = stat?.minutes.orEmpty(),
+                    diffText = if (showDiff) {
+                        formatDiff(
+                            today = stat?.count ?: 0,
+                            comparison = comparisonCounts?.get(type),
+                            hasComparisonData = hasComparisonData
+                        )
+                    } else {
+                        null
+                    }
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = TimelineLabelWidth + Spacing.sm,
+                    end = if (showDiff) {
+                        TimelineCountWidth + TimelineDiffWidth + Spacing.sm + Spacing.sm
+                    } else {
+                        TimelineCountWidth + Spacing.sm
+                    }
+                ),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            listOf("07", "13", "19", "22").forEach { hour ->
+                Text(
+                    text = hour,
+                    style = MonoTypography.Micro,
+                    color = MaterialTheme.appColors.inkDisabled
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkActionTimelineRow(
+    label: String,
+    color: Color,
+    count: Int,
+    minutes: List<Float>,
+    diffText: String?,
+) {
+    val isZero = count == 0
+    val labelColor = if (isZero) MaterialTheme.appColors.inkDisabled else MaterialTheme.appColors.inkSecondary
+    val dotColor = if (isZero) MaterialTheme.appColors.inkDisabled else color
+    val countColor = if (isZero) MaterialTheme.appColors.inkDisabled else MaterialTheme.appColors.inkPrimary
+    val trackColor = MaterialTheme.appColors.surfaceQuiet
+    val dividerColor = MaterialTheme.appColors.dividerSoft
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+    ) {
+        Row(
+            modifier = Modifier.width(TimelineLabelWidth),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(7.dp)
+                    .clip(CircleShape)
+                    .background(dotColor)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = labelColor
+            )
+        }
+
+        Canvas(
+            modifier = Modifier
+                .weight(1f)
+                .height(18.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(trackColor)
+        ) {
+            val stroke = 1.dp.toPx()
+            listOf(13f, 19f).forEach { hour ->
+                val fraction = ((hour * 60f - DetailChartStartMinutes) / (DetailChartEndMinutes - DetailChartStartMinutes))
+                    .coerceIn(0f, 1f)
+                val x = size.width * fraction
+                drawLine(
+                    color = dividerColor,
+                    start = Offset(x, 0f),
+                    end = Offset(x, size.height),
+                    strokeWidth = stroke
+                )
+            }
+            minutes.forEach { minute ->
+                val fraction = ((minute - DetailChartStartMinutes) / (DetailChartEndMinutes - DetailChartStartMinutes))
+                    .coerceIn(0f, 1f)
+                drawCircle(
+                    color = dotColor,
+                    radius = 3.dp.toPx(),
+                    center = Offset(size.width * fraction, size.height / 2f)
+                )
+            }
+        }
+
+        Text(
+            text = count.toString(),
+            modifier = Modifier.width(TimelineCountWidth),
+            style = MonoTypography.Micro,
+            color = countColor,
+            fontWeight = if (isZero) FontWeight.Normal else FontWeight.SemiBold,
+            textAlign = TextAlign.End
+        )
+
+        if (diffText != null) {
+            Text(
+                text = diffText,
+                modifier = Modifier.width(TimelineDiffWidth),
+                style = MonoTypography.Micro,
+                color = MaterialTheme.appColors.inkTertiary,
+                textAlign = TextAlign.End
+            )
+        }
+    }
+}
+
+/**
+ * 差分表示文字列を生成。
+ * - 比較対象データなし: "−"
+ * - 増加: "▲n"
+ * - 減少: "▼n"
+ * - 変化なし: "−"
+ */
+private fun formatDiff(today: Int, comparison: Int?, hasComparisonData: Boolean): String {
+    if (!hasComparisonData || comparison == null) return "−"
+    val diff = today - comparison
+    return when {
+        diff > 0 -> "▲$diff"
+        diff < 0 -> "▼${-diff}"
+        else -> "−"
     }
 }
 
