@@ -40,9 +40,6 @@ import androidx.compose.material.icons.filled.HistoryEdu
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.ViewAgenda
-import androidx.compose.material.icons.outlined.ViewStream
-import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -95,10 +92,7 @@ import com.example.sample2.ui.theme.SemanticColors
 import com.example.sample2.ui.theme.appColors
 import kotlinx.coroutines.launch
 import java.io.File
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 import com.example.sample2.ui.theme.Spacing
 import com.example.sample2.ui.theme.AppShapeTokens
 
@@ -262,15 +256,23 @@ fun ChatRoute() {
         }
     }
 
+    // 親 + 子の合計件数を算出。
+    // フィルタは親メモのみに掛かる仕様のため、子は「フィルタに通った親」の
+    // 配下のみをカウントすることで親フィルタと整合させる。
+    val totalEntryCount by remember {
+        derivedStateOf {
+            parentEntries.size +
+                    parentEntries.sumOf { parent ->
+                        childEntriesByParentId[parent.id].orEmpty().size
+                    }
+        }
+    }
+
     val forwardActionSummary by remember {
         derivedStateOf {
             ForwardActionSummary.fromMessages(state.messages.filter { it.isToday() })
         }
     }
-
-    val dateLabel = buildJournalDateLabel(
-        timestamp = parentEntries.lastOrNull()?.timestamp ?: System.currentTimeMillis()
-    )
 
     LaunchedEffect(parentEntries.size, currentMode) {
         if (
@@ -523,21 +525,12 @@ fun ChatRoute() {
                                     .padding(padding)
                             ) {
                                 JournalCompactMetaRow(
-                                    dateLabel = dateLabel,
-                                    entryCount = parentEntries.size,
+                                    entryCount = totalEntryCount,
                                     hasActiveFilter = hasActiveFilter,
-                                    isSingleLineMode = state.isSingleLineMode,
-                                    isWorkMode = workModeEnabled,
                                     onMenuClick = {
                                         scope.launch { drawerState.open() }
                                     },
                                     onFilterClick = { showFilterSheet = true },
-                                    onToggleWorkMode = {
-                                        workModeEnabled = !workModeEnabled
-                                    },
-                                    onToggleSingleLine = {
-                                        state.isSingleLineMode = !state.isSingleLineMode
-                                    },
                                 )
 
                                 HorizontalDivider(
@@ -783,25 +776,14 @@ private fun JournalBottomTab(
 
 @Composable
 private fun JournalCompactMetaRow(
-    dateLabel: String,
     entryCount: Int,
     hasActiveFilter: Boolean,
-    isSingleLineMode: Boolean,
-    isWorkMode: Boolean,
     onMenuClick: () -> Unit,
     onFilterClick: () -> Unit,
-    onToggleWorkMode: () -> Unit,
-    onToggleSingleLine: () -> Unit
 ) {
-    val effectiveSingleLineMode = isSingleLineMode || isWorkMode
-    val title = "記録 ${entryCount}件"
-    val datePart = dateLabel.substringBefore('・').trim()
-    val isToday = dateLabel.contains("今日")
-    val subtitle = if (isToday) "$datePart · 今日" else datePart
-
     JournalTopHeader(
-        title = title,
-        subtitle = subtitle,
+        title = "記録",
+        subtitle = "${entryCount}件",
         showLiveDot = false,
         navigationIcon = Icons.Outlined.Menu,
         navigationContentDescription = "メニュー",
@@ -812,29 +794,6 @@ private fun JournalCompactMetaRow(
                 onClick = onFilterClick,
                 icon = Icons.Outlined.FilterList,
                 contentDescription = "フィルタ"
-            )
-
-            CompactHeaderIconButton(
-                selected = isWorkMode,
-                onClick = onToggleWorkMode,
-                icon = Icons.Outlined.WorkOutline,
-                contentDescription = if (isWorkMode) "仕事表示をオフ" else "仕事表示をオン"
-            )
-
-            CompactHeaderIconButton(
-                selected = effectiveSingleLineMode,
-                onClick = onToggleSingleLine,
-                icon = if (effectiveSingleLineMode) {
-                    Icons.Outlined.ViewAgenda
-                } else {
-                    Icons.Outlined.ViewStream
-                },
-                contentDescription = if (effectiveSingleLineMode) {
-                    "通常表示に切り替え"
-                } else {
-                    "1行表示に切り替え"
-                },
-                showNotificationDot = effectiveSingleLineMode
             )
         }
     )
@@ -1017,23 +976,4 @@ private fun shareJournalBackup(
     }
 
     context.startActivity(Intent.createChooser(intent, "バックアップを共有"))
-}
-
-private fun buildJournalDateLabel(timestamp: Long): String {
-    val dateText = SimpleDateFormat("M月d日(E)", Locale.JAPAN).format(Date(timestamp))
-
-    val target = Calendar.getInstance().apply {
-        timeInMillis = timestamp
-    }
-    val today = Calendar.getInstance()
-
-    val isToday =
-        target.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
-                target.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)
-
-    return if (isToday) {
-        "$dateText・今日"
-    } else {
-        dateText
-    }
 }
