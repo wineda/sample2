@@ -8,18 +8,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sample2.data.MessageV2
-import com.example.sample2.ui.EmotionResponseChildBubble
 import com.example.sample2.ui.categoryColorFor
 import com.example.sample2.ui.components.AppCard
 import com.example.sample2.ui.components.AppCardVariant
-import com.example.sample2.ui.theme.Spacing
 
 @Composable
 fun ThreadCard(
@@ -68,15 +65,12 @@ fun ThreadCard(
                         status = status,
                         actionCount = children.size,
                     )
-                } else if (children.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(top = Spacing.xs, bottom = Spacing.sm)) {
-                        children.forEach { child ->
-                            EmotionResponseChildBubble(
-                                message = child,
-                                onLongClick = onLongPressChild,
-                            )
-                        }
-                    }
+                } else {
+                    ThreadBody(
+                        parent = parent,
+                        children = children,
+                        onLongPressChild = onLongPressChild,
+                    )
                 }
             }
         }

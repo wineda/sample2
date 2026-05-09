@@ -210,6 +210,10 @@ fun MessageBubble(
     }
 }
 
+/**
+ * @deprecated PR-C 以降は ThreadChildRow に置き換えられている。
+ * ロールバック安全網として残置。動作確認後の整理PRで削除予定。
+ */
 @Composable
 fun EmotionResponseChildBubble(
     message: MessageV2,
