@@ -21,17 +21,22 @@ internal class BaselineCalculator {
                     calm = PersonalityMath.blend(current?.emotions?.calm, 1.6, 0.35)
                 ),
                 flags = DailyFlagAverages(
-                    exercised = PersonalityMath.blend(current?.flags?.exercised?.toDouble(), 0.4, 0.35),
-                    socialized = PersonalityMath.blend(current?.flags?.socialized?.toDouble(), 0.7, 0.35),
-                    delegate = PersonalityMath.blend(current?.flags?.delegate?.toDouble(), 0.4, 0.35),
-                    challenge = PersonalityMath.blend(current?.flags?.challenge?.toDouble(), 0.4, 0.35),
-                    breakdown = PersonalityMath.blend(current?.flags?.breakdown?.toDouble(), 0.5, 0.35),
-                    quickAction = PersonalityMath.blend(current?.flags?.quickAction?.toDouble(), 0.6, 0.35),
                     pendingTask = PersonalityMath.blend(current?.flags?.pendingTask?.toDouble(), 0.8, 0.35),
+                    reluctance = PersonalityMath.blend(current?.flags?.reluctance?.toDouble(), 0.3, 0.35),
                     meetingStress = PersonalityMath.blend(current?.flags?.meetingStress?.toDouble(), 0.5, 0.35),
-                    smartphoneDrift = PersonalityMath.blend(current?.flags?.smartphoneDrift?.toDouble(), 0.6, 0.35),
+                    rumination = PersonalityMath.blend(current?.flags?.rumination?.toDouble(), 0.3, 0.35),
+                    idleDrift = PersonalityMath.blend(current?.flags?.idleDrift?.toDouble(), 0.6, 0.35),
                     alcohol = PersonalityMath.blend(current?.flags?.alcohol?.toDouble(), 0.1, 0.35),
-                    hangover = PersonalityMath.blend(current?.flags?.hangover?.toDouble(), 0.05, 0.35)
+                    hyperfocus = PersonalityMath.blend(current?.flags?.hyperfocus?.toDouble(), 0.2, 0.35),
+                    noDrinkChoice = PersonalityMath.blend(current?.flags?.noDrinkChoice?.toDouble(), 0.2, 0.35),
+                    quickAction = PersonalityMath.blend(current?.flags?.quickAction?.toDouble(), 0.6, 0.35),
+                    breakdown = PersonalityMath.blend(current?.flags?.breakdown?.toDouble(), 0.5, 0.35),
+                    rest = PersonalityMath.blend(current?.flags?.rest?.toDouble(), 0.2, 0.35),
+                    exercised = PersonalityMath.blend(current?.flags?.exercised?.toDouble(), 0.4, 0.35),
+                    mindfulAction = PersonalityMath.blend(current?.flags?.mindfulAction?.toDouble(), 0.4, 0.35),
+                    insight = PersonalityMath.blend(current?.flags?.insight?.toDouble(), 0.3, 0.35),
+                    tomorrowBaton = PersonalityMath.blend(current?.flags?.tomorrowBaton?.toDouble(), 0.3, 0.35),
+                    consultConnect = PersonalityMath.blend(current?.flags?.consultConnect?.toDouble(), 0.7, 0.35)
                 )
             )
         }
@@ -48,17 +53,22 @@ internal class BaselineCalculator {
                 calm = recent.map { it.emotions.calm }.averageOr(1.6)
             ),
             flags = DailyFlagAverages(
-                exercised = recent.map { it.flags.exercised.toDouble() }.averageOr(0.4),
-                socialized = recent.map { it.flags.socialized.toDouble() }.averageOr(0.7),
-                delegate = recent.map { it.flags.delegate.toDouble() }.averageOr(0.4),
-                challenge = recent.map { it.flags.challenge.toDouble() }.averageOr(0.4),
-                breakdown = recent.map { it.flags.breakdown.toDouble() }.averageOr(0.5),
-                quickAction = recent.map { it.flags.quickAction.toDouble() }.averageOr(0.6),
                 pendingTask = recent.map { it.flags.pendingTask.toDouble() }.averageOr(0.8),
+                reluctance = recent.map { it.flags.reluctance.toDouble() }.averageOr(0.3),
                 meetingStress = recent.map { it.flags.meetingStress.toDouble() }.averageOr(0.5),
-                smartphoneDrift = recent.map { it.flags.smartphoneDrift.toDouble() }.averageOr(0.6),
+                rumination = recent.map { it.flags.rumination.toDouble() }.averageOr(0.3),
+                idleDrift = recent.map { it.flags.idleDrift.toDouble() }.averageOr(0.6),
                 alcohol = recent.map { it.flags.alcohol.toDouble() }.averageOr(0.1),
-                hangover = recent.map { it.flags.hangover.toDouble() }.averageOr(0.05)
+                hyperfocus = recent.map { it.flags.hyperfocus.toDouble() }.averageOr(0.2),
+                noDrinkChoice = recent.map { it.flags.noDrinkChoice.toDouble() }.averageOr(0.2),
+                quickAction = recent.map { it.flags.quickAction.toDouble() }.averageOr(0.6),
+                breakdown = recent.map { it.flags.breakdown.toDouble() }.averageOr(0.5),
+                rest = recent.map { it.flags.rest.toDouble() }.averageOr(0.2),
+                exercised = recent.map { it.flags.exercised.toDouble() }.averageOr(0.4),
+                mindfulAction = recent.map { it.flags.mindfulAction.toDouble() }.averageOr(0.4),
+                insight = recent.map { it.flags.insight.toDouble() }.averageOr(0.3),
+                tomorrowBaton = recent.map { it.flags.tomorrowBaton.toDouble() }.averageOr(0.3),
+                consultConnect = recent.map { it.flags.consultConnect.toDouble() }.averageOr(0.7)
             )
         )
     }

@@ -1,5 +1,7 @@
 package com.example.sample2.data
 
+import androidx.compose.ui.graphics.Color
+
 data class MessageV2(
     val id: String,
     val timestamp: Long,
@@ -32,21 +34,30 @@ data class EmotionMetrics(
     val calm: Int = 0
 )
 
-data class ActionFlags(
-    val exercised: Boolean = false,
-    val socialized: Boolean = false,
-    val delegate: Boolean = false,
-    val challenge: Boolean = false,
-    val breakdown: Boolean = false,
-    val instruct: Boolean = false,
-    val quickAction: Boolean = false,
+enum class ActionGroup(val label: String, val color: Color) {
+    LOAD("負荷", Color(0xFF8E24AA)),
+    DECLINE("崩れ", Color(0xFFE53935)),
+    RECOVER("立て直し", Color(0xFF43A047)),
+    FORWARD("前進", Color(0xFFFB8C00))
+}
 
-    // 負荷フラグ
+data class ActionFlags(
     val pendingTask: Boolean = false,
+    val reluctance: Boolean = false,
     val meetingStress: Boolean = false,
-    val smartphoneDrift: Boolean = false,
+    val rumination: Boolean = false,
+    val idleDrift: Boolean = false,
     val alcohol: Boolean = false,
-    val hangover: Boolean = false
+    val hyperfocus: Boolean = false,
+    val noDrinkChoice: Boolean = false,
+    val quickAction: Boolean = false,
+    val breakdown: Boolean = false,
+    val rest: Boolean = false,
+    val exercised: Boolean = false,
+    val mindfulAction: Boolean = false,
+    val insight: Boolean = false,
+    val tomorrowBaton: Boolean = false,
+    val consultConnect: Boolean = false
 )
 
 /**
@@ -141,70 +152,25 @@ enum class EmotionType(
 enum class ActionType(
     val key: String,
     val label: String,
+    val group: ActionGroup,
     private val matcher: (ActionFlags) -> Boolean
 ) {
-    EXERCISED(
-        key = "exercised",
-        label = "運動",
-        matcher = { it.exercised }
-    ),
-    SOCIALIZED(
-        key = "socialized",
-        label = "会話",
-        matcher = { it.socialized }
-    ),
-    DELEGATE(
-        key = "delegate",
-        label = "委譲",
-        matcher = { it.delegate }
-    ),
-    CHALLENGE(
-        key = "challenge",
-        label = "チャレンジ",
-        matcher = { it.challenge }
-    ),
-    BREAKDOWN(
-        key = "breakdown",
-        label = "細分化",
-        matcher = { it.breakdown }
-    ),
-    INSTRUCT(
-        key = "instruct",
-        label = "指示",
-        matcher = { it.instruct }
-    ),
-    QUICK_ACTION(
-        key = "quick_action",
-        label = "すぐやる",
-        matcher = { it.quickAction }
-    ),
-
-    // 負荷フラグ
-    PENDING_TASK(
-        key = "pending_task",
-        label = "未処理",
-        matcher = { it.pendingTask }
-    ),
-    MEETING_STRESS(
-        key = "meeting_stress",
-        label = "会議負荷",
-        matcher = { it.meetingStress }
-    ),
-    SMARTPHONE_DRIFT(
-        key = "smartphone_drift",
-        label = "スマホ逸脱",
-        matcher = { it.smartphoneDrift }
-    ),
-    ALCOHOL(
-        key = "alcohol",
-        label = "飲酒",
-        matcher = { it.alcohol }
-    ),
-    HANGOVER(
-        key = "hangover",
-        label = "体調不良",
-        matcher = { it.hangover }
-    );
+    PENDING_TASK("pending_task", "未処理", ActionGroup.LOAD, { it.pendingTask }),
+    RELUCTANCE("reluctance", "めんどくさい", ActionGroup.LOAD, { it.reluctance }),
+    MEETING_STRESS("meeting_stress", "会議ストレス", ActionGroup.LOAD, { it.meetingStress }),
+    RUMINATION("rumination", "ぐるぐる思考", ActionGroup.LOAD, { it.rumination }),
+    IDLE_DRIFT("idle_drift", "ダラダラ", ActionGroup.DECLINE, { it.idleDrift }),
+    ALCOHOL("alcohol", "飲酒・飲酒欲", ActionGroup.DECLINE, { it.alcohol }),
+    HYPERFOCUS("hyperfocus", "過集中", ActionGroup.DECLINE, { it.hyperfocus }),
+    NO_DRINK_CHOICE("no_drink_choice", "飲まない選択", ActionGroup.RECOVER, { it.noDrinkChoice }),
+    QUICK_ACTION("quick_action", "すぐやる", ActionGroup.RECOVER, { it.quickAction }),
+    BREAKDOWN("breakdown", "分解", ActionGroup.RECOVER, { it.breakdown }),
+    REST("rest", "休息", ActionGroup.RECOVER, { it.rest }),
+    EXERCISED("exercised", "運動", ActionGroup.RECOVER, { it.exercised }),
+    MINDFUL_ACTION("mindful_action", "意識して行動", ActionGroup.FORWARD, { it.mindfulAction }),
+    INSIGHT("insight", "気づき", ActionGroup.FORWARD, { it.insight }),
+    TOMORROW_BATON("tomorrow_baton", "明日のバトン", ActionGroup.FORWARD, { it.tomorrowBaton }),
+    CONSULT_CONNECT("consult_connect", "相談・つながり", ActionGroup.FORWARD, { it.consultConnect });
 
     fun matches(flags: ActionFlags): Boolean = matcher(flags)
 }

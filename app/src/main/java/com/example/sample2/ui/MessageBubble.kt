@@ -882,7 +882,7 @@ private fun CollapsibleActionTypeEditor(
     onSelected: (ActionType) -> Unit,
     onClear: () -> Unit
 ) {
-    val currentType = selectedType ?: ActionType.CHALLENGE
+    val currentType = selectedType ?: ActionType.MINDFUL_ACTION
     val selectedSpec = currentType.toUiSpec()
     val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron_rotation")
 
@@ -962,21 +962,8 @@ private fun ActionTypeGrid(
     selectedType: ActionType?,
     onSelected: (ActionType) -> Unit
 ) {
-    val columnsPerRow = 3
-    val allActionTypes = listOf(
-        ActionType.EXERCISED,
-        ActionType.SOCIALIZED,
-        ActionType.DELEGATE,
-        ActionType.CHALLENGE,
-        ActionType.BREAKDOWN,
-        ActionType.INSTRUCT,
-        ActionType.QUICK_ACTION,
-        ActionType.PENDING_TASK,
-        ActionType.MEETING_STRESS,
-        ActionType.SMARTPHONE_DRIFT,
-        ActionType.ALCOHOL,
-        ActionType.HANGOVER
-    )
+    val columnsPerRow = 4
+    val allActionTypes = ActionType.entries.toList()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1240,19 +1227,22 @@ private fun EmotionMetrics.withScore(type: EmotionType, score: Int): EmotionMetr
 
 private fun ActionFlags.toggle(type: ActionType): ActionFlags {
     return when (type) {
-        ActionType.EXERCISED -> copy(exercised = !exercised)
-        ActionType.SOCIALIZED -> copy(socialized = !socialized)
-        ActionType.DELEGATE -> copy(delegate = !delegate)
-        ActionType.CHALLENGE -> copy(challenge = !challenge)
-        ActionType.BREAKDOWN -> copy(breakdown = !breakdown)
-        ActionType.INSTRUCT -> copy(instruct = !instruct)
-        ActionType.QUICK_ACTION -> copy(quickAction = !quickAction)
-
         ActionType.PENDING_TASK -> copy(pendingTask = !pendingTask)
+        ActionType.RELUCTANCE -> copy(reluctance = !reluctance)
         ActionType.MEETING_STRESS -> copy(meetingStress = !meetingStress)
-        ActionType.SMARTPHONE_DRIFT -> copy(smartphoneDrift = !smartphoneDrift)
+        ActionType.RUMINATION -> copy(rumination = !rumination)
+        ActionType.IDLE_DRIFT -> copy(idleDrift = !idleDrift)
         ActionType.ALCOHOL -> copy(alcohol = !alcohol)
-        ActionType.HANGOVER -> copy(hangover = !hangover)
+        ActionType.HYPERFOCUS -> copy(hyperfocus = !hyperfocus)
+        ActionType.NO_DRINK_CHOICE -> copy(noDrinkChoice = !noDrinkChoice)
+        ActionType.QUICK_ACTION -> copy(quickAction = !quickAction)
+        ActionType.BREAKDOWN -> copy(breakdown = !breakdown)
+        ActionType.REST -> copy(rest = !rest)
+        ActionType.EXERCISED -> copy(exercised = !exercised)
+        ActionType.MINDFUL_ACTION -> copy(mindfulAction = !mindfulAction)
+        ActionType.INSIGHT -> copy(insight = !insight)
+        ActionType.TOMORROW_BATON -> copy(tomorrowBaton = !tomorrowBaton)
+        ActionType.CONSULT_CONNECT -> copy(consultConnect = !consultConnect)
     }
 }
 

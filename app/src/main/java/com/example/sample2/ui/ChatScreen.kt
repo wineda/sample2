@@ -275,9 +275,9 @@ fun ChatRoute() {
         }
     }
 
-    val workActionSummary by remember {
+    val forwardActionSummary by remember {
         derivedStateOf {
-            WorkActionSummary.fromMessages(state.messages.filter { it.isToday() })
+            ForwardActionSummary.fromMessages(state.messages.filter { it.isToday() })
         }
     }
 
@@ -595,8 +595,8 @@ fun ChatRoute() {
                                 AnimatedVisibility(
                                     visible = workModeEnabled
                                 ) {
-                                    WorkActionSummaryRow(
-                                        summary = workActionSummary,
+                                    ForwardActionSummaryRow(
+                                        summary = forwardActionSummary,
                                         modifier = Modifier.padding(
                                             start = 12.dp,
                                             end = 12.dp,
@@ -844,37 +844,31 @@ private fun JournalCompactMetaRow(
     )
 }
 
-private data class WorkActionSummary(
-    val delegate: Int,
-    val challenge: Int,
-    val breakdown: Int,
-    val instruct: Int,
-    val quickAction: Int
+private data class ForwardActionSummary(
+    val mindfulAction: Int,
+    val insight: Int,
+    val tomorrowBaton: Int,
+    val consultConnect: Int
 ) {
     companion object {
-        fun fromMessages(messages: List<MessageV2>): WorkActionSummary {
-            return WorkActionSummary(
-                delegate = messages.count { it.flags.delegate },
-                challenge = messages.count { it.flags.challenge },
-                breakdown = messages.count { it.flags.breakdown },
-                instruct = messages.count { it.flags.instruct },
-                quickAction = messages.count { it.flags.quickAction }
+        fun fromMessages(messages: List<MessageV2>): ForwardActionSummary {
+            return ForwardActionSummary(
+                mindfulAction = messages.count { it.flags.mindfulAction },
+                insight = messages.count { it.flags.insight },
+                tomorrowBaton = messages.count { it.flags.tomorrowBaton },
+                consultConnect = messages.count { it.flags.consultConnect }
             )
         }
     }
 }
 
-private fun MessageV2.hasWorkAction(): Boolean {
-    return flags.delegate ||
-            flags.challenge ||
-            flags.breakdown ||
-            flags.instruct ||
-            flags.quickAction
+private fun MessageV2.hasForwardAction(): Boolean {
+    return flags.mindfulAction || flags.insight || flags.tomorrowBaton || flags.consultConnect
 }
 
 @Composable
-private fun WorkActionSummaryRow(
-    summary: WorkActionSummary,
+private fun ForwardActionSummaryRow(
+    summary: ForwardActionSummary,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -885,24 +879,20 @@ private fun WorkActionSummaryRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         WorkActionSummaryItem(
-            actionType = ActionType.DELEGATE,
-            count = summary.delegate
+            actionType = ActionType.MINDFUL_ACTION,
+            count = summary.mindfulAction
         )
         WorkActionSummaryItem(
-            actionType = ActionType.CHALLENGE,
-            count = summary.challenge
+            actionType = ActionType.INSIGHT,
+            count = summary.insight
         )
         WorkActionSummaryItem(
-            actionType = ActionType.BREAKDOWN,
-            count = summary.breakdown
+            actionType = ActionType.TOMORROW_BATON,
+            count = summary.tomorrowBaton
         )
         WorkActionSummaryItem(
-            actionType = ActionType.INSTRUCT,
-            count = summary.instruct
-        )
-        WorkActionSummaryItem(
-            actionType = ActionType.QUICK_ACTION,
-            count = summary.quickAction
+            actionType = ActionType.CONSULT_CONNECT,
+            count = summary.consultConnect
         )
     }
 }

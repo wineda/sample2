@@ -24,7 +24,7 @@ object JournalJsonStorage {
     private const val DAILY_REFLECTIONS_FILE_NAME = "daily_reflections.json"
 
     // daily_reflections を追加
-    private const val BACKUP_VERSION = 5
+    private const val BACKUP_VERSION = 6
 
     private val DATE_REGEX = Regex("""\d{4}-\d{2}-\d{2}""")
 
@@ -289,20 +289,22 @@ object JournalJsonStorage {
 
     private fun parseActionFlags(obj: JSONObject): ActionFlags {
         return ActionFlags(
-            exercised = obj.optBoolean("exercised", false),
-            socialized = obj.optBoolean("socialized", false),
-            delegate = obj.optBoolean("delegate", false),
-            challenge = obj.optBoolean("challenge", obj.optBoolean("intent", false)),
-            breakdown = obj.optBoolean("breakdown", false),
-            instruct = obj.optBoolean("instruct", false),
-
-            // 旧JSONに存在しない項目は false 既定で後方互換
             pendingTask = obj.optBoolean("pendingTask", false),
-            quickAction = obj.optBoolean("quickAction", false),
+            reluctance = obj.optBoolean("reluctance", false),
             meetingStress = obj.optBoolean("meetingStress", false),
-            smartphoneDrift = obj.optBoolean("smartphoneDrift", false),
+            rumination = obj.optBoolean("rumination", false),
+            idleDrift = obj.optBoolean("idleDrift", obj.optBoolean("smartphoneDrift", false)),
             alcohol = obj.optBoolean("alcohol", false),
-            hangover = obj.optBoolean("hangover", false)
+            hyperfocus = obj.optBoolean("hyperfocus", false),
+            noDrinkChoice = obj.optBoolean("noDrinkChoice", false),
+            quickAction = obj.optBoolean("quickAction", false),
+            breakdown = obj.optBoolean("breakdown", false),
+            rest = obj.optBoolean("rest", obj.optBoolean("hangover", false)),
+            exercised = obj.optBoolean("exercised", false),
+            mindfulAction = obj.optBoolean("mindfulAction", obj.optBoolean("challenge", obj.optBoolean("intent", false))),
+            insight = obj.optBoolean("insight", obj.optBoolean("instruct", false)),
+            tomorrowBaton = obj.optBoolean("tomorrowBaton", obj.optBoolean("delegate", false)),
+            consultConnect = obj.optBoolean("consultConnect", obj.optBoolean("socialized", false))
         )
     }
 
@@ -370,20 +372,22 @@ object JournalJsonStorage {
 
     private fun ActionFlags.toJson(): JSONObject {
         return JSONObject().apply {
-            put("exercised", exercised)
-            put("socialized", socialized)
-            put("delegate", delegate)
-            put("challenge", challenge)
-            put("intent", challenge)
-            put("breakdown", breakdown)
-            put("instruct", instruct)
-
             put("pendingTask", pendingTask)
-            put("quickAction", quickAction)
+            put("reluctance", reluctance)
             put("meetingStress", meetingStress)
-            put("smartphoneDrift", smartphoneDrift)
+            put("rumination", rumination)
+            put("idleDrift", idleDrift)
             put("alcohol", alcohol)
-            put("hangover", hangover)
+            put("hyperfocus", hyperfocus)
+            put("noDrinkChoice", noDrinkChoice)
+            put("quickAction", quickAction)
+            put("breakdown", breakdown)
+            put("rest", rest)
+            put("exercised", exercised)
+            put("mindfulAction", mindfulAction)
+            put("insight", insight)
+            put("tomorrowBaton", tomorrowBaton)
+            put("consultConnect", consultConnect)
         }
     }
 

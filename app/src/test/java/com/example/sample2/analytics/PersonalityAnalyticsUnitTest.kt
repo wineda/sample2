@@ -77,15 +77,21 @@ class PersonalityAnalyticsUnitTest {
             emotions = DailyEmotionAverages(anxiety = 3.0, angry = 0.0, sad = 1.0, happy = 1.0, calm = 2.0),
             flags = DailyFlagCounts(
                 exercised = 1,
-                socialized = 2,
-                delegate = 0,
-                intent = 1,
+                consultConnect = 2,
+                tomorrowBaton = 0,
+                mindfulAction = 1,
                 quickAction = 3,
                 pendingTask = 0,
                 meetingStress = 0,
-                smartphoneDrift = 1,
+                idleDrift = 1,
                 alcohol = 0,
-                hangover = 0
+                rest = 0,
+                reluctance = 0,
+                rumination = 0,
+                hyperfocus = 0,
+                noDrinkChoice = 0,
+                breakdown = 0,
+                insight = 0
             )
         )
 
@@ -125,15 +131,21 @@ class PersonalityAnalyticsUnitTest {
             emotions = DailyEmotionAverages(anxiety = 1.0, angry = 0.0, sad = 0.0, happy = 1.0, calm = 1.0),
             flags = DailyFlagCounts(
                 exercised = 0,
-                socialized = 0,
-                delegate = 0,
-                intent = 0,
+                consultConnect = 0,
+                tomorrowBaton = 0,
+                mindfulAction = 0,
                 quickAction = 0,
                 pendingTask = 3,
                 meetingStress = 0,
-                smartphoneDrift = 0,
+                idleDrift = 0,
                 alcohol = 0,
-                hangover = 0
+                rest = 0,
+                reluctance = 0,
+                rumination = 0,
+                hyperfocus = 0,
+                noDrinkChoice = 0,
+                breakdown = 0,
+                insight = 0
             )
         )
         val withQuickAction = base.copy(flags = base.flags.copy(quickAction = 3))
@@ -153,7 +165,7 @@ class PersonalityAnalyticsUnitTest {
             sleepQuality = null,
             steps = null,
             emotions = DailyEmotionAverages(anxiety = 2.0, angry = 1.0, sad = 2.0, happy = 0.0, calm = 0.0),
-            flags = DailyFlagCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            flags = DailyFlagCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         )
         val actionOnly = DailyStructuredFeatures(
             sleepHours = null,
@@ -162,15 +174,21 @@ class PersonalityAnalyticsUnitTest {
             emotions = DailyEmotionAverages(0.0, 0.0, 0.0, 0.0, 0.0),
             flags = DailyFlagCounts(
                 exercised = 1,
-                socialized = 1,
-                delegate = 0,
-                intent = 1,
+                consultConnect = 1,
+                tomorrowBaton = 0,
+                mindfulAction = 1,
                 quickAction = 2,
                 pendingTask = 0,
                 meetingStress = 0,
-                smartphoneDrift = 0,
+                idleDrift = 0,
                 alcohol = 0,
-                hangover = 0
+                rest = 0,
+                reluctance = 0,
+                rumination = 0,
+                hyperfocus = 0,
+                noDrinkChoice = 0,
+                breakdown = 0,
+                insight = 0
             )
         )
 
@@ -339,8 +357,8 @@ class PersonalityAnalyticsUnitTest {
             calm = calm
         ),
         flags = ActionFlags(
-            quickAction = quickAction,
-            pendingTask = pendingTask
+                quickAction = quickAction,
+                pendingTask = pendingTask
         )
     )
 
@@ -360,16 +378,22 @@ class PersonalityAnalyticsUnitTest {
             calm = 1.0
         ),
         flags = DailyFlagCounts(
-            exercised = 0,
-            socialized = 0,
-            delegate = 0,
-            intent = 0,
-            quickAction = quickAction,
-            pendingTask = pendingTask,
-            meetingStress = 0,
-            smartphoneDrift = 0,
-            alcohol = 0,
-            hangover = 0
-        )
+                exercised = 0,
+                consultConnect = 0,
+                tomorrowBaton = 0,
+                mindfulAction = 0,
+                quickAction = quickAction,
+                pendingTask = pendingTask,
+                meetingStress = 0,
+                idleDrift = 0,
+                alcohol = 0,
+                rest = 0,
+                reluctance = 0,
+                rumination = 0,
+                hyperfocus = 0,
+                noDrinkChoice = 0,
+                breakdown = 0,
+                insight = 0
+            )
     )
 }

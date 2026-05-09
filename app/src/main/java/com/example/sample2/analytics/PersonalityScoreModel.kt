@@ -17,17 +17,22 @@ data class DailyEmotionAverages(
 )
 
 data class DailyFlagCounts(
-    val exercised: Int,
-    val socialized: Int,
-    val delegate: Int,
-    val challenge: Int,
-    val breakdown: Int,
-    val quickAction: Int,
     val pendingTask: Int,
+    val reluctance: Int,
     val meetingStress: Int,
-    val smartphoneDrift: Int,
+    val rumination: Int,
+    val idleDrift: Int,
     val alcohol: Int,
-    val hangover: Int
+    val hyperfocus: Int,
+    val noDrinkChoice: Int,
+    val quickAction: Int,
+    val breakdown: Int,
+    val rest: Int,
+    val exercised: Int,
+    val mindfulAction: Int,
+    val insight: Int,
+    val tomorrowBaton: Int,
+    val consultConnect: Int
 )
 
 data class DailyStructuredFeatures(
@@ -73,17 +78,22 @@ data class WeeklyPersonalityScore(
 )
 
 data class DailyFlagAverages(
-    val exercised: Double,
-    val socialized: Double,
-    val delegate: Double,
-    val challenge: Double,
-    val breakdown: Double,
-    val quickAction: Double,
     val pendingTask: Double,
+    val reluctance: Double,
     val meetingStress: Double,
-    val smartphoneDrift: Double,
+    val rumination: Double,
+    val idleDrift: Double,
     val alcohol: Double,
-    val hangover: Double
+    val hyperfocus: Double,
+    val noDrinkChoice: Double,
+    val quickAction: Double,
+    val breakdown: Double,
+    val rest: Double,
+    val exercised: Double,
+    val mindfulAction: Double,
+    val insight: Double,
+    val tomorrowBaton: Double,
+    val consultConnect: Double
 )
 
 data class PersonalBaseline(
