@@ -57,8 +57,6 @@ fun ThreadBody(
             ThreadChildRow(
                 child = child,
                 parentTimestamp = parent.timestamp,
-                isFirst = index == 0,
-                isLast = index == children.lastIndex,
                 onLongPress = onLongPressChild,
             )
         }
