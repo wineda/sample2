@@ -24,7 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
@@ -76,7 +75,7 @@ import java.util.Locale
  * - Weekly Overview: 曜日別スタックバー + 4指標サマリー。
  * - 日々の記録: 7日分の DayCard を新しい順で表示。
  *   - 4色メーター: wins / difficulties / insights / summary の入力有無を表示。
- *   - 入力済み項目: 読み取り表示 + 鉛筆アイコン → タップで TextField 展開。
+ *   - 入力済み項目: 読み取り表示の行全体タップで TextField 展開。
  *   - 空欄項目: 「+ 記録を追加」プレースホルダ → タップで TextField 展開。
  *   - フォーカスアウトで自動保存（差分があれば upsert）。
  * - tomorrowFirstAction はこの画面では表示・編集しない（既存データは保持）。
@@ -797,8 +796,9 @@ private fun ReflectionFieldRow(
     val accentColor = fieldColor(field)
     val isEmpty = text.isBlank()
 
-    val rowModifier = if (isEmpty && !isEditing) {
-        // 空欄行は全体タップで編集モード（誤タップしても損失なし）
+    // 編集中以外は、行全体タップで編集モードに入れるようにする。
+    // 鉛筆アイコンは廃止し、テキストエリア全体をタップ領域にする。
+    val rowModifier = if (!isEditing) {
         Modifier.clickable { onStartEdit() }
     } else {
         Modifier
@@ -853,24 +853,6 @@ private fun ReflectionFieldRow(
                         color = MaterialTheme.appColors.inkPrimary,
                         lineHeight = 20.sp
                     )
-                )
-            }
-        }
-
-        if (!isEmpty && !isEditing) {
-            Spacer(Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .clickable(onClick = onStartEdit),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Edit,
-                    contentDescription = "${field.label}を編集",
-                    tint = MaterialTheme.appColors.inkTertiary,
-                    modifier = Modifier.size(16.dp)
                 )
             }
         }
