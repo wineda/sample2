@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Schedule
 import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.ActionType
@@ -477,6 +478,18 @@ fun MessageActionOverlay(
                 )
                 HorizontalDivider(color = MaterialTheme.appColors.dividerColor)
 
+                DateRow(
+                    timestamp = editingTimestamp,
+                    onClick = {
+                        showAppDatePickerDialog(
+                            context = context,
+                            initialTimestamp = editingTimestamp,
+                            onSelected = { editingTimestamp = it }
+                        )
+                    }
+                )
+                HorizontalDivider(color = MaterialTheme.appColors.dividerColor)
+
                 TimeRow(
                     timestamp = editingTimestamp,
                     onClick = {
@@ -540,16 +553,18 @@ fun MessageActionOverlay(
 }
 
 private fun formatEditorTime(timestamp: Long): String {
+    return SimpleDateFormat("HH:mm", Locale.JAPANESE).format(Date(timestamp))
+}
+
+private fun formatEditorDate(timestamp: Long): String {
     val selected = Calendar.getInstance().apply { timeInMillis = timestamp }
     val now = Calendar.getInstance()
     val isToday = selected.get(Calendar.YEAR) == now.get(Calendar.YEAR) &&
             selected.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR)
-    val hhmm = SimpleDateFormat("HH:mm", Locale.JAPANESE).format(Date(timestamp))
     return if (isToday) {
-        "今日 $hhmm"
+        "今日"
     } else {
-        val md = SimpleDateFormat("M/d", Locale.JAPANESE).format(Date(timestamp))
-        "$md $hhmm"
+        SimpleDateFormat("yyyy/MM/dd(E)", Locale.JAPANESE).format(Date(timestamp))
     }
 }
 
@@ -613,6 +628,38 @@ private fun TextBodySection(
                 }
                 innerTextField()
             }
+        )
+    }
+}
+
+@Composable
+private fun DateRow(timestamp: Long, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.CalendarMonth,
+            contentDescription = null,
+            tint = MaterialTheme.appColors.labelGray,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text("日付", color = MaterialTheme.appColors.labelGray, fontSize = 14.sp)
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = formatEditorDate(timestamp),
+            color = MaterialTheme.appColors.labelGray,
+            fontSize = 13.sp
+        )
+        Icon(
+            imageVector = Icons.Default.ExpandMore,
+            contentDescription = null,
+            tint = MaterialTheme.appColors.labelGray,
+            modifier = Modifier.size(18.dp)
         )
     }
 }
