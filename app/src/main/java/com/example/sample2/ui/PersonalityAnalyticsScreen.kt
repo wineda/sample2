@@ -79,7 +79,6 @@ import android.graphics.Paint
 import com.example.sample2.analytics.DailyPersonalityScore
 import com.example.sample2.analytics.PersonalityScoreModel
 import com.example.sample2.analytics.PersonalityState
-import com.example.sample2.data.ActionGroup
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.DailyRecord
 import com.example.sample2.data.MessageV2
@@ -340,9 +339,13 @@ fun PersonalityAnalyticsScreen(
     }
 
     val targetActionTypes = remember {
-        ActionType.entries.filter {
-            it.group == ActionGroup.FORWARD || it.group == ActionGroup.RECOVER
-        }
+        listOf(
+            ActionType.QUICK_ACTION,
+            ActionType.BREAKDOWN,
+            ActionType.MINDFUL_ACTION,
+            ActionType.CONSULT_CONNECT,
+            ActionType.INSIGHT,
+        )
     }
 
     val chartDates = remember(allRawScoresDesc, selectedPeriod) {
