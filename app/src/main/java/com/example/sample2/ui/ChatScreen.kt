@@ -104,6 +104,13 @@ private enum class JournalScreenMode {
     Reflection
 }
 
+private data class DrawerStats(
+    val messageCount: Int,
+    val dailyRecordCount: Int,
+    val dailyReflectionCount: Int,
+    val dataSizeBytes: Long
+)
+
 @Composable
 fun ChatScreen() {
     ChatRoute()
@@ -184,6 +191,25 @@ fun ChatRoute() {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val drawerStats by remember(state.messages.size) {
+        derivedStateOf {
+            val records = state.loadDailyRecords()
+            val reflections = state.loadDailyReflections()
+            val dataSize = listOf(
+                "messages_v2.json",
+                "daily_records.json",
+                "daily_reflections.json",
+            ).sumOf { name ->
+                File(context.filesDir, name).takeIf { it.exists() }?.length() ?: 0L
+            }
+            DrawerStats(
+                messageCount = state.messages.size,
+                dailyRecordCount = records.size,
+                dailyReflectionCount = reflections.size,
+                dataSizeBytes = dataSize
+            )
+        }
+    }
 
     fun switchToJournal() {
         showDailyRecordScreen = false
@@ -376,6 +402,10 @@ fun ChatRoute() {
                     gesturesEnabled = false,
                     drawerContent = {
                         JournalDrawerContent(
+                            messageCount = drawerStats.messageCount,
+                            dailyRecordCount = drawerStats.dailyRecordCount,
+                            dailyReflectionCount = drawerStats.dailyReflectionCount,
+                            dataSizeBytes = drawerStats.dataSizeBytes,
                             onClose = {
                                 scope.launch { drawerState.close() }
                             },
