@@ -13,6 +13,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -53,7 +55,6 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -694,7 +695,7 @@ private fun JournalBottomModeBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp, bottom = Spacing.lg)
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = Spacing.sm),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             JournalBottomTab(
@@ -742,29 +743,39 @@ private fun JournalBottomTab(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        TextButton(onClick = onClick) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = text,
-                    tint = if (selected) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.inkTertiary,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (selected) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.inkTertiary,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-                )
-            }
-        }
+    val interactionSource = remember { MutableInteractionSource() }
+    val contentColor = if (selected) SemanticColors.InfoMain else MaterialTheme.appColors.inkTertiary
+
+    Column(
+        modifier = Modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
+            .padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Box(
             modifier = Modifier
-                .height(2.dp)
-                .size(width = 14.dp, height = 2.dp)
-                .clip(AppShapeTokens.Tech)
-                .background(if (selected) SemanticColors.InfoMain else Color.Transparent)
+                .size(width = 56.dp, height = 32.dp)
+                .clip(AppShapeTokens.Pill)
+                .background(if (selected) SemanticColors.InfoSoft else Color.Transparent),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = text,
+                tint = contentColor,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(Spacing.xs))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = contentColor,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
         )
     }
 }
