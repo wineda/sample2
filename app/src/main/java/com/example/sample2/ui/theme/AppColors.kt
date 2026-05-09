@@ -43,6 +43,14 @@ data class AppColorScheme(
     // 維持: 用途が明確で誤用がないトークン
     val borderStrong: Color,
     val scrimDim: Color,
+
+    // メモ編集画面（フラットレイアウト）用トークン
+    val backgroundFlat: Color,
+    val dividerColor: Color,
+    val labelGray: Color,
+    val iconActiveBackground: Color,
+    val buttonSurface: Color,
+    val buttonPrimary: Color,
 )
 
 val LightAppColors = AppColorScheme(
@@ -61,6 +69,13 @@ val LightAppColors = AppColorScheme(
 
     borderStrong = Color(0xFFB8C0CC),
     scrimDim = Color(0x52000000),
+
+    backgroundFlat = Color(0xFFF7F6F3),
+    dividerColor = Color(0x14000000),
+    labelGray = Color(0xFFAAAAAA),
+    iconActiveBackground = Color(0x0F000000),
+    buttonSurface = Color(0x0F000000),
+    buttonPrimary = Color(0xFF1A1A1A),
 )
 
 val DarkAppColors = AppColorScheme(
@@ -79,6 +94,13 @@ val DarkAppColors = AppColorScheme(
 
     borderStrong = Color(0xFF5A6068),
     scrimDim = Color(0x7A000000),
+
+    backgroundFlat = Color(0xFFF7F6F3),
+    dividerColor = Color(0x14000000),
+    labelGray = Color(0xFFAAAAAA),
+    iconActiveBackground = Color(0x0F000000),
+    buttonSurface = Color(0x0F000000),
+    buttonPrimary = Color(0xFF1A1A1A),
 )
 
 val LocalAppColors = staticCompositionLocalOf { LightAppColors }

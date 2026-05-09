@@ -8,6 +8,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
@@ -24,6 +27,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -36,7 +40,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -60,14 +66,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Schedule
 import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.EmotionMetrics
@@ -379,7 +391,6 @@ fun MessageActionOverlay(
     var editingEmotions by remember(message.id) { mutableStateOf(message.emotions) }
     var editingFlags by remember(message.id) { mutableStateOf(message.flags) }
     var selectedActionType by remember(message.id) { mutableStateOf(message.flags.firstEnabledActionOrNull()) }
-    var isActionTypeExpanded by remember(message.id) { mutableStateOf(false) }
     var showActionMenu by remember(message.id) { mutableStateOf(false) }
     var showDeleteConfirm by remember(message.id) { mutableStateOf(false) }
 
@@ -388,280 +399,103 @@ fun MessageActionOverlay(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val textFocusRequester = remember { FocusRequester() }
-    var isTextFocused by remember { mutableStateOf(false) }
 
     LaunchedEffect(message.id, mode) {
         if (mode == EditorMode.CREATE) textFocusRequester.requestFocus()
+    }
+
+    fun saveAndClose() {
+        val payload = message.copy(
+            text = editingText.text,
+            timestamp = editingTimestamp,
+            emotions = editingEmotions,
+            flags = editingFlags
+        )
+        if (mode == EditorMode.CREATE) onCreate(payload) else onUpdate(payload)
+        onDismiss()
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.appColors.scrimDim)
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                onDismiss()
-            }
     ) {
-        Column(
+        Scaffold(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 72.dp, bottom = 16.dp)
-                .verticalScroll(scrollState)
+                .fillMaxSize()
                 .clickable(
                     indication = null,
                     interactionSource = blockClicks
                 ) {
                     // 中身タップ時は閉じない
-                }
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.5.dp, if (isTextFocused) MaterialTheme.appColors.inkPrimary else MaterialTheme.appColors.dividerStrong),
-                tonalElevation = 0.dp,
-                shadowElevation = 3.dp
-            ) {
-                Column(modifier = Modifier.padding(vertical = Spacing.md, horizontal = 16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = if (mode == EditorMode.CREATE) "新しい記録" else "記録を編集",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = if (mode == EditorMode.CREATE) "NEW" else "EDIT",
-                            style = MonoTypography.Micro,
-                            color = MaterialTheme.appColors.inkSecondary
-                        )
+                },
+            containerColor = MaterialTheme.appColors.backgroundFlat,
+            bottomBar = {
+                EditFooter(
+                    showMore = mode == EditorMode.EDIT,
+                    menuExpanded = showActionMenu,
+                    onMenuDismiss = { showActionMenu = false },
+                    onClose = onDismiss,
+                    onSave = { saveAndClose() },
+                    onMore = { showActionMenu = true },
+                    onDelete = {
+                        showActionMenu = false
+                        showDeleteConfirm = true
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "本文",
-                        style = MonoTypography.Micro,
-                        color = MaterialTheme.appColors.inkTertiary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    BasicTextField(
-                        value = editingText,
-                        onValueChange = { editingText = it },
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(
-                            lineHeight = 21.sp,
-                            color = MaterialTheme.appColors.inkPrimary
-                        ),
-                        maxLines = 5,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(textFocusRequester)
-                            .onFocusChanged { isTextFocused = it.isFocused },
-                        decorationBox = { innerTextField ->
-                            if (editingText.text.isBlank()) {
-                                Text(
-                                    text = "思ったことをひとこと…",
-                                    color = MaterialTheme.appColors.inkSecondary,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            innerTextField()
-                        }
-                    )
-                }
+                )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
+        ) { innerPadding ->
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(innerPadding)
+            ) {
+                EditTopBar(mode = mode)
+                HorizontalDivider(color = MaterialTheme.appColors.dividerColor)
+
+                TextBodySection(
+                    text = editingText,
+                    onTextChange = { editingText = it },
+                    focusRequester = textFocusRequester,
+                    onFocusChanged = { }
+                )
+                HorizontalDivider(color = MaterialTheme.appColors.dividerColor)
+
+                TimeRow(
+                    timestamp = editingTimestamp,
+                    onClick = {
                         showAppTimePickerDialog(
                             context = context,
                             initialTimestamp = editingTimestamp,
                             onSelected = { editingTimestamp = it }
                         )
+                    }
+                )
+                HorizontalDivider(color = MaterialTheme.appColors.dividerColor)
+
+                FlagSection(
+                    selectedType = selectedActionType,
+                    onAddClick = {
+                        focusManager.clearFocus(force = true)
                     },
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(MaterialTheme.shapes.small)
-                            .background(MaterialTheme.appColors.surfaceInactive),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("🕒", color = MaterialTheme.appColors.inkTertiary, fontSize = 12.sp)
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "時刻",
-                        style = MonoTypography.Micro,
-                        color = MaterialTheme.appColors.inkTertiary,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        text = formatEditorTime(editingTimestamp),
-                        style = MonoTypography.Body.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.02).sp
-                        ),
-                        color = MaterialTheme.appColors.inkPrimary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("⌄", color = MaterialTheme.appColors.inkDisabled, fontSize = 14.sp)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                tonalElevation = 2.dp,
-                shadowElevation = 6.dp
-            ) {
-                if (selectedActionType == null) {
-                    Column {
-                        AddEmotionButton(
-                            text = "種類を追加",
-                            onClick = {
-                                focusManager.clearFocus(force = true)
-                                isActionTypeExpanded = !isActionTypeExpanded
-                            }
-                        )
-                        if (isActionTypeExpanded) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Surface(color = MaterialTheme.colorScheme.surface) {
-                                ActionTypeGrid(
-                                    selectedType = null,
-                                    onSelected = { selected ->
-                                        selectedActionType = selected
-                                        editingFlags = ActionFlags().selectOnly(selected)
-                                        isActionTypeExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    CollapsibleActionTypeEditor(
-                        selectedType = selectedActionType,
-                        expanded = isActionTypeExpanded,
-                        onToggleExpanded = {
-                            focusManager.clearFocus(force = true)
-                            isActionTypeExpanded = !isActionTypeExpanded
-                        },
-                        onSelected = { selected ->
-                            selectedActionType = selected
-                            editingFlags = ActionFlags().selectOnly(selected)
-                            isActionTypeExpanded = false
-                        },
-                        onClear = {
+                    onSelected = { selected ->
+                        focusManager.clearFocus(force = true)
+                        if (selected == selectedActionType) {
                             selectedActionType = null
                             editingFlags = ActionFlags()
-                            isActionTypeExpanded = false
+                        } else {
+                            selectedActionType = selected
+                            editingFlags = ActionFlags().selectOnly(selected)
                         }
-                    )
-                }
-            }
+                    }
+                )
+                HorizontalDivider(color = MaterialTheme.appColors.dividerColor)
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                tonalElevation = 2.dp,
-                shadowElevation = 6.dp
-            ) {
                 AdditiveEmotionEditor(
                     emotions = editingEmotions,
                     onEmotionsChanged = { editingEmotions = it }
                 )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                tonalElevation = 2.dp,
-                shadowElevation = 6.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.appColors.inkSecondary),
-                        onClick = {
-                            onDismiss()
-                        }
-                    ) {
-                        Text("閉じる", style = MaterialTheme.typography.titleSmall)
-                    }
-
-                    Button(
-                        modifier = Modifier.weight(1.6f),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.appColors.inkPrimary),
-                        onClick = {
-                            val payload = message.copy(
-                                text = editingText.text,
-                                timestamp = editingTimestamp,
-                                emotions = editingEmotions,
-                                flags = editingFlags
-                            )
-                            if (mode == EditorMode.CREATE) onCreate(payload) else onUpdate(payload)
-                            onDismiss()
-                        }
-                    ) {
-                        Text("保存", color = MaterialTheme.colorScheme.surface, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                    }
-
-                    if (mode == EditorMode.EDIT) Box {
-                        IconButton(
-                            onClick = { showActionMenu = true },
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surface)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = "more",
-                                tint = MaterialTheme.appColors.inkSecondary
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showActionMenu,
-                            onDismissRequest = { showActionMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("削除", color = MaterialTheme.colorScheme.error) },
-                                onClick = {
-                                    showActionMenu = false
-                                    showDeleteConfirm = true
-                                }
-                            )
-                        }
-                    }
-                }
             }
         }
     }
@@ -690,6 +524,262 @@ private fun formatEditorTime(timestamp: Long): String {
     } else {
         val md = SimpleDateFormat("M/d", Locale.JAPANESE).format(Date(timestamp))
         "$md $hhmm"
+    }
+}
+
+
+@Composable
+private fun EditTopBar(mode: EditorMode) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (mode == EditorMode.CREATE) "新しい記録" else "記録を編集",
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.02).em
+            )
+        )
+        Text(
+            text = if (mode == EditorMode.CREATE) "NEW" else "EDIT",
+            color = MaterialTheme.appColors.labelGray,
+            fontSize = 13.sp
+        )
+    }
+}
+
+@Composable
+private fun TextBodySection(
+    text: TextFieldValue,
+    onTextChange: (TextFieldValue) -> Unit,
+    focusRequester: FocusRequester,
+    onFocusChanged: (Boolean) -> Unit
+) {
+    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+        Text(
+            text = "本文",
+            fontSize = 11.sp,
+            color = MaterialTheme.appColors.labelGray,
+            letterSpacing = 0.06.em
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        BasicTextField(
+            value = text,
+            onValueChange = onTextChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester)
+                .onFocusChanged { onFocusChanged(it.isFocused) },
+            textStyle = TextStyle(
+                fontSize = 15.sp,
+                lineHeight = 24.sp,
+                color = Color(0xFF1A1A1A)
+            ),
+            maxLines = 5,
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Default),
+            decorationBox = { innerTextField ->
+                if (text.text.isEmpty()) {
+                    Text("メモを入力…", color = MaterialTheme.appColors.labelGray, fontSize = 15.sp)
+                }
+                innerTextField()
+            }
+        )
+    }
+}
+
+@Composable
+private fun TimeRow(timestamp: Long, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Schedule,
+            contentDescription = null,
+            tint = MaterialTheme.appColors.labelGray,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text("時刻", color = MaterialTheme.appColors.labelGray, fontSize = 14.sp)
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = formatEditorTime(timestamp),
+            color = MaterialTheme.appColors.labelGray,
+            fontSize = 13.sp
+        )
+        Icon(
+            imageVector = Icons.Default.ExpandMore,
+            contentDescription = null,
+            tint = MaterialTheme.appColors.labelGray,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
+
+@Composable
+private fun FlagSection(
+    selectedType: ActionType?,
+    onAddClick: () -> Unit,
+    onSelected: (ActionType) -> Unit
+) {
+    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "種類",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.appColors.labelGray,
+                letterSpacing = 0.06.em
+            )
+            TextButton(onClick = onAddClick) {
+                Text("＋ 追加", color = MaterialTheme.appColors.labelGray, fontSize = 12.sp)
+            }
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 400.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            userScrollEnabled = false
+        ) {
+            items(ActionType.entries.toList()) { type ->
+                FlagIconItem(
+                    type = type,
+                    isActive = type == selectedType,
+                    onClick = { onSelected(type) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun FlagIconItem(type: ActionType, isActive: Boolean, onClick: () -> Unit) {
+    val uiSpec = type.toUiSpec()
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(if (isActive) MaterialTheme.appColors.iconActiveBackground else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            painter = painterResource(id = uiSpec.iconRes),
+            contentDescription = type.label,
+            modifier = Modifier.size(22.dp),
+            tint = if (isActive) Color(0xFF1A1A1A) else Color(0xFF666666)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = type.label,
+            fontSize = 10.sp,
+            color = if (isActive) Color(0xFF1A1A1A) else Color(0xFF777777),
+            textAlign = TextAlign.Center,
+            lineHeight = 13.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun EditFooter(
+    showMore: Boolean,
+    menuExpanded: Boolean,
+    onMenuDismiss: () -> Unit,
+    onClose: () -> Unit,
+    onSave: () -> Unit,
+    onMore: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.appColors.backgroundFlat,
+        shadowElevation = 0.dp,
+        border = BorderStroke(width = 1.dp, color = MaterialTheme.appColors.dividerColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = onClose,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.appColors.buttonSurface,
+                    contentColor = Color(0xFF555555)
+                ),
+                elevation = ButtonDefaults.buttonElevation(0.dp)
+            ) {
+                Text("閉じる", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            }
+
+            Button(
+                onClick = onSave,
+                modifier = Modifier.weight(2.2f),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.appColors.buttonPrimary,
+                    contentColor = Color.White
+                ),
+                elevation = ButtonDefaults.buttonElevation(0.dp)
+            ) {
+                Text("保存", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Box {
+                IconButton(
+                    onClick = onMore,
+                    enabled = showMore,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.appColors.buttonSurface)
+                ) {
+                    if (showMore) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "その他",
+                            tint = Color(0xFF555555)
+                        )
+                    }
+                }
+                if (showMore) {
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = onMenuDismiss
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("削除", color = MaterialTheme.colorScheme.error) },
+                            onClick = onDelete
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
