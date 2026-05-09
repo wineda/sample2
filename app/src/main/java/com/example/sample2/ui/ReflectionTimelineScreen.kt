@@ -76,14 +76,26 @@ import java.util.Locale
  *   - 入力済み項目: 読み取り表示の行全体タップで TextField 展開。
  *   - 空欄項目: 「+ 記録を追加」プレースホルダ → タップで TextField 展開。
  *   - フォーカスアウトで自動保存（差分があれば upsert）。
- * - tomorrowFirstAction はこの画面では表示・編集しない（既存データは保持）。
+ *   - tomorrowFirstAction は「明日やること」として本文リストで表示・編集する。
  * =========================================================================== */
 
-private enum class ReflectionField(val label: String) {
+/**
+ * 振り返り項目。
+ *
+ * @param label UIに表示する日本語ラベル
+ * @param includeInStats 棒グラフ・指標サマリー・4分割メーターなどの「集計系」UI に
+ *                       含めるかどうか。本文リストには includeInStats に関わらず
+ *                       全項目が表示される。
+ */
+private enum class ReflectionField(
+    val label: String,
+    val includeInStats: Boolean = true
+) {
     WINS("うまくいったこと"),
     DIFFICULTIES("しんどかったこと"),
     INSIGHTS("気づき"),
-    SUMMARY("ひとことまとめ")
+    SUMMARY("ひとことまとめ"),
+    TOMORROW("明日やること", includeInStats = false)
 }
 
 private data class FieldEditorKey(val date: String, val field: ReflectionField)
@@ -652,7 +664,9 @@ private fun DayCard(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                ReflectionField.entries.forEach { f ->
+                // 4分割メーターは集計対象（includeInStats=true）の項目のみ表示。
+                // 「明日やること」は本文リストには表示されるが、ここには現れない。
+                ReflectionField.entries.filter { it.includeInStats }.forEach { f ->
                     val filled = reflection?.let { fieldText(it, f) }?.isNotBlank() == true
                     Box(
                         modifier = Modifier
@@ -889,6 +903,7 @@ private fun fieldText(r: DailyReflection, field: ReflectionField): String = when
     ReflectionField.DIFFICULTIES -> r.difficulties
     ReflectionField.INSIGHTS -> r.insights
     ReflectionField.SUMMARY -> r.summary
+    ReflectionField.TOMORROW -> r.tomorrowFirstAction
 }
 
 private fun updateField(base: DailyReflection, field: ReflectionField, value: String): DailyReflection = when (field) {
@@ -896,23 +911,33 @@ private fun updateField(base: DailyReflection, field: ReflectionField, value: St
     ReflectionField.DIFFICULTIES -> base.copy(difficulties = value)
     ReflectionField.INSIGHTS -> base.copy(insights = value)
     ReflectionField.SUMMARY -> base.copy(summary = value)
+    ReflectionField.TOMORROW -> base.copy(tomorrowFirstAction = value)
 }
 
 private fun sameField(r: DailyReflection, field: ReflectionField, value: String): Boolean =
     fieldText(r, field) == value
 
+/**
+ * その日の振り返りで「記入されている集計対象項目」のリストを返す。
+ * 棒グラフのスタック構成と4分割メーターの色付けに使われるため、
+ * includeInStats=false の項目（TOMORROW）は除外する。
+ */
 private fun categoryFlags(r: DailyReflection): List<ReflectionField> =
-    ReflectionField.entries.filter { fieldText(r, it).isNotBlank() }
+    ReflectionField.entries
+        .filter { it.includeInStats }
+        .filter { fieldText(r, it).isNotBlank() }
 
 private fun hasAnyOf4(r: DailyReflection): Boolean =
     r.wins.isNotBlank() || r.difficulties.isNotBlank() || r.insights.isNotBlank() || r.summary.isNotBlank()
 
 /**
- * 振り返り4項目の色。記録画面（ChatScreen）の ActionGroup カラーと意味的に揃えてある:
+ * 振り返り項目の色。
  *  - WINS         → ActionGroup.RECOVER（立て直し）の緑
  *  - DIFFICULTIES → ActionGroup.LOAD（負荷）の紫
  *  - INSIGHTS     → ActionGroup.FORWARD（前進）のオレンジ
- *  - SUMMARY      → どのグループにも該当しないニュートラル紫（既存維持）
+ *  - SUMMARY      → 青紫（EmotionPalette.Sad と同色）
+ *  - TOMORROW     → ActionGroup.DECLINE（崩れ）と同色の赤。「明日やる」という
+ *                   行動志向の強いメッセージとしてビビッドな赤を使う
  *
  * SemanticColors.* はアプリ全体で共有されている色のため、振り返り画面だけで配色を
  * 変えたい今回のケースでは、ここに直接ハードコードする方が波及範囲が小さくて安全。
@@ -921,7 +946,8 @@ private fun fieldColor(field: ReflectionField): Color = when (field) {
     ReflectionField.WINS -> Color(0xFF43A047)
     ReflectionField.DIFFICULTIES -> Color(0xFF8E24AA)
     ReflectionField.INSIGHTS -> Color(0xFFFB8C00)
-    ReflectionField.SUMMARY -> SemanticColors.SummaryMain
+    ReflectionField.SUMMARY -> Color(0xFF6366F1)
+    ReflectionField.TOMORROW -> Color(0xFFE53935)
 }
 
 private fun computeWeekStats(
