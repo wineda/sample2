@@ -58,7 +58,7 @@ object JournalJsonStorage {
         normalized.forEach { array.put(it.toJson()) }
 
         val file = File(context.filesDir, MESSAGES_FILE_NAME)
-        writeAtomically(file, array.toString(2))
+        writeAtomically(file, array.toString())
     }
 
     fun loadDailyRecords(context: Context): List<DailyRecord> {
@@ -85,7 +85,7 @@ object JournalJsonStorage {
         normalized.forEach { array.put(it.toJson()) }
 
         val file = File(context.filesDir, DAILY_RECORDS_FILE_NAME)
-        writeAtomically(file, array.toString(2))
+        writeAtomically(file, array.toString())
     }
 
     fun upsertDailyRecord(context: Context, record: DailyRecord) {
@@ -122,7 +122,7 @@ object JournalJsonStorage {
         normalized.forEach { array.put(it.toJson()) }
 
         val file = File(context.filesDir, DAILY_REFLECTIONS_FILE_NAME)
-        writeAtomically(file, array.toString(2))
+        writeAtomically(file, array.toString())
     }
 
     fun upsertDailyReflection(context: Context, reflection: DailyReflection) {
@@ -155,7 +155,7 @@ object JournalJsonStorage {
             dailyReflections = loadDailyReflections(context)
         )
         outputStream.writer(Charsets.UTF_8).use { writer ->
-            writer.write(backup.toString(2))
+            writer.write(backup.toString())
         }
     }
 
@@ -342,13 +342,22 @@ object JournalJsonStorage {
             put("id", id)
             put("timestamp", timestamp)
             put("text", text)
-            put("emotions", emotions.toJson())
+            if (!emotions.isAllZero()) {
+                put("emotions", emotions.toJson())
+            }
             put("flags", flags.toJson())
-            put("parentId", parentId)
+            if (parentId != null) {
+                put("parentId", parentId)
+            }
             put("entryType", entryType.name)
-            put("response", response?.toJson())
+            if (response != null) {
+                put("response", response.toJson())
+            }
         }
     }
+
+    private fun EmotionMetrics.isAllZero(): Boolean =
+        anxiety == 0 && angry == 0 && sad == 0 && happy == 0 && calm == 0
 
     private fun EmotionResponse.toJson(): JSONObject {
         return JSONObject().apply {
