@@ -1,5 +1,6 @@
 package com.example.sample2.ui.analytics
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,7 +48,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -119,7 +119,6 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.example.sample2.ui.theme.Spacing
 import com.example.sample2.ui.theme.AppShapeTokens
-import com.example.sample2.ui.theme.AppTextStyles
 import com.example.sample2.ui.theme.appColors
 
 private const val AnalyticsLogTag = "PersonalityAnalytics"
@@ -274,17 +273,16 @@ private fun formatMinuteLabel(minutes: Float): String {
 
 
 @Composable
-private fun DetailAnalyticsHeader(
+private fun DetailDateNavStrip(
     selectedDate: LocalDate,
     datesWithRecord: Set<LocalDate>,
     onDateChange: (LocalDate) -> Unit,
-    onMenuClick: () -> Unit,
 ) {
     val today = remember { LocalDate.now() }
     var showDatePicker by remember { mutableStateOf(false) }
     val canGoNext = selectedDate < today
     val canGoPrev = datesWithRecord.any { it < selectedDate }
-    val bottomBorderColor = MaterialTheme.appColors.dividerSoft
+    val borderColor = MaterialTheme.appColors.dividerSoft
 
     Row(
         modifier = Modifier
@@ -292,45 +290,29 @@ private fun DetailAnalyticsHeader(
             .background(MaterialTheme.colorScheme.surface)
             .drawBehind {
                 drawLine(
-                    color = bottomBorderColor,
+                    color = borderColor,
                     start = Offset(0f, size.height),
                     end = Offset(size.width, size.height),
                     strokeWidth = 1.dp.toPx()
                 )
             }
-            .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
-        CompactHeaderIconButton(
-            selected = false,
-            onClick = onMenuClick,
-            icon = Icons.Outlined.Menu,
-            contentDescription = "メニュー"
-        )
-
-        Spacer(Modifier.width(Spacing.xs))
-
-        Text(
-            text = "詳細分析",
-            style = AppTextStyles.ScreenTitleLarge.copy(fontSize = 16.sp),
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.appColors.inkStrongAlt,
-            modifier = Modifier.padding(end = Spacing.xs)
-        )
-
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically
+        Surface(
+            modifier = Modifier.size(32.dp),
+            shape = CircleShape,
+            border = BorderStroke(1.dp, MaterialTheme.appColors.dividerSoft),
+            color = MaterialTheme.colorScheme.surface,
+            onClick = { onDateChange(selectedDate.minusDays(1)) },
+            enabled = canGoPrev
         ) {
-            IconButton(
-                onClick = { onDateChange(selectedDate.minusDays(1)) },
-                enabled = canGoPrev,
-                modifier = Modifier.size(32.dp)
-            ) {
+            Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Rounded.ChevronLeft,
                     contentDescription = "前日",
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(14.dp),
                     tint = if (canGoPrev) {
                         MaterialTheme.appColors.inkSecondary
                     } else {
@@ -338,86 +320,99 @@ private fun DetailAnalyticsHeader(
                     }
                 )
             }
+        }
 
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(MaterialTheme.shapes.small)
-                    .clickable { showDatePicker = true }
-                    .padding(vertical = 2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+        Spacer(Modifier.width(Spacing.sm))
+
+        Column(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .clip(MaterialTheme.shapes.small)
+                .clickable { showDatePicker = true }
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Text(
-                        text = selectedDate.format(DateTimeFormatter.ofPattern("M月d日", Locale.JAPAN)),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.appColors.inkPrimary
-                    )
-                    if (selectedDate == today) {
-                        Surface(
-                            shape = AppShapeTokens.Tech,
-                            color = SemanticColors.InfoMain
-                        ) {
-                            Text(
-                                text = "TODAY",
-                                color = Color.White,
-                                style = MonoTypography.Micro,
-                                modifier = Modifier.padding(
-                                    horizontal = Spacing.xs,
-                                    vertical = 1.dp
-                                )
+                Text(
+                    text = selectedDate.format(
+                        DateTimeFormatter.ofPattern("M月d日", Locale.JAPAN)
+                    ),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.appColors.inkPrimary
+                )
+                if (selectedDate == today) {
+                    Surface(
+                        shape = AppShapeTokens.Tech,
+                        color = SemanticColors.InfoMain
+                    ) {
+                        Text(
+                            text = "TODAY",
+                            color = Color.White,
+                            style = MonoTypography.Micro,
+                            modifier = Modifier.padding(
+                                horizontal = Spacing.xs,
+                                vertical = 1.dp
                             )
-                        }
-                    } else if (selectedDate < today) {
-                        Surface(
-                            shape = AppShapeTokens.Tech,
-                            color = MaterialTheme.appColors.surfaceInactive
-                        ) {
-                            Text(
-                                text = "${ChronoUnit.DAYS.between(selectedDate, today)}日前",
-                                color = MaterialTheme.appColors.inkTertiary,
-                                style = MonoTypography.Micro,
-                                modifier = Modifier.padding(
-                                    horizontal = Spacing.xs,
-                                    vertical = 1.dp
-                                )
-                            )
-                        }
+                        )
                     }
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.padding(top = 2.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        modifier = Modifier.size(11.dp),
-                        tint = MaterialTheme.appColors.inkTertiary
-                    )
-                    Text(
-                        text = selectedDate.format(DateTimeFormatter.ofPattern("E曜日", Locale.JAPAN)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.appColors.inkTertiary
-                    )
+                } else if (selectedDate < today) {
+                    Surface(
+                        shape = AppShapeTokens.Tech,
+                        color = MaterialTheme.appColors.surfaceInactive
+                    ) {
+                        Text(
+                            text = "${ChronoUnit.DAYS.between(selectedDate, today)}日前",
+                            color = MaterialTheme.appColors.inkTertiary,
+                            style = MonoTypography.Micro,
+                            modifier = Modifier.padding(
+                                horizontal = Spacing.xs,
+                                vertical = 1.dp
+                            )
+                        )
+                    }
                 }
             }
 
-            IconButton(
-                onClick = { onDateChange(selectedDate.plusDays(1)) },
-                enabled = canGoNext,
-                modifier = Modifier.size(32.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 2.dp)
             ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = null,
+                    modifier = Modifier.size(11.dp),
+                    tint = MaterialTheme.appColors.inkTertiary
+                )
+                Text(
+                    text = selectedDate.format(
+                        DateTimeFormatter.ofPattern("E曜日", Locale.JAPAN)
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.appColors.inkTertiary
+                )
+            }
+        }
+
+        Spacer(Modifier.width(Spacing.sm))
+
+        Surface(
+            modifier = Modifier.size(32.dp),
+            shape = CircleShape,
+            border = BorderStroke(1.dp, MaterialTheme.appColors.dividerSoft),
+            color = MaterialTheme.colorScheme.surface,
+            onClick = { onDateChange(selectedDate.plusDays(1)) },
+            enabled = canGoNext
+        ) {
+            Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Rounded.ChevronRight,
                     contentDescription = "翌日",
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(14.dp),
                     tint = if (canGoNext) {
                         MaterialTheme.appColors.inkSecondary
                     } else {
@@ -697,17 +692,23 @@ fun PersonalityAnalyticsScreen(
     Column(modifier = modifier.fillMaxSize()) {
         when (displayMode) {
             AnalyticsDisplayMode.DETAIL -> {
-                DetailAnalyticsHeader(
+                JournalTopHeader(
+                    title = "詳細分析",
+                    subtitle = null,
+                    navigationIcon = Icons.Outlined.Menu,
+                    navigationContentDescription = "メニュー",
+                    onNavigationClick = {}
+                )
+                DetailDateNavStrip(
                     selectedDate = selectedDate ?: LocalDate.now(),
                     datesWithRecord = allRawScoresDesc.map { it.date }.toSet(),
-                    onDateChange = { selectedDateText = it.toString() },
-                    onMenuClick = {}
+                    onDateChange = { selectedDateText = it.toString() }
                 )
             }
             else -> {
                 JournalTopHeader(
                     title = "分析",
-                    subtitle = "感情・行動の推移",
+                    subtitle = null,
                     navigationIcon = Icons.Outlined.Menu,
                     navigationContentDescription = "メニュー",
                     onNavigationClick = {},

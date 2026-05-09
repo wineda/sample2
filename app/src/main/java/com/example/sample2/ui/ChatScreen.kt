@@ -286,18 +286,6 @@ fun ChatRoute() {
         }
     }
 
-    // 親 + 子の合計件数を算出。
-    // フィルタは親メモのみに掛かる仕様のため、子は「フィルタに通った親」の
-    // 配下のみをカウントすることで親フィルタと整合させる。
-    val totalEntryCount by remember {
-        derivedStateOf {
-            parentEntries.size +
-                    parentEntries.sumOf { parent ->
-                        childEntriesByParentId[parent.id].orEmpty().size
-                    }
-        }
-    }
-
     val forwardActionSummary by remember {
         derivedStateOf {
             ForwardActionSummary.fromMessages(state.messages.filter { it.isToday() })
@@ -562,7 +550,6 @@ fun ChatRoute() {
                                     .padding(padding)
                             ) {
                                 JournalCompactMetaRow(
-                                    entryCount = totalEntryCount,
                                     hasActiveFilter = hasActiveFilter,
                                     onMenuClick = {
                                         scope.launch { drawerState.open() }
@@ -841,14 +828,13 @@ private fun JournalBottomTab(
 
 @Composable
 private fun JournalCompactMetaRow(
-    entryCount: Int,
     hasActiveFilter: Boolean,
     onMenuClick: () -> Unit,
     onFilterClick: () -> Unit,
 ) {
     JournalTopHeader(
         title = "記録",
-        subtitle = "${entryCount}件",
+        subtitle = null,
         showLiveDot = false,
         navigationIcon = Icons.Outlined.Menu,
         navigationContentDescription = "メニュー",

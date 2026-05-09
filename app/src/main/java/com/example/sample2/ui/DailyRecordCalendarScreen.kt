@@ -110,7 +110,21 @@ fun DailyRecordCalendarScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        DailyRecordTopBar(onMenuClick = onMenuClick)
+        JournalTopHeader(
+            title = "日次記録",
+            subtitle = null,
+            navigationIcon = Icons.Outlined.Menu,
+            navigationContentDescription = "メニュー",
+            onNavigationClick = onMenuClick,
+            actions = {
+                CompactHeaderIconButton(
+                    selected = false,
+                    onClick = { /* 検索は今後の拡張枠 */ },
+                    icon = Icons.Outlined.Search,
+                    contentDescription = "検索（準備中）"
+                )
+            }
+        )
         MonthNav(
             month = visibleMonth,
             monthRecordCount = monthRecordCount,
@@ -131,38 +145,6 @@ fun DailyRecordCalendarScreen(
         )
         Legend(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
         Spacer(Modifier.height(12.dp))
-    }
-}
-
-@Composable
-private fun DailyRecordTopBar(onMenuClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        CompactHeaderIconButton(
-            selected = false,
-            onClick = onMenuClick,
-            icon = Icons.Outlined.Menu,
-            contentDescription = "メニュー"
-        )
-        Spacer(Modifier.width(4.dp))
-        Text(
-            text = "日次記録",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.appColors.inkPrimary,
-            modifier = Modifier.weight(1f)
-        )
-        CompactHeaderIconButton(
-            selected = false,
-            onClick = { /* 検索は今後の拡張枠 */ },
-            icon = Icons.Outlined.Search,
-            contentDescription = "検索（準備中）"
-        )
     }
 }
 
