@@ -308,6 +308,13 @@ fun PersonalityAnalyticsScreen(
         allRawScores.sortedByDescending { it.date }
     }
 
+    val analyticsPeriodLabel = remember(allRawScoresDesc, selectedPeriod) {
+        formatAnalyticsPeriodLabel(
+            allDatesDesc = allRawScoresDesc.map { it.date },
+            period = selectedPeriod
+        )
+    }
+
     val filteredRawScoresDesc = remember(allRawScoresDesc, selectedPeriod) {
         filterScoresByPeriod(
             scores = allRawScoresDesc,
@@ -468,7 +475,11 @@ fun PersonalityAnalyticsScreen(
     Column(modifier = modifier.fillMaxSize()) {
         JournalTopHeader(
             title = if (initialDisplayMode == AnalyticsDisplayMode.DETAIL) "詳細分析" else "分析",
-            subtitle = if (initialDisplayMode == AnalyticsDisplayMode.DETAIL) "1日単位の内訳" else "感情・行動の推移",
+            subtitle = if (initialDisplayMode == AnalyticsDisplayMode.DETAIL) {
+                "1日単位の内訳"
+            } else {
+                analyticsPeriodLabel ?: "データなし"
+            },
             navigationIcon = Icons.Outlined.Menu,
             navigationContentDescription = "メニュー",
             onNavigationClick = {},
@@ -2381,6 +2392,41 @@ private fun formatMetricValue(
     return when (title) {
         "不安" -> "%.1f".format(Locale.JAPAN, value)
         else -> value.roundToInt().toString()
+    }
+}
+
+
+/**
+ * CHARTS モードのヘッダー用に、選択期間の日付範囲を返す。
+ * - 7日 / 14日 / 30日: latest - (N-1)日 〜 latest
+ * - 全期間: 最古日 〜 最新日
+ * - データなし: null
+ *
+ * フォーマットは振り返り画面の formatRangeMain と統一:
+ * - 同月内: "5月3日 — 9日"
+ * - 月またぎ: "4月26日 — 5月9日"
+ */
+private fun formatAnalyticsPeriodLabel(
+    allDatesDesc: List<LocalDate>,
+    period: AnalyticsPeriod
+): String? {
+    if (allDatesDesc.isEmpty()) return null
+
+    val latest = allDatesDesc.maxOrNull() ?: return null
+    val (start, end) = when (period) {
+        AnalyticsPeriod.DAYS_7 -> latest.minusDays(6) to latest
+        AnalyticsPeriod.DAYS_14 -> latest.minusDays(13) to latest
+        AnalyticsPeriod.DAYS_30 -> latest.minusDays(29) to latest
+        AnalyticsPeriod.ALL -> {
+            val earliest = allDatesDesc.minOrNull() ?: return null
+            earliest to latest
+        }
+    }
+
+    return if (start.month == end.month && start.year == end.year) {
+        "${start.monthValue}月${start.dayOfMonth}日 — ${end.dayOfMonth}日"
+    } else {
+        "${start.monthValue}月${start.dayOfMonth}日 — ${end.monthValue}月${end.dayOfMonth}日"
     }
 }
 
