@@ -29,4 +29,10 @@ object SemanticColors {
     // カテゴリ識別用のオレンジ系アクセント
     // (DailyReflection の番号別カラーマッピングで5番目の色として使用)
     val AccentOrange = Color(0xFFD97757)
+
+    // 「ひとことまとめ（summary）」用のニュートラル紫
+    // 4つの振り返り項目（wins/difficulties/insights/summary）の最後の1色として、
+    // 他のセマンティックカラーと衝突しない落ち着いた色を割り当てる。
+    val SummaryMain = Color(0xFF6B6B8A)
+    val SummarySoft = Color(0xFFEDEDF2)
 }
