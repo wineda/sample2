@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HistoryEdu
+import androidx.compose.material.icons.outlined.Bedtime
+import androidx.compose.material.icons.outlined.DirectionsWalk
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Menu
@@ -37,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -61,9 +65,9 @@ private val SundayColor = Color(0xFFC62828)
  * 月カレンダーで全体を俯瞰し、マスをタップして詳細ダイアログを開く。
  *
  * 各マスには以下を表示:
- *  - 🌙 睡眠時間（h、小数1桁、未入力は "-"）
- *  - 👟 歩数（4桁未満は生値、4桁以上は k 表記、未入力は "-"）
- *  - 📝 振り返り項目数（0-5、未入力は "-"）
+ *  - Bedtime: 睡眠時間（h、小数1桁、未入力は "-"）
+ *  - DirectionsWalk: 歩数（4桁未満は生値、4桁以上は k 表記、未入力は "-"）
+ *  - HistoryEdu: 振り返り項目数（0-5、未入力は "-"）
  */
 @Composable
 fun DailyRecordCalendarScreen(
@@ -359,17 +363,17 @@ private fun DayCell(
 
         if (!isFuture) {
             DayValueRow(
-                emoji = "🌙",
+                icon = Icons.Outlined.Bedtime,
                 value = formatSleepHours(record),
                 color = SleepColor
             )
             DayValueRow(
-                emoji = "👟",
+                icon = Icons.Outlined.DirectionsWalk,
                 value = formatSteps(record),
                 color = StepsColor
             )
             DayValueRow(
-                emoji = "📝",
+                icon = Icons.Default.HistoryEdu,
                 value = formatReflectionCount(reflection),
                 color = ReflectionColor
             )
@@ -378,13 +382,16 @@ private fun DayCell(
 }
 
 @Composable
-private fun DayValueRow(emoji: String, value: String, color: Color) {
+private fun DayValueRow(icon: ImageVector, value: String, color: Color) {
     val isEmpty = value == "-"
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = emoji,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-            modifier = Modifier.alpha(if (isEmpty) 0.5f else 1f)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier
+                .size(10.dp)
+                .alpha(if (isEmpty) 0.5f else 1f),
+            tint = if (isEmpty) MaterialTheme.appColors.inkTertiary else color
         )
         Spacer(Modifier.width(2.dp))
         Text(
@@ -409,16 +416,21 @@ private fun Legend(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        LegendItem(emoji = "🌙", label = "睡眠 (h)", color = SleepColor)
-        LegendItem(emoji = "👟", label = "歩数", color = StepsColor)
-        LegendItem(emoji = "📝", label = "振り返り", color = ReflectionColor)
+        LegendItem(icon = Icons.Outlined.Bedtime, label = "睡眠 (h)", color = SleepColor)
+        LegendItem(icon = Icons.Outlined.DirectionsWalk, label = "歩数", color = StepsColor)
+        LegendItem(icon = Icons.Default.HistoryEdu, label = "振り返り", color = ReflectionColor)
     }
 }
 
 @Composable
-private fun LegendItem(emoji: String, label: String, color: Color) {
+private fun LegendItem(icon: ImageVector, label: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text = emoji, style = MaterialTheme.typography.labelMedium)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = color
+        )
         Spacer(Modifier.width(4.dp))
         Text(
             text = label,
