@@ -23,13 +23,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Article
@@ -37,7 +37,6 @@ import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.HistoryEdu
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material3.ButtonDefaults
@@ -47,7 +46,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -71,18 +69,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import com.example.sample2.data.DefaultJournalRepository
+import com.example.sample2.data.EmotionMetrics
 import com.example.sample2.data.EmotionResponse
 import com.example.sample2.ui.components.AppConfirmDialog
 import com.example.sample2.ui.components.AppDestructiveDialog
+import com.example.sample2.data.ActionFlags
 import com.example.sample2.data.ActionType
 import com.example.sample2.data.JournalEntryType
 import com.example.sample2.data.JournalBackupService
 import com.example.sample2.data.JournalLocalDataSource
 import com.example.sample2.data.MessageV2
+import com.example.sample2.data.TriggerKind
 import com.example.sample2.data.maxEmotionOrNull
 import com.example.sample2.ui.analytics.AnalyticsDisplayMode
 import com.example.sample2.ui.journal.ThreadList
@@ -125,6 +127,7 @@ fun ChatScreen() {
 @Composable
 fun ChatRoute() {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val localDataSource = remember(context) { JournalLocalDataSource(context) }
     val backupService = remember(context, localDataSource) {
         JournalBackupService(context, localDataSource)
@@ -150,6 +153,10 @@ fun ChatRoute() {
     var dailyRecordsVersion by remember { mutableIntStateOf(0) }
     var createEditorMessage by remember { mutableStateOf<MessageV2?>(null) }
     var createEditorParentTarget by remember { mutableStateOf<MessageV2?>(null) }
+    var bottomBarText by remember { mutableStateOf("") }
+    var bottomBarTrigger by remember { mutableStateOf<TriggerKind?>(null) }
+    var bottomBarFocused by remember { mutableStateOf(false) }
+    var triggerPopoverVisible by remember { mutableStateOf(false) }
     var explicitlyExpanded by rememberSaveable(
         stateSaver = stringSetSaver()
     ) { mutableStateOf<Set<String>>(emptySet()) }
@@ -439,38 +446,44 @@ fun ChatRoute() {
                 ) {
                     Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
-                    floatingActionButton = {
-                        if (currentMode == JournalScreenMode.Journal) {
-                            FloatingActionButton(
-                                onClick = {
-                                    createEditorMessage = MessageV2(
-                                        id = "__new__",
-                                        timestamp = System.currentTimeMillis(),
-                                        text = ""
-                                    )
-                                },
-                                containerColor = MaterialTheme.appColors.inkPrimary,
-                                contentColor = MaterialTheme.colorScheme.surface,
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .clip(CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "新しい記録",
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                        }
-                    },
                     bottomBar = {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(MaterialTheme.colorScheme.background)
+                                .imePadding()
                                 .navigationBarsPadding()
                         ) {
+                            JournalBottomInputBar(
+                                text = bottomBarText,
+                                onTextChange = { bottomBarText = it },
+                                trigger = bottomBarTrigger,
+                                onTriggerSelected = { bottomBarTrigger = it },
+                                focused = bottomBarFocused,
+                                onFocusedChange = { bottomBarFocused = it },
+                                onSend = {
+                                    val newMsg = MessageV2(
+                                        id = "",
+                                        text = bottomBarText.trim(),
+                                        timestamp = System.currentTimeMillis(),
+                                        trigger = bottomBarTrigger,
+                                        entryType = JournalEntryType.MEMO,
+                                        parentId = null,
+                                        emotions = EmotionMetrics(),
+                                        flags = ActionFlags(),
+                                        response = null
+                                    )
+                                    state.addMessageRaw(newMsg)
+                                    bottomBarText = ""
+                                    bottomBarTrigger = null
+                                    bottomBarFocused = false
+                                    triggerPopoverVisible = false
+                                    focusManager.clearFocus()
+                                },
+                                triggerPopoverVisible = triggerPopoverVisible,
+                                onTriggerPopoverVisibleChange = { triggerPopoverVisible = it }
+                            )
+
                             JournalBottomModeBar(
                                 currentMode = currentMode,
                                 onOpenJournal = { switchToJournal() },
