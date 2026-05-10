@@ -31,9 +31,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -41,6 +42,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -48,24 +50,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sample2.data.TriggerKind
 import com.example.sample2.ui.theme.appColors
+import kotlinx.coroutines.delay
 
 /**
  * 全画面で常時表示される、メモ作成用のボトムバー入力UI。
  *
- * 設計上の重要な原則:
- *   - TextField は展開エリア内の 1 つだけにする
- *   - ボトムバー本体の中央エリアは TextField ではなく Box + Text
- *   - タップ受付・プレースホルダ表示・プレビュー表示はすべて Text + Box で扱う
- *   - フォーカスの一意性を保つことで、IME 入力が確実に展開エリアに届く
- *
- * 構成:
- *   通常状態 (focused=false):
- *     [きっかけアイコン] [タップ受付Box]                    [送信]
- *
- *   入力中状態 (focused=true):
- *     ┌── 唯一の TextField (複数行) ──┐
- *     [きっかけアイコン] [入力中プレビュー(Text)]            [送信]
+ * V3 設計原則:
+ *   - TextField を **常に composition 内** に置く (focused=false でも非表示で存在)
+ *   - これにより FocusRequester が常に attach 状態を保ち、requestFocus が確実に動く
+ *   - LocalSoftwareKeyboardController.show() で IME を明示的に表示
+ *   - 高さ 0 + alpha 0 で「見えないが存在する」状態を作る
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun JournalBottomInputBar(
     text: String,
@@ -80,74 +76,89 @@ fun JournalBottomInputBar(
     modifier: Modifier = Modifier
 ) {
     val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
     val canSend = text.isNotBlank()
 
-    // focused=true になったら展開エリアの TextField に確実にフォーカスを移す
-    // ※ if (focused) { ... } で展開 TextField が composition に追加された直後では
-    //   まだ FocusRequester が node に attach されていない可能性がある。
-    //   1 フレーム待つことで attach 完了を保証する。
+    // focused=true の変化に応じて requestFocus + IME show
+    // TextField は常時 composition 内なので、attach タイミングを気にする必要なし
     LaunchedEffect(focused) {
         if (focused) {
-            withFrameNanos {}
-            focusRequester.requestFocus()
+            // 念のため複数フレーム待ってから (composition 安定化のため)
+            delay(50)
+            try {
+                focusRequester.requestFocus()
+                keyboardController?.show()
+            } catch (e: Exception) {
+                // requestFocus が失敗するケース (まれ) は無視
+            }
+        } else {
+            keyboardController?.hide()
         }
     }
 
     Box(modifier = modifier.fillMaxWidth()) {
         Column {
-            // ───── 展開エリア (フォーカス時のみ) ─────
-            // AnimatedVisibility は使わない。理由:
-            //   AnimatedVisibility は内部 composable の attach が遅延するため、
-            //   その直後に呼ぶ FocusRequester.requestFocus() が失敗する。
-            //   アニメーションは諦めて、確実な動作を優先する。
-            if (focused) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.appColors.dividerColor),
+            // ───── 展開エリア (TextField は常時存在、高さで見せ消し) ─────
+            // ★ V3 のキモ: focused=false でも composition には残す
+            //   FocusRequester は常に attach されている状態を保つ
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                border = if (focused) BorderStroke(1.dp, MaterialTheme.appColors.dividerColor)
+                else BorderStroke(0.dp, Color.Transparent),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = if (focused) 12.dp else 0.dp,
+                        vertical = if (focused) 8.dp else 0.dp
+                    )
+                    .clip(RoundedCornerShape(12.dp))
+                    .heightIn(
+                        min = if (focused) 100.dp else 0.dp,
+                        max = if (focused) 220.dp else 0.dp
+                    )
+                    .alpha(if (focused) 1f else 0f)
+            ) {
+                BasicTextField(
+                    value = text,
+                    onValueChange = onTextChange,
+                    enabled = focused,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                ) {
-                    // ★ アプリ全体で唯一の TextField (フォーカス時のみ存在)
-                    BasicTextField(
-                        value = text,
-                        onValueChange = onTextChange,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 100.dp, max = 220.dp)
-                            .padding(14.dp)
-                            .focusRequester(focusRequester)
-                            .onFocusChanged { fs ->
-                                // 外タップ等でフォーカスを失ったら折りたたみ
-                                if (!fs.isFocused && focused) {
-                                    onFocusedChange(false)
-                                }
-                            },
-                        textStyle = LocalTextStyle.current.copy(
-                            fontSize = 14.sp,
-                            color = MaterialTheme.appColors.inkPrimary,
-                            lineHeight = 22.sp
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Sentences,
-                            imeAction = ImeAction.Default
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.appColors.inkPrimary),
-                        decorationBox = { innerField ->
-                            Box {
-                                if (text.isEmpty()) {
-                                    Text(
-                                        text = "ここに本文を書く…",
-                                        color = MaterialTheme.appColors.inkTertiary,
-                                        fontSize = 14.sp
-                                    )
-                                }
-                                innerField()
+                        .heightIn(
+                            min = if (focused) 100.dp else 0.dp,
+                            max = if (focused) 220.dp else 0.dp
+                        )
+                        .padding(if (focused) 14.dp else 0.dp)
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { fs ->
+                            // 外タップ等でフォーカスを失ったら折りたたみ
+                            if (!fs.isFocused && focused) {
+                                onFocusedChange(false)
                             }
+                        },
+                    textStyle = LocalTextStyle.current.copy(
+                        fontSize = 14.sp,
+                        color = MaterialTheme.appColors.inkPrimary,
+                        lineHeight = 22.sp
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = ImeAction.Default
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.appColors.inkPrimary),
+                    decorationBox = { innerField ->
+                        Box {
+                            if (text.isEmpty() && focused) {
+                                Text(
+                                    text = "ここに本文を書く…",
+                                    color = MaterialTheme.appColors.inkTertiary,
+                                    fontSize = 14.sp
+                                )
+                            }
+                            innerField()
                         }
-                    )
-                }
+                    }
+                )
             }
 
             // ───── ボトムバー本体 ─────
@@ -168,14 +179,12 @@ fun JournalBottomInputBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // きっかけアイコン
                     TriggerIconButton(
                         trigger = trigger,
                         onClick = { onTriggerPopoverVisibleChange(!triggerPopoverVisible) }
                     )
 
-                    // ★ 中央は TextField ではなく Box + Text
-                    //   タップで focused=true にする
+                    // 中央: Box + Text。タップで focused=true
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -230,7 +239,7 @@ fun JournalBottomInputBar(
             }
         }
 
-        // ───── きっかけポップオーバー ─────
+        // ───── きっかけポップオーバー (変更なし) ─────
         if (triggerPopoverVisible) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
