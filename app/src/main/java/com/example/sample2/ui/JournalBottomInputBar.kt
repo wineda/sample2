@@ -26,8 +26,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.outlined.Adjust
-import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +43,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -55,17 +56,19 @@ import com.example.sample2.ui.theme.appColors
 /**
  * 全画面で常時表示される、メモ作成用のボトムバー入力UI。
  *
+ * 設計上の重要な原則:
+ *   - TextField は展開エリア内の 1 つだけにする
+ *   - ボトムバー本体の中央エリアは TextField ではなく Box + Text
+ *   - タップ受付・プレースホルダ表示・プレビュー表示はすべて Text + Box で扱う
+ *   - フォーカスの一意性を保つことで、IME 入力が確実に展開エリアに届く
+ *
  * 構成:
- *   通常状態 (折りたたみ):
- *     [きっかけアイコン] [本文プレースホルダー] [送信ボタン]
+ *   通常状態 (focused=false):
+ *     [きっかけアイコン] [タップ受付Box]                    [送信]
  *
- *   フォーカス状態 (展開):
- *     ┌── 複数行 TextField ──┐
- *     [きっかけアイコン] [入力中プレビュー] [送信ボタン]
- *
- *   きっかけアイコンタップ → 2x2 ポップオーバー (4種から排他選択)
- *
- * 親 (ChatRoute) は state を保持し、onSend で MessageV2 を組み立てる。
+ *   入力中状態 (focused=true):
+ *     ┌── 唯一の TextField (複数行) ──┐
+ *     [きっかけアイコン] [入力中プレビュー(Text)]            [送信]
  */
 @Composable
 fun JournalBottomInputBar(
@@ -75,23 +78,24 @@ fun JournalBottomInputBar(
     onTriggerSelected: (TriggerKind?) -> Unit,
     focused: Boolean,
     onFocusedChange: (Boolean) -> Unit,
-    onSend: () -> Unit,
     triggerPopoverVisible: Boolean,
     onTriggerPopoverVisibleChange: (Boolean) -> Unit,
+    onSend: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val bottomFocusRequester = remember { FocusRequester() }
-    val expandedFocusRequester = remember { FocusRequester() }
+    val focusRequester = remember { FocusRequester() }
     val canSend = text.isNotBlank()
 
+    // focused=true になったら展開エリアの TextField に確実にフォーカスを移す
     LaunchedEffect(focused) {
         if (focused) {
-            expandedFocusRequester.requestFocus()
+            focusRequester.requestFocus()
         }
     }
 
     Box(modifier = modifier.fillMaxWidth()) {
         Column {
+            // ───── 展開エリア (フォーカス時のみ) ─────
             AnimatedVisibility(
                 visible = focused,
                 enter = fadeIn() + expandVertically(),
@@ -105,6 +109,7 @@ fun JournalBottomInputBar(
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                         .clip(RoundedCornerShape(12.dp))
                 ) {
+                    // ★ アプリ全体で唯一の TextField (フォーカス時のみ存在)
                     BasicTextField(
                         value = text,
                         onValueChange = onTextChange,
@@ -112,9 +117,12 @@ fun JournalBottomInputBar(
                             .fillMaxWidth()
                             .heightIn(min = 100.dp, max = 220.dp)
                             .padding(14.dp)
-                            .focusRequester(expandedFocusRequester)
+                            .focusRequester(focusRequester)
                             .onFocusChanged { fs ->
-                                if (fs.isFocused != focused) onFocusedChange(fs.isFocused)
+                                // 外タップ等でフォーカスを失ったら折りたたみ
+                                if (!fs.isFocused && focused) {
+                                    onFocusedChange(false)
+                                }
                             },
                         textStyle = LocalTextStyle.current.copy(
                             fontSize = 14.sp,
@@ -125,6 +133,7 @@ fun JournalBottomInputBar(
                             capitalization = KeyboardCapitalization.Sentences,
                             imeAction = ImeAction.Default
                         ),
+                        cursorBrush = SolidColor(MaterialTheme.appColors.inkPrimary),
                         decorationBox = { innerField ->
                             Box {
                                 if (text.isEmpty()) {
@@ -141,6 +150,7 @@ fun JournalBottomInputBar(
                 }
             }
 
+            // ───── ボトムバー本体 ─────
             Surface(
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 0.dp,
@@ -148,7 +158,7 @@ fun JournalBottomInputBar(
                     .fillMaxWidth()
                     .border(
                         width = 1.dp,
-                        color = MaterialTheme.appColors.dividerColor,
+                        color = MaterialTheme.appColors.dividerColor
                     )
             ) {
                 Row(
@@ -158,55 +168,43 @@ fun JournalBottomInputBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // きっかけアイコン
                     TriggerIconButton(
                         trigger = trigger,
                         onClick = { onTriggerPopoverVisibleChange(!triggerPopoverVisible) }
                     )
 
-                    BasicTextField(
-                        value = if (focused) text else "",
-                        onValueChange = onTextChange,
+                    // ★ 中央は TextField ではなく Box + Text
+                    //   タップで focused=true にする
+                    Box(
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 36.dp)
                             .clip(RoundedCornerShape(18.dp))
                             .background(MaterialTheme.appColors.surfaceInactive)
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
-                            .onFocusChanged { fs ->
-                                if (fs.isFocused && !focused) onFocusedChange(true)
-                            }
-                            .focusRequester(bottomFocusRequester),
-                        singleLine = true,
-                        textStyle = LocalTextStyle.current.copy(
-                            fontSize = 13.sp,
-                            color = MaterialTheme.appColors.inkPrimary
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Sentences,
-                            imeAction = ImeAction.Default
-                        ),
-                        decorationBox = { innerField ->
-                            Box(contentAlignment = Alignment.CenterStart) {
-                                val showPlaceholder = !focused && text.isEmpty()
-                                if (showPlaceholder) {
-                                    Text(
-                                        text = "いま、何があった？",
-                                        color = MaterialTheme.appColors.inkTertiary,
-                                        fontSize = 13.sp
-                                    )
-                                } else if (!focused && text.isNotEmpty()) {
-                                    Text(
-                                        text = text,
-                                        color = MaterialTheme.appColors.inkPrimary,
-                                        fontSize = 13.sp,
-                                        maxLines = 1
-                                    )
-                                }
-                                innerField()
-                            }
+                            .clickable { onFocusedChange(true) }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        val displayText = when {
+                            text.isEmpty() -> "いま、何があった？"
+                            focused -> "入力中…"
+                            else -> text
                         }
-                    )
+                        val displayColor = if (text.isEmpty() || focused) {
+                            MaterialTheme.appColors.inkTertiary
+                        } else {
+                            MaterialTheme.appColors.inkPrimary
+                        }
+                        Text(
+                            text = displayText,
+                            color = displayColor,
+                            fontSize = 13.sp,
+                            maxLines = 1
+                        )
+                    }
 
+                    // 送信ボタン
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -222,16 +220,17 @@ fun JournalBottomInputBar(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.ArrowUpward,
+                            imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "送信",
                             tint = if (canSend) Color.White else MaterialTheme.appColors.inkTertiary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
             }
         }
 
+        // ───── きっかけポップオーバー ─────
         if (triggerPopoverVisible) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
@@ -241,7 +240,7 @@ fun JournalBottomInputBar(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(start = 12.dp)
-                    .offset(y = (-132).dp)
+                    .offset(y = (-200).dp)
                     .width(220.dp)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
@@ -252,7 +251,7 @@ fun JournalBottomInputBar(
                         color = MaterialTheme.appColors.inkSecondary,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    val triggers = TriggerKind.values().toList()
+                    val triggers = TriggerKind.entries.toList()
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         for (i in triggers.indices step 2) {
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -260,7 +259,9 @@ fun JournalBottomInputBar(
                                     kind = triggers[i],
                                     isSelected = triggers[i] == trigger,
                                     onClick = {
-                                        onTriggerSelected(if (triggers[i] == trigger) null else triggers[i])
+                                        onTriggerSelected(
+                                            if (triggers[i] == trigger) null else triggers[i]
+                                        )
                                         onTriggerPopoverVisibleChange(false)
                                     },
                                     modifier = Modifier.weight(1f)
@@ -270,7 +271,9 @@ fun JournalBottomInputBar(
                                         kind = triggers[i + 1],
                                         isSelected = triggers[i + 1] == trigger,
                                         onClick = {
-                                            onTriggerSelected(if (triggers[i + 1] == trigger) null else triggers[i + 1])
+                                            onTriggerSelected(
+                                                if (triggers[i + 1] == trigger) null else triggers[i + 1]
+                                            )
                                             onTriggerPopoverVisibleChange(false)
                                         },
                                         modifier = Modifier.weight(1f)
