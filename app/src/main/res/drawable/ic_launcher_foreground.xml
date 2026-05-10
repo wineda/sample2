@@ -1,30 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
+
+    <!--
+        Branch logo foreground.
+
+        元の SVG viewBox=0..160 を 108 にスケールするため 0.675 倍。
+        さらに安全領域(中心 72x72)に収まるよう若干内側に寄せている。
+
+        アイコン構成:
+          - 親ノード(紫) : 左上の親メモを表す円
+          - 接続線(白)   : 親から2つの子へ枝分かれする線
+          - 子ノード     : 感情応答(緑/オレンジ)を表す円
+          - もう一つの親 : 青の半透明円(連続するメモを示唆)
+    -->
+
+    <!-- 親→子1 の接続線 (50,55) -> (50,95) -> (105,95) を 0.675倍に変換 -->
+    <!-- (33.75, 37.13) -> (33.75, 64.13) -> (70.88, 64.13) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+        android:pathData="M 33.75 37.13 L 33.75 64.13 L 70.88 64.13"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.7"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"/>
+
+    <!-- 親→子2 の接続線 (50,95) -> (105,115) -->
+    <!-- (33.75, 64.13) -> (70.88, 77.63) -->
+    <path
+        android:pathData="M 33.75 64.13 L 70.88 77.63"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.7"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"/>
+
+    <!-- 親ノード(紫): cx=50,cy=55,r=14 → cx=33.75, cy=37.13, r=9.45 -->
+    <path
+        android:pathData="M 33.75 27.68 A 9.45 9.45 0 1 0 33.75 46.58 A 9.45 9.45 0 1 0 33.75 27.68 Z"
+        android:fillColor="#9C27B0"/>
+
+    <!-- 子ノード1(緑): cx=105,cy=95,r=9 → cx=70.88, cy=64.13, r=6.08 -->
+    <path
+        android:pathData="M 70.88 58.05 A 6.08 6.08 0 1 0 70.88 70.21 A 6.08 6.08 0 1 0 70.88 58.05 Z"
+        android:fillColor="#43A047"/>
+
+    <!-- 子ノード2(オレンジ): cx=105,cy=115,r=9 → cx=70.88, cy=77.63, r=6.08 -->
+    <path
+        android:pathData="M 70.88 71.55 A 6.08 6.08 0 1 0 70.88 83.71 A 6.08 6.08 0 1 0 70.88 71.55 Z"
+        android:fillColor="#FB8C00"/>
+
+    <!-- もう一つの親(青、半透明): cx=50,cy=125,r=9 → cx=33.75, cy=84.38, r=6.08 -->
+    <path
+        android:pathData="M 33.75 78.30 A 6.08 6.08 0 1 0 33.75 90.46 A 6.08 6.08 0 1 0 33.75 78.30 Z"
+        android:fillColor="#1976D2"
+        android:fillAlpha="0.7"/>
 </vector>
