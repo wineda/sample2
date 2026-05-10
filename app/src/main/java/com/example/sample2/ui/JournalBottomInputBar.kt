@@ -1,10 +1,5 @@
 package com.example.sample2.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -87,8 +83,12 @@ fun JournalBottomInputBar(
     val canSend = text.isNotBlank()
 
     // focused=true になったら展開エリアの TextField に確実にフォーカスを移す
+    // ※ if (focused) { ... } で展開 TextField が composition に追加された直後では
+    //   まだ FocusRequester が node に attach されていない可能性がある。
+    //   1 フレーム待つことで attach 完了を保証する。
     LaunchedEffect(focused) {
         if (focused) {
+            withFrameNanos {}
             focusRequester.requestFocus()
         }
     }
@@ -96,11 +96,11 @@ fun JournalBottomInputBar(
     Box(modifier = modifier.fillMaxWidth()) {
         Column {
             // ───── 展開エリア (フォーカス時のみ) ─────
-            AnimatedVisibility(
-                visible = focused,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
+            // AnimatedVisibility は使わない。理由:
+            //   AnimatedVisibility は内部 composable の attach が遅延するため、
+            //   その直後に呼ぶ FocusRequester.requestFocus() が失敗する。
+            //   アニメーションは諦めて、確実な動作を優先する。
+            if (focused) {
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
                     border = BorderStroke(1.dp, MaterialTheme.appColors.dividerColor),
